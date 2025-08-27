@@ -1,0 +1,32 @@
+import { verifyJWT, type JwtPayload } from "../lib/jwt";
+import { parseCookies } from "../lib/cookies";
+import { COOKIE_NAME, PUBLIC_API_PATHS } from "../constants";
+import type { Context, Next } from "hono";
+
+// Auth guard for /api/* except PUBLIC_API_PATHS
+export async function apiAuthGuard(c: Context<{ Bindings: Env; Variables: { user: JwtPayload } }>, next: Next) {
+  const url = new URL(c.req.url);
+  // Allow public API endpoints
+  if (PUBLIC_API_PATHS.includes(url.pathname)) {
+    return next();
+  }
+
+  const cookieHeader = c.req.header("Cookie");
+  const cookies = parseCookies(cookieHeader);
+  const token = cookies[COOKIE_NAME];
+  if (!token) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const JWT_SECRET = c.env.JWT_SECRET;
+  if (!JWT_SECRET) {
+    return c.json({ error: "Server misconfigured: JWT_SECRET missing" }, 500);
+  }
+  const payload = await verifyJWT(token, JWT_SECRET);
+  if (!payload) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  c.set("user", payload);
+  await next();
+}
