@@ -11,7 +11,7 @@ export default function DashboardHeader({ }: DashboardHeaderProps) {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
     } finally {
-      navigate("/login");
+      navigate("/login?reason=logout", { replace: true });
     }
   }
   return (

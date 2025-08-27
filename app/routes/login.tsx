@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import type { Route } from "./+types/login";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { safeText, sleep } from "../utils/misc";
+import { useToast } from "../components/Toast";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -13,20 +14,36 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Login(_: Route.ComponentProps) {
   const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const shownRef = useRef(false);
+
+  useEffect(() => {
+    if (shownRef.current) return;
+    const reason = params.get("reason");
+    if (!reason) return;
+    shownRef.current = true;
+    if (reason === "auth") {
+      toast({ title: "Yêu cầu đăng nhập", description: "Vui lòng đăng nhập để tiếp tục.", variant: "warning" });
+    } else if (reason === "logout") {
+      toast({ title: "Đã đăng xuất", description: "Hẹn gặp lại bạn!", variant: "success" });
+    }
+    // Remove the query so remounts/HMR/StrictMode won't retrigger the toast
+    setParams((prev) => {
+      prev.delete("reason");
+      return prev;
+    }, { replace: true });
+  }, [params, toast, setParams]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      // Artificial delay in development to observe the loading animation
-    //   if (import.meta.env.DEV) {
-    //     await sleep(5000);
-    //   }
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -36,6 +53,7 @@ export default function Login(_: Route.ComponentProps) {
         const msg = await safeText(res);
         throw new Error(msg || "Đăng nhập thất bại");
       }
+      toast({ title: "Đăng nhập thành công", variant: "success" });
       navigate("/dashboard");
     } catch (err) {
       setError((err as Error).message);

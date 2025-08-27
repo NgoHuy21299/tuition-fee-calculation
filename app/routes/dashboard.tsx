@@ -13,7 +13,7 @@ export function meta({}: Route.MetaArgs) {
 export async function loader({ request, context }: Route.LoaderArgs) {
   const user = await requireUser(request, context.cloudflare.env);
   if (!user) {
-    throw redirect("/login");
+    throw redirect("/login?reason=auth");
   }
   return { user };
 }

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import type { Route } from "./+types/register";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { safeText } from "../utils/misc";
+import { useToast } from "../components/Toast";
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: "Đăng ký" }, { name: "description", content: "Tạo tài khoản mới" }];
@@ -10,6 +11,7 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Register(_: Route.ComponentProps) {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,6 +32,7 @@ export default function Register(_: Route.ComponentProps) {
         const msg = await safeText(res);
         throw new Error(msg || "Đăng ký thất bại");
       }
+      toast({ title: "Đăng ký thành công", description: "Chào mừng bạn!", variant: "success" });
       navigate("/dashboard");
     } catch (err) {
       setError((err as Error).message);
