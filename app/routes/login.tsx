@@ -4,6 +4,9 @@ import type { Route } from "./+types/login";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { safeText, sleep } from "../utils/misc";
 import { useToast } from "../components/Toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -80,49 +83,38 @@ export default function Login(_: Route.ComponentProps) {
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">
-              Email
-            </label>
-            <input
+            <Label htmlFor="email">Email</Label>
+            <Input
               id="email"
               type="email"
               required
               autoComplete="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-800 outline-none focus:ring-2 focus:ring-black/80 dark:focus:ring-white/60"
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
               placeholder="you@example.com"
             />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="password" className="text-sm font-medium">
-              Mật khẩu
-            </label>
-            <input
+            <Label htmlFor="password">Mật khẩu</Label>
+            <Input
               id="password"
               type="password"
               required
               autoComplete="current-password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-800 outline-none focus:ring-2 focus:ring-black/80 dark:focus:ring-white/60"
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
               placeholder="••••••••"
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            aria-busy={loading}
-            className="w-full h-10 rounded-md bg-black text-white dark:bg-white dark:text-black font-medium hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center"
-          >
+          <Button type="submit" disabled={loading} aria-busy={loading} className="w-full h-10">
             {loading ? (
               <LoadingSpinner size={18} background="black" padding={3}  />
             ) : (
               "Đăng nhập"
             )}
-          </button>
+          </Button>
         </form>
 
         <div className="mt-6 text-center">

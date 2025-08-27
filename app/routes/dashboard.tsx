@@ -24,7 +24,8 @@ export default function Dashboard({ loaderData }: Route.ComponentProps) {
       <div className="space-y-2">
         <h1 className="text-xl font-semibold">Xin chào!</h1>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Đây là trang dashboard dùng để kiểm thử cơ chế đăng nhập bắt buộc (requireUser).
+          Đây là trang dashboard dùng để kiểm thử cơ chế đăng nhập bắt buộc
+          (requireUser).
         </p>
       </div>
     </DashboardShell>
