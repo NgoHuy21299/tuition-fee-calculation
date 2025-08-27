@@ -5,6 +5,7 @@ Dự án là một template full-stack hiện đại chạy trên Cloudflare Wor
 - Frontend: React + React Router (SSR + SPA mode), UI theo phong cách ShadCN và Tailwind CSS (đã cấu hình plugin Tailwind cho Vite).
 - Backend: Hono (chạy cùng Worker), định nghĩa API linh hoạt theo chuẩn REST.
 - Build/Dev: Vite + @cloudflare/vite-plugin, @react-router/dev cho routing, Wrangler để deploy lên Cloudflare.
+- Theme: Chủ yếu là đen/trắng đơn giản và hiện đại.
 
 Các thành phần chính liên quan:
 - `workers/app.ts`: Ứng dụng Hono khởi tạo React Router handler và có chỗ để khai báo các endpoint API tùy chỉnh.
