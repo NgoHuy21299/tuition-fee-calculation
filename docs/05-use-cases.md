@@ -27,11 +27,11 @@ Ghi chú định dạng UC:
   - Biến môi trường secret đã thiết lập trong `wrangler.jsonc`.
 - Luồng chính:
   1) Người dùng truy cập bất kỳ route bảo vệ -> bị redirect `/login` nếu chưa có session hợp lệ.
-  2) Tại `/login`, người dùng xác thực (email/password hoặc Google OAuth).
+  2) Tại `/login`, người dùng xác thực (email/password).
   3) Sau khi thành công -> set cookie HttpOnly và điều hướng về `/dashboard`.
 - Luồng thay thế:
   - Thất bại xác thực -> hiển thị thông báo lỗi, cho phép thử lại.
-- Dữ liệu/Endpoint: `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`.
+- Dữ liệu/Endpoint: `POST /api/auth/login`, `POST /api/auth/logout`, `POST /api/auth/register`.
 - AC:
   - Không đăng nhập không thể truy cập trang bảo vệ.
   - Có thể đăng nhập/đăng xuất ổn định, cookie an toàn.

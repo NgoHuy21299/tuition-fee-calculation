@@ -115,3 +115,11 @@ Các thành phần chính liên quan:
 - Deploy cần đăng nhập Wrangler và có dự án Cloudflare Workers. Cấu hình tên worker trong `wrangler.jsonc` (key `name`).
 - Khi cần secrets, dùng `wrangler secret put KEY` thay vì để trực tiếp trong `vars`.
 - Có thể bật Observability trong `wrangler.jsonc` để theo dõi Worker.
+
+## Auth Gate và tuyến được bảo vệ
+
+- __Cơ chế__: JWT (HS256) lưu trong cookie HttpOnly, Secure, SameSite=Lax, Path=/.
+- __Endpoints__: `POST /api/auth/login`, `POST /api/auth/logout`, `POST /api/auth/register` được mount tại `workers/routes/auth.ts`.
+- __Middleware__: `workers/middleware/auth.ts` bảo vệ `/api/*` trừ các đường dẫn công khai trong `PUBLIC_API_PATHS` (khai báo ở `workers/constants.ts`).
+- __UI loaders__: Helper `requireUser()` tại `app/utils/auth.server.ts` kiểm tra cookie trong `loader` và redirect về `/login` nếu chưa đăng nhập. Các trang như `/dashboard` đã được bảo vệ.
+- __Cấu hình công khai__: `PUBLIC_PATHS` (UI) và `PUBLIC_API_PATHS` (API) giúp bỏ qua kiểm tra auth cho các route như `/login`, static assets.

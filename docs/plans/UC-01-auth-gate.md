@@ -20,9 +20,9 @@ Mục tiêu: Bảo vệ toàn bộ ứng dụng, yêu cầu người dùng (giá
   2) Bỏ qua kiểm tra auth cho các đường dẫn: `/login`, `/api/auth/login`, `/api/auth/logout`, static assets `/build/*`, `/favicon.ico`.
   3) Với đường dẫn `/api/*` còn lại: trả 401 nếu thiếu/invalid.
   4) Đối với request UI (không phải `/api/*`): nếu chưa auth -> để React Router loader xử lý redirect về `/login` (hoặc có thể redirect ngay tại Workers đối với các path không-public).
-  5) Tạo endpoints:
-     - `POST /api/auth/login` nhận `{ email, password }`, tra `Teacher` và so sánh `password_hash` (bcrypt/argon2 – xem giới hạn runtime; có thể dùng Web Crypto + scrypt/argon2 WASM nhẹ). Nếu khớp -> ký JWT, set cookie, trả 200.
-     - `POST /api/auth/logout` xóa cookie (set Max-Age=0) hoặc thêm vào blacklist (KV hoặc bảng revocation), trả 200.
+  5) Mount router auth và SSR:
+     - `app.route("/api/auth", createAuthRouter())` (định nghĩa tại `workers/routes/auth.ts`).
+     - Các request khác chuyển sang SSR handler (`workers/handlers/ssr.ts`).
 
 - __`app/routes.ts`__
   - Thêm route `/login` đến `routes/login.tsx`.
@@ -58,7 +58,7 @@ Mục tiêu: Bảo vệ toàn bộ ứng dụng, yêu cầu người dùng (giá
 ## 4) Schema D1 gợi ý (SQL)
 
 ```sql
-CREATE TABLE IF NOT EXISTS Teacher (
+CREATE TABLE IF NOT EXISTS User (
   id TEXT PRIMARY KEY,
   email TEXT NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
@@ -91,7 +91,7 @@ Giai đoạn sau khi cần reset password/email verify mới bổ sung bảng/fi
 
 1) Tạo bảng `Teacher` (migration D1) và seed một tài khoản mặc định (dev).
 2) Thêm secrets `JWT_SECRET` (và `PASSWORD_PEPPER` nếu dùng).
-3) Implement endpoints `/api/auth/login`, `/api/auth/logout` trong `workers/app.ts`.
+3) Implement endpoints `/api/auth/login`, `/api/auth/logout`, `/api/auth/register` trong `workers/routes/auth.ts` và mount tại `workers/app.ts`.
 4) Thêm middleware verify JWT cho `/api/*`.
 5) Tạo `app/routes/login.tsx` + form + xử lý redirect.
 6) Viết helper `requireUser()` và áp vào loaders các route.
@@ -110,7 +110,7 @@ app/routes/login.tsx
 [completed] Register /login route in 
 app/routes.ts
 [completed] Generate route types (+types) and run typecheck
-[pending] Implement API endpoints and middleware in workers/app.ts
-[pending] Create requireUser() and apply to protected loaders
-[pending] Add /dashboard stub route
-[pending] Update docs for /login and UC-01
+[completed] Implement API endpoints in workers/routes/auth.ts and mount in workers/app.ts; apply API auth middleware
+[completed] Create requireUser() and apply to protected loaders
+[completed] Add /dashboard stub route
+[completed] Update docs for /login and UC-01

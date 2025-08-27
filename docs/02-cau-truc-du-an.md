@@ -5,8 +5,19 @@ Tổng quan các thư mục và file chính trong repository:
 ```
 / (root)
 ├─ app/
+│  ├─ components/
+│  │  ├─ DashboardHeader.tsx
+│  │  ├─ DashboardSidebar.tsx
+│  │  ├─ DashboardBody.tsx
+│  │  └─ DashboardShell.tsx
 │  ├─ routes/
-│  │  └─ home.tsx
+│  │  ├─ home.tsx
+│  │  ├─ login.tsx
+│  │  ├─ register.tsx
+│  │  └─ dashboard.tsx
+│  ├─ utils/
+│  │  ├─ auth.server.ts
+│  │  └─ misc.ts
 │  ├─ app.css
 │  ├─ entry.server.tsx
 │  ├─ root.tsx
@@ -20,9 +31,17 @@ Tổng quan các thư mục và file chính trong repository:
 ├─ public/
 │  └─ favicon.ico
 ├─ workers/
-│  └─ app.ts
-├─ .vscode/
-│  └─ settings.json
+│  ├─ app.ts
+│  ├─ constants.ts
+│  ├─ handlers/
+│  │  └─ ssr.ts
+│  ├─ middleware/
+│  │  └─ auth.ts
+│  ├─ routes/
+│  │  └─ auth.ts
+│  └─ lib/
+│     ├─ jwt.ts
+│     └─ cookies.ts
 ├─ .react-router/
 ├─ build/
 ├─ package.json
@@ -46,16 +65,24 @@ Tổng quan các thư mục và file chính trong repository:
   - __`app/routes.ts`__: Khai báo cấu hình routes theo kiểu file-based của `@react-router/dev/routes`.
     - Ví dụ: `index("routes/home.tsx")` cho route `/`.
     - Thêm mới page bằng cách thêm `route("/path", "routes/your-file.tsx")`.
+    - Đã có: `/login`, `/register`, `/dashboard` (bảo vệ bằng loader `requireUser`).
   - __`app/root.tsx`__: Root layout, khai báo `<Links/>`, `<Meta/>`, `<Scripts/>`, `<Outlet/>`, và `ErrorBoundary`.
   - __`app/entry.server.tsx`__: Hàm `handleRequest` để render SSR bằng `ServerRouter`.
   - __`app/app.css`__: CSS toàn cục (kết hợp với Tailwind qua plugin Vite).
-  - __`app/types/react-router.d.ts`__: Bổ sung/ghi đè type cho React Router (nếu cần).
+  - __`app/types/react-router.d.ts`__: Bổ sung type Cloudflare context cho React Router loaders.
+  - __`app/utils/auth.server.ts`__: Helper `requireUser(request, env)` cho loader, xác thực JWT từ cookie.
   - __`app/welcome/`__: Component chào mừng và tài nguyên SVG mẫu.
 
 - __`workers/`__:
   - __`workers/app.ts`__: Ứng dụng Hono chạy trên Cloudflare Workers.
-    - Khai báo API tại đây, ví dụ `app.get("/api/health", ...)`.
-    - Cuối file có `app.get("*", ...)` để chuyển các request còn lại cho React Router handler.
+    - Áp dụng middleware `apiAuthGuard` cho tất cả `/api/*`.
+    - Định tuyến `app.route("/api/auth", createAuthRouter())` (login/logout/register).
+    - Bắt các request còn lại bằng SSR handler để render React Router.
+    - Có handler tắt tiếng request DevTools `/.well-known/appspecific/com.chrome.devtools.json` (204).
+  - __`workers/constants.ts`__: Khai báo `COOKIE_NAME`, `COOKIE_MAX_AGE`, `PUBLIC_PATHS`, `PUBLIC_API_PATHS`.
+  - __`workers/middleware/auth.ts`__: `apiAuthGuard` bảo vệ `/api/*` trừ các `PUBLIC_API_PATHS`.
+  - __`workers/routes/auth.ts`__: Endpoints `POST /login`, `POST /logout`, `POST /register` và set/clear cookie.
+  - __`workers/lib/jwt.ts`__, __`workers/lib/cookies.ts`__, __`workers/handlers/ssr.ts`__.
 
 - __`public/`__:
   - Tài nguyên tĩnh phục vụ trực tiếp (ví dụ `favicon.ico`). Có thể mở rộng thêm ảnh, robots.txt,…
