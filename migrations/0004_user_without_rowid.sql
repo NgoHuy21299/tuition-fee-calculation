@@ -6,7 +6,6 @@
 -- Note: Migration will FAIL if there are duplicate normalizedEmail values.
 
 PRAGMA foreign_keys = OFF;
-BEGIN TRANSACTION;
 
 -- 1) Backfill normalizedEmail if it is NULL/empty.
 UPDATE "User"
@@ -42,5 +41,4 @@ ALTER TABLE "User_new" RENAME TO "User";
 -- 6) (Optional) Drop the old table.
 DROP TABLE "User_old";
 
-COMMIT;
 PRAGMA foreign_keys = ON;
