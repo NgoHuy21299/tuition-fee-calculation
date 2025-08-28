@@ -2,6 +2,8 @@
 
 Tài liệu này liệt kê các Use Case (UC) chi tiết, sắp xếp theo thứ tự thực thi tối ưu dựa trên yêu cầu trong `docs/03-yeu-cau-chuc-nang.md` và các đề xuất hạ tầng trong `docs/04-cloudflare-dich-vu-de-xuat.md`.
 
+Lưu ý: DB/migrations sẽ được xây dựng incrementally theo từng UC để đáp ứng nhu cầu sử dụng và tránh dư thừa.
+
 Ghi chú định dạng UC:
 - Mỗi UC có: Mục tiêu, Actor, Tiền đề, Luồng chính, Luồng thay thế, Dữ liệu/Endpoint liên quan, Tiêu chí nghiệm thu (AC).
 
@@ -77,19 +79,7 @@ Ghi chú định dạng UC:
   - Loading state khi đang xử lý thay đổi mật khẩu.
   - Form reset sau khi thành công hoặc đóng modal.
 
-
-## UC-02: Thiết lập hạ tầng dữ liệu (D1 + Migrations)
-- Mục tiêu: Khởi tạo bảng dữ liệu nền tảng.
-- Actor: Hệ thống/Dev.
-- Tiền đề: Binding D1 `DB` trong `wrangler.jsonc` (đã có).
-- Luồng chính:
-  1) Tạo migrations cho bảng: Teacher, Class, Student, ClassStudent, Session, Attendance, EmailJob.
-  2) Áp dụng migration lên D1 (local và production).
-- Luồng thay thế: Nâng cấp lược đồ (migrations tiếp theo).
-- Dữ liệu: D1 `DB`.
-- AC: Migrations chạy thành công; có thể CRUD bản ghi cơ bản.
-
-## UC-03: Tạo/Sửa/Xóa lớp học (Classes CRUD)
+## UC-02: Tạo/Sửa/Xóa lớp học (Classes CRUD)
 - Mục tiêu: Quản lý danh sách lớp học.
 - Actor: Giáo viên.
 - Tiền đề: Đã đăng nhập; có bảng `Class`.
@@ -101,7 +91,7 @@ Ghi chú định dạng UC:
 - Endpoint: `GET/POST /api/classes`, `GET/PUT/DELETE /api/classes/:id`.
 - AC: CRUD hoạt động; hiển thị cập nhật ngay trên UI.
 
-## UC-04: Quản lý học sinh và gán vào lớp
+## UC-03: Quản lý học sinh và gán vào lớp
 - Mục tiêu: Quản lý học sinh và liên kết với lớp.
 - Actor: Giáo viên.
 - Tiền đề: Bảng `Student`, `ClassStudent`.
@@ -113,7 +103,7 @@ Ghi chú định dạng UC:
 - Endpoint: `GET/POST /api/students`, `POST/DELETE /api/classes/:id/students`.
 - AC: Học sinh hiển thị trong tab lớp; dữ liệu liên kết chính xác.
 
-## UC-05: Tạo lịch/buổi học (Sessions)
+## UC-04: Tạo lịch/buổi học (Sessions)
 - Mục tiêu: Tạo các buổi học cho lớp, có thể theo lặp.
 - Actor: Giáo viên.
 - Tiền đề: Có lớp, có học sinh (không bắt buộc để tạo buổi).
@@ -125,7 +115,7 @@ Ghi chú định dạng UC:
 - Endpoint: `POST /api/classes/:id/sessions`, `GET /api/classes/:id/sessions`, `PUT/DELETE /api/sessions/:id`.
 - AC: Buổi được sinh đúng thời gian; hiển thị trên UI.
 
-## UC-06: Gửi email nhắc giờ học (Cron + Queues)
+## UC-05: Gửi email nhắc giờ học (Cron + Queues)
 - Mục tiêu: Nhắc giáo viên trước giờ học kèm link điểm danh.
 - Actor: Hệ thống.
 - Tiền đề: Cron Triggers, Queues, provider Email + secrets.
@@ -137,7 +127,7 @@ Ghi chú định dạng UC:
 - Endpoint: Producer/Consumer nội bộ; có thể `POST /api/notifications/send` (thủ công).
 - AC: Email được gửi đúng thời điểm; không gửi trùng (idempotent).
 
-## UC-07: Điểm danh học sinh
+## UC-06: Điểm danh học sinh
 - Mục tiêu: Đánh dấu tham dự/absent/late cho từng học sinh trong buổi.
 - Actor: Giáo viên.
 - Tiền đề: Có buổi học, có học sinh trong lớp; đã đăng nhập.
@@ -149,7 +139,7 @@ Ghi chú định dạng UC:
 - Endpoint: `GET/POST /api/sessions/:id/attendance`.
 - AC: Dữ liệu lưu chính xác; tổng buổi tính đúng.
 
-## UC-08: Báo cáo theo tháng
+## UC-07: Báo cáo theo tháng
 - Mục tiêu: Xem/tạo báo cáo mỗi học sinh đã học những buổi nào, tổng buổi, tổng tiền.
 - Actor: Giáo viên.
 - Tiền đề: Dữ liệu Attendance/Sessions đầy đủ.
@@ -161,7 +151,7 @@ Ghi chú định dạng UC:
 - Endpoint: `GET /api/reports/monthly?classId=&month=YYYY-MM`.
 - AC: Số buổi và tiền tính đúng theo rule; performance ổn.
 
-## UC-09: Sinh nội dung tin nhắn cho phụ huynh
+## UC-08: Sinh nội dung tin nhắn cho phụ huynh
 - Mục tiêu: Sinh template “Tháng MM/YYYY, học sinh A tham gia X buổi, học phí Y VNĐ”.
 - Actor: Giáo viên.
 - Tiền đề: Có báo cáo tháng.
@@ -172,7 +162,7 @@ Ghi chú định dạng UC:
 - Endpoint: `POST /api/notifications/preview` (tạo preview nội dung).
 - AC: Nội dung đúng số buổi/tiền; dễ copy/sử dụng.
 
-## UC-10: Cài đặt hệ thống
+## UC-09: Cài đặt hệ thống
 - Mục tiêu: Thiết lập thông số (email provider, timezone, nhắc lịch mặc định, đơn giá mặc định, bảo mật…).
 - Actor: Giáo viên.
 - Tiền đề: Biến môi trường/Settings lưu ở D1.
@@ -180,7 +170,7 @@ Ghi chú định dạng UC:
 - Endpoint: `GET/PUT /api/settings`.
 - AC: Cấu hình áp dụng ngay các chức năng liên quan.
 
-## UC-11: Quan sát/giám sát & nhật ký
+## UC-10: Quan sát/giám sát & nhật ký
 - Mục tiêu: Theo dõi hoạt động, lỗi, chỉ số.
 - Actor: Hệ thống/Dev.
 - Tiền đề: Observability bật trong `wrangler.jsonc`.
@@ -190,8 +180,8 @@ Ghi chú định dạng UC:
 ---
 
 ## Lộ trình thực hiện đề xuất (Roadmap theo sprint)
-- Sprint 1: UC-01, UC-02, skeleton API/DB + UI chính (`/login`, `/dashboard`).
+- Sprint 1: UC-01, skeleton API/DB + UI chính (`/login`, `/dashboard`).
 - Sprint 2: UC-03, UC-04 (CRUD lớp, học sinh, liên kết), bảo vệ route trong loader.
-- Sprint 3: UC-05 (lịch/buổi, lặp), UC-07 (điểm danh cơ bản).
+- Sprint 3: UC-05 (lịch/buổi, lặp), UC-06 (điểm danh cơ bản).
 - Sprint 4: UC-08 (báo cáo tháng), UC-09 (sinh tin nhắn), tối ưu hiệu năng truy vấn.
-- Sprint 5: UC-06 (Cron+Queues gửi nhắc), UC-10 (cài đặt), UC-11 (observability nâng cao), R2 nếu cần.
+- Sprint 5: UC-07 (Cron+Queues gửi nhắc), UC-10 (cài đặt), UC-11 (observability nâng cao), R2 nếu cần.
