@@ -47,7 +47,7 @@
   "scripts": {
     "build": "react-router build",
     "cf-typegen": "wrangler types",
-    "deploy": "npm run build && wrangler deploy",
+    "deploy": "npm run build && npm run db:migrate:remote && wrangler deploy",
     "dev": "react-router dev",
     "preview": "npm run build && vite preview",
     "typecheck": "npm run cf-typegen && react-router typegen && tsc -b",
