@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import type { Route } from "./+types/register";
-import LoadingSpinner from "../components/LoadingSpinner";
+import LoadingSpinner from "../components/commons/LoadingSpinner";
 import { safeText } from "../utils/misc";
-import { useToast } from "../components/Toast";
+import { useToast } from "../components/commons/Toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

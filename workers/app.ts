@@ -1,7 +1,7 @@
 import { Hono } from "hono";
-import type { JwtPayload } from "./lib/jwt";
-import { apiAuthGuard } from "./middleware/auth";
-import { createAuthRouter } from "./routes/auth";
+import type { JwtPayload } from "./services/jwtService";
+import { apiAuthGuard } from "./middleware/authMiddleware";
+import { createAuthRouter } from "./routes/authRoute";
 import { createSSRHandler } from "./handlers/ssr";
 
 const app = new Hono<{ Bindings: Env; Variables: { user: JwtPayload } }>();

@@ -2,29 +2,24 @@
 // - Responsible for verifying credentials against D1
 // - Issuing JWT payloads (actual signing handled by jwt.ts)
 
-import type { JwtPayload } from "./jwt";
+import type { JwtPayload } from "./jwtService";
+import type { User } from "../types/user";
+import { UserRepository } from "../repos/userRepository";
 
-export type User = {
-  id: string;
-  email: string;
-  password_hash: string;
-  name: string | null;
-  createdAt: string;
-};
 
 export interface AuthDeps {
   db: D1Database;
 }
 
 export class AuthService {
-  constructor(private readonly deps: AuthDeps) {}
+  private readonly userRepository: UserRepository;
+  constructor(private readonly deps: AuthDeps) {
+    this.userRepository = new UserRepository({ db: deps.db });
+  }
 
   async findUserByEmail(email: string): Promise<User | null> {
-    const stmt = this.deps.db.prepare(
-      "SELECT id, email, password_hash, name, createdAt FROM User WHERE email = ? LIMIT 1"
-    );
-    const row = await stmt.bind(email).first<User>();
-    return row ?? null;
+    const normalized = normalizeEmail(email);
+    return this.userRepository.getByNormalizedEmail(normalized);
   }
 
   async verifyCredentials(email: string, password: string): Promise<User | null> {
@@ -33,6 +28,17 @@ export class AuthService {
 
     const ok = await verifyPassword(password, user.password_hash);
     return ok ? user : null;
+  }
+
+  async changePassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
+    const user = await this.userRepository.getById(userId);
+    if (!user) throw new Error("User not found");
+
+    const ok = await verifyPassword(oldPassword, user.password_hash);
+    if (!ok) throw new Error("Invalid old password");
+
+    const newHash = await hashPassword(newPassword);
+    await this.userRepository.updatePasswordHash(userId, newHash);
   }
 
   buildJwtPayload(u: User, maxAgeSec: number): JwtPayload {
@@ -46,22 +52,17 @@ export class AuthService {
   }
 
   async createUser(params: { id?: string; email: string; password: string; name?: string | null }): Promise<User> {
-    const exists = await this.findUserByEmail(params.email);
+    const normalizedEmail = normalizeEmail(params.email);
+    const exists = await this.userRepository.getByNormalizedEmail(normalizedEmail);
     if (exists) throw new Error("Email already registered");
 
     const id = params.id ?? crypto.randomUUID();
     const password_hash = await hashPassword(params.password);
     const name = params.name ?? null;
 
-    await this.deps.db
-      .prepare("INSERT INTO User (id, email, password_hash, name) VALUES (?, ?, ?, ?)")
-      .bind(id, params.email, password_hash, name)
-      .run();
+    await this.userRepository.insert({ id, email: params.email, normalizedEmail, password_hash, name });
 
-    const row = await this.deps.db
-      .prepare("SELECT id, email, password_hash, name, createdAt FROM User WHERE id = ?")
-      .bind(id)
-      .first<User>();
+    const row = await this.userRepository.getById(id);
     if (!row) throw new Error("Failed to load created user");
     return row;
   }
@@ -98,3 +99,9 @@ export async function hashPassword(plaintext: string): Promise<string> {
   const hex = await sha256Hex(plaintext);
   return `sha256:${hex}`;
 }
+
+// Email normalization utility (trim + lowercase)
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+

@@ -36,6 +36,48 @@ Ghi chú định dạng UC:
   - Không đăng nhập không thể truy cập trang bảo vệ.
   - Có thể đăng nhập/đăng xuất ổn định, cookie an toàn.
 
+
+## UC-01.1: Nâng cấp xác thực và quản lý tài khoản
+- Mục tiêu: Cải thiện hệ thống xác thực với email chuẩn hóa và bổ sung chức năng thay đổi mật khẩu.
+- Actor: Giáo viên.
+- Tiền đề: 
+  - UC-01 đã hoàn thành (đăng nhập/đăng ký cơ bản).
+  - Có bảng `User` với trường `normalizedEmail`.
+  - Đã đăng nhập vào dashboard.
+- Luồng chính:
+  1) **Email chuẩn hóa**: 
+     - Khi đăng ký/đăng nhập, hệ thống tự động chuẩn hóa email (lowercase, trim).
+     - Kiểm tra trùng lặp dựa trên `normalizedEmail` thay vì `email` gốc.
+  2) **UI cải tiến Dashboard Header**:
+     - Thay thế text "Giáo viên" bằng icon user với dropdown menu.
+     - Dropdown chứa: "Thay đổi mật khẩu", "Đăng xuất".
+  3) **Thay đổi mật khẩu**:
+     - Click "Thay đổi mật khẩu" → mở modal popup.
+     - Form gồm: mật khẩu cũ, mật khẩu mới, nhập lại mật khẩu mới.
+     - Validate: mật khẩu cũ đúng, mật khẩu mới khớp, độ dài tối thiểu.
+     - Thành công → đóng modal, hiển thị toast thông báo.
+- Luồng thay thế:
+  - Mật khẩu cũ sai → hiển thị lỗi, không đóng modal.
+  - Mật khẩu mới không khớp → hiển thị lỗi validation.
+  - Lỗi server → hiển thị thông báo lỗi, cho phép thử lại.
+- Dữ liệu/Endpoint: 
+  - Migration: `ALTER TABLE User ADD COLUMN normalizedEmail TEXT`.
+  - `POST /api/auth/change-password` (body: `{oldPassword, newPassword}`).
+  - Cập nhật `POST /api/auth/login` và `POST /api/auth/register` để sử dụng `normalizedEmail`.
+- AC:
+  - Tạo migration trường `normalizedEmail` cho bảng User.
+  - Email không phân biệt hoa thường khi đăng nhập/đăng ký.
+  - Không thể tạo 2 tài khoản với email chỉ khác hoa thường (vd: `user@test.com` và `User@Test.com`).
+  - Dropdown user menu hoạt động mượt mà.
+  - Modal thay đổi mật khẩu hiển thị đúng, validation chính xác.
+  - Thay đổi mật khẩu thành công, có thể đăng nhập với mật khẩu mới ngay lập tức.
+  - Thay đổi mật khẩu thành công thì sẽ có toastr thông báo thay đổi mật khẩu thành công.
+- AC bổ sung:
+  - Modal có thể đóng bằng ESC hoặc click outside.
+  - Loading state khi đang xử lý thay đổi mật khẩu.
+  - Form reset sau khi thành công hoặc đóng modal.
+
+
 ## UC-02: Thiết lập hạ tầng dữ liệu (D1 + Migrations)
 - Mục tiêu: Khởi tạo bảng dữ liệu nền tảng.
 - Actor: Hệ thống/Dev.

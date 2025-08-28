@@ -1,10 +1,12 @@
 import React from "react";
 import { useNavigate } from "react-router";
+import UserDropdown from "./UserDropdown";
 
 type DashboardHeaderProps = {
+  onChangePassword?: () => void;
 };
 
-export default function DashboardHeader({ }: DashboardHeaderProps) {
+export default function DashboardHeader({ onChangePassword }: DashboardHeaderProps) {
   const navigate = useNavigate();
 
   async function onLogout() {
@@ -20,13 +22,7 @@ export default function DashboardHeader({ }: DashboardHeaderProps) {
         <span className="font-semibold">Dashboard</span>
       </div>
       <div className="flex items-center gap-3">
-        <div className="text-sm text-gray-500 dark:text-gray-400">Giáo viên</div>
-        <button
-          onClick={onLogout}
-          className="h-9 px-3 rounded-md border border-gray-300 dark:border-gray-800 text-sm hover:bg-gray-50 dark:hover:bg-gray-900"
-        >
-          Đăng xuất
-        </button>
+        <UserDropdown onLogout={onLogout} onChangePassword={onChangePassword} />
       </div>
     </header>
   );

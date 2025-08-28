@@ -1,5 +1,5 @@
-import { verifyJWT, type JwtPayload } from "../lib/jwt";
-import { parseCookies } from "../lib/cookies";
+import { verifyJWT, type JwtPayload } from "../services/jwtService";
+import { parseCookies } from "../services/cookiesService";
 import { COOKIE_NAME, PUBLIC_API_PATHS } from "../constants";
 import type { Context, Next } from "hono";
 

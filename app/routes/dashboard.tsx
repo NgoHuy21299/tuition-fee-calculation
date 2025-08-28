@@ -1,6 +1,6 @@
 import type { Route } from "./+types/dashboard";
 import { redirect } from "react-router";
-import DashboardShell from "../components/DashboardShell";
+import DashboardShell from "../components/dashboard/DashboardShell";
 import { requireUser } from "../utils/auth.server";
 
 export function meta({}: Route.MetaArgs) {
