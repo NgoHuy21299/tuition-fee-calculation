@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import type { Route } from "./+types/login";
 import LoadingSpinner from "../components/commons/LoadingSpinner";
-import { safeText, sleep } from "../utils/misc";
+import { safeText } from "../utils/misc";
 import { useToast } from "../components/commons/Toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,8 +53,14 @@ export default function Login(_: Route.ComponentProps) {
         body: JSON.stringify({ email, password }),
       });
       if (!res.ok) {
-        const msg = await safeText(res);
-        throw new Error(msg || "Đăng nhập thất bại");
+        // Prefer JSON error shape: { error, code }
+        const data = (await res
+          .json()
+          .catch(async () => ({ error: (await safeText(res)) || null }))) as {
+          error?: string;
+          code?: string;
+        };
+        throw new Error(data.error || "Đăng nhập thất bại");
       }
       toast({ title: "Đăng nhập thành công", variant: "success" });
       navigate("/dashboard");

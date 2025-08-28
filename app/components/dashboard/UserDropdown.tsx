@@ -52,7 +52,7 @@ export default function UserDropdown({ onLogout, onChangePassword, className }: 
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="rounded-full"
+        className="rounded-full cursor-pointer"
         title="Tài khoản"
       >
         <UserIcon />

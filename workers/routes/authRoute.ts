@@ -3,6 +3,8 @@ import { AuthService } from "../services/authService";
 import { signJWT, type JwtPayload } from "../services/jwtService";
 import { serializeCookie } from "../services/cookiesService";
 import { COOKIE_MAX_AGE, COOKIE_NAME } from "../constants";
+import { toAppError } from "../errors";
+import { t } from "../i18n/messages";
 
 export function createAuthRouter() {
   const router = new Hono<{ Bindings: Env; Variables: { user: JwtPayload } }>();
@@ -10,17 +12,17 @@ export function createAuthRouter() {
   router.post("/login", async (c) => {
     const { email, password } = await c.req.json<{ email: string; password: string }>();
     if (!email || !password) {
-      return c.text("Missing credentials", 400);
+      return c.json({ error: t("AUTH_MISSING_CREDENTIALS"), code: "AUTH_MISSING_CREDENTIALS" }, 400 as 400);
     }
     const auth = new AuthService({ db: c.env.DB });
     const user = await auth.verifyCredentials(email, password);
     if (!user) {
-      return c.text("Invalid email or password", 401);
+      return c.json({ error: t("AUTH_INVALID_CREDENTIALS"), code: "AUTH_INVALID_CREDENTIALS" }, 401 as 401);
     }
 
     const JWT_SECRET = c.env.JWT_SECRET;
     if (!JWT_SECRET) {
-      return c.text("Server misconfigured: JWT_SECRET missing", 500);
+      return c.json({ error: t("SERVER_MISCONFIGURED"), code: "SERVER_MISCONFIGURED" }, 500 as 500);
     }
     const payload = auth.buildJwtPayload(user, COOKIE_MAX_AGE);
     const token = await signJWT(payload, JWT_SECRET);
@@ -55,25 +57,24 @@ export function createAuthRouter() {
     const body = await c.req
       .json<{ oldPassword: string; newPassword: string }>()
       .catch(() => null);
-    if (!body) return c.json({ error: "Invalid JSON" }, 400);
+    if (!body) return c.json({ error: t("AUTH_INVALID_JSON"), code: "AUTH_INVALID_JSON" }, 400);
     const { oldPassword, newPassword } = body;
-    if (!oldPassword || !newPassword) return c.json({ error: "Missing fields" }, 400);
-    if (newPassword.length < 8) return c.json({ error: "Mật khẩu mới phải có ít nhất 8 ký tự" }, 400);
+    if (!oldPassword || !newPassword)
+      return c.json({ error: t("AUTH_MISSING_FIELDS"), code: "AUTH_MISSING_FIELDS" }, 400);
+    if (newPassword.length < 8)
+      return c.json({ error: t("AUTH_PASSWORD_TOO_SHORT"), code: "AUTH_PASSWORD_TOO_SHORT" }, 400);
 
     const user = c.get("user");
     const userId = (user?.sub as string) || "";
-    if (!userId) return c.json({ error: "Unauthorized" }, 401);
+    if (!userId) return c.json({ error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" }, 401);
 
     const auth = new AuthService({ db: c.env.DB });
     try {
       await auth.changePassword(userId, oldPassword, newPassword);
       return new Response(null, { status: 204 });
     } catch (err) {
-      const msg = (err as Error).message || "Change password failed";
-      if (/invalid old password/i.test(msg)) {
-        return c.json({ error: "Mật khẩu cũ không đúng" }, 400);
-      }
-      return c.json({ error: msg }, 400);
+      const e = toAppError(err, { code: "UNKNOWN" });
+      return c.json({ error: t(e.code, e.message), code: e.code }, e.status as any);
     }
   });
 
@@ -83,7 +84,7 @@ export function createAuthRouter() {
       .json<{ email: string; password: string; name?: string }>()
       .catch(() => null);
     if (!body || !body.email || !body.password) {
-      return c.text("Missing fields", 400);
+      return c.json({ error: t("AUTH_MISSING_FIELDS"), code: "AUTH_MISSING_FIELDS" }, 400);
     }
     const { email, password, name } = body;
     const auth = new AuthService({ db: c.env.DB });
@@ -92,7 +93,7 @@ export function createAuthRouter() {
 
       const JWT_SECRET = c.env.JWT_SECRET;
       if (!JWT_SECRET) {
-        return c.text("Server misconfigured: JWT_SECRET missing", 500);
+        return c.json({ error: t("SERVER_MISCONFIGURED"), code: "SERVER_MISCONFIGURED" }, 500);
       }
       const payload = auth.buildJwtPayload(created, COOKIE_MAX_AGE);
       const token = await signJWT(payload, JWT_SECRET);
@@ -107,11 +108,10 @@ export function createAuthRouter() {
 
       return new Response(null, { status: 204, headers: { "Set-Cookie": cookie } });
     } catch (err) {
-      const msg = (err as Error).message || "Registration failed";
-      if (/already registered/i.test(msg)) {
-        return c.text("Email đã được đăng ký", 409);
-      }
-      return c.text(msg, 400);
+      const e = toAppError(err, { code: "AUTH_REGISTER_FAILED" });
+      // Specialize status for email exists if not provided by service
+      const status = e.code === "AUTH_EMAIL_EXISTS" && e.status === 400 ? (409 as const) : e.status;
+      return c.json({ error: t(e.code, e.message), code: e.code }, status as any);
     }
   });
 

@@ -32,8 +32,13 @@ export default function Register(_: Route.ComponentProps) {
         body: JSON.stringify({ name: name || undefined, email, password }),
       });
       if (!res.ok) {
-        const msg = await safeText(res);
-        throw new Error(msg || "Đăng ký thất bại");
+        const data = (await res
+          .json()
+          .catch(async () => ({ error: (await safeText(res)) || null }))) as {
+          error?: string;
+          code?: string;
+        };
+        throw new Error(data.error || "Đăng ký thất bại");
       }
       toast({ title: "Đăng ký thành công", description: "Chào mừng bạn!", variant: "success" });
       navigate("/dashboard");

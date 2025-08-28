@@ -5,6 +5,7 @@
 import type { JwtPayload } from "./jwtService";
 import type { User } from "../types/user";
 import { UserRepository } from "../repos/userRepository";
+import { AppError } from "../errors";
 
 
 export interface AuthDeps {
@@ -32,10 +33,10 @@ export class AuthService {
 
   async changePassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
     const user = await this.userRepository.getById(userId);
-    if (!user) throw new Error("User not found");
+    if (!user) throw new AppError("RESOURCE_NOT_FOUND", "User not found", 404);
 
     const ok = await verifyPassword(oldPassword, user.password_hash);
-    if (!ok) throw new Error("Invalid old password");
+    if (!ok) throw new AppError("AUTH_INVALID_OLD_PASSWORD");
 
     const newHash = await hashPassword(newPassword);
     await this.userRepository.updatePasswordHash(userId, newHash);
@@ -54,7 +55,7 @@ export class AuthService {
   async createUser(params: { id?: string; email: string; password: string; name?: string | null }): Promise<User> {
     const normalizedEmail = normalizeEmail(params.email);
     const exists = await this.userRepository.getByNormalizedEmail(normalizedEmail);
-    if (exists) throw new Error("Email already registered");
+    if (exists) throw new AppError("AUTH_EMAIL_EXISTS");
 
     const id = params.id ?? crypto.randomUUID();
     const password_hash = await hashPassword(params.password);
@@ -63,7 +64,7 @@ export class AuthService {
     await this.userRepository.insert({ id, email: params.email, normalizedEmail, password_hash, name });
 
     const row = await this.userRepository.getById(id);
-    if (!row) throw new Error("Failed to load created user");
+    if (!row) throw new AppError("RESOURCE_NOT_FOUND", "Failed to load created user", 500);
     return row;
   }
 }
