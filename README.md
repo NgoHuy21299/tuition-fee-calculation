@@ -47,3 +47,18 @@ A perfect starting point for building interactive, styled, and edge-deployed SPA
 - 🎨 [shadcn/ui](https://ui.shadcn.com)
 - 💨 [Tailwind CSS Documentation](https://tailwindcss.com/)
 - 🔀 [React Router Docs](https://reactrouter.com/)
+
+## Local Development
+
+To run the app locally with authentication enabled, add a `.dev.vars` file at the project root to provide your environment secrets for the Cloudflare Worker.
+
+- Create a `.dev.vars` file with at least the following variable:
+  - `JWT_SECRET=your-long-random-secret-value`
+
+Do not commit `.dev.vars` to source control. Wrangler automatically loads these values for `wrangler dev` (used by `react-router dev`).
+
+Before starting development, initialize the local database (D1) by applying migrations:
+
+- Run: `npm run db:migrate:local`
+
+This applies migrations to your local D1 database so the API and dashboard can function properly.

@@ -19,7 +19,13 @@ export default function DashboardHeader({ onChangePassword }: DashboardHeaderPro
   return (
     <header className="h-14 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4 bg-white/70 dark:bg-gray-950/70 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-10">
       <div className="flex items-center gap-2">
-        <span className="font-semibold">Dashboard</span>
+        <button
+          type="button"
+          onClick={() => navigate("/dashboard/overview")}
+          className="font-semibold cursor-pointer"
+        >
+          Dashboard
+        </button>
       </div>
       <div className="flex items-center gap-3">
         <UserDropdown onLogout={onLogout} onChangePassword={onChangePassword} />
