@@ -62,3 +62,13 @@ Before starting development, initialize the local database (D1) by applying migr
 - Run: `npm run db:migrate:local`
 
 This applies migrations to your local D1 database so the API and dashboard can function properly.
+
+## Health Check
+
+Public API endpoints for service probes are provided:
+
+- `GET /api/health` → returns `{ "status": "ok" }`
+- `GET /api/live` → liveness probe
+- `GET /api/ready` → readiness probe (503 when DB binding missing)
+
+Implementation: `workers/routes/healthRoute.ts`, registered in `workers/app.ts`.

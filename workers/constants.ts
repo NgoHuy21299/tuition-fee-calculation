@@ -11,4 +11,8 @@ export const PUBLIC_API_PATHS = [
   "/api/auth/login",
   "/api/auth/logout",
   "/api/auth/register",
+  // Health check endpoints
+  "/api/health",
+  "/api/live",
+  "/api/ready",
 ];
