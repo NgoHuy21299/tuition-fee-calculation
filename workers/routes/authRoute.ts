@@ -35,9 +35,10 @@ export function createAuthRouter() {
       maxAge: COOKIE_MAX_AGE,
     });
 
-    return new Response(null, {
-      status: 204,
-      headers: { "Set-Cookie": cookie },
+    // Return token in body for client-side storage while still setting cookie for compatibility
+    return new Response(JSON.stringify({ token }), {
+      status: 200,
+      headers: { "Set-Cookie": cookie, "Content-Type": "application/json" },
     });
   });
 
@@ -106,7 +107,11 @@ export function createAuthRouter() {
         maxAge: COOKIE_MAX_AGE,
       });
 
-      return new Response(null, { status: 204, headers: { "Set-Cookie": cookie } });
+      // Return token in body for client-side storage while still setting cookie for compatibility
+      return new Response(JSON.stringify({ token }), {
+        status: 200,
+        headers: { "Set-Cookie": cookie, "Content-Type": "application/json" },
+      });
     } catch (err) {
       const e = toAppError(err, { code: "AUTH_REGISTER_FAILED" });
       // Specialize status for email exists if not provided by service

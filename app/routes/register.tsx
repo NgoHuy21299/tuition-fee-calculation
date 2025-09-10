@@ -7,6 +7,7 @@ import { useToast } from "../components/commons/Toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { setToken } from "@/utils/auth.client";
 
 export function meta({}: Route.MetaArgs) {
   return [{ title: "Đăng ký" }, { name: "description", content: "Tạo tài khoản mới" }];
@@ -40,6 +41,14 @@ export default function Register(_: Route.ComponentProps) {
         };
         throw new Error(data.error || "Đăng ký thất bại");
       }
+      const data = (await res
+        .json()
+        .catch(async () => ({ token: null as string | null, error: (await safeText(res)) || null }))) as {
+        token?: string | null;
+        error?: string | null;
+      };
+      if (!data?.token) throw new Error(data?.error || "Đăng ký thất bại: thiếu token");
+      setToken(data.token);
       toast({ title: "Đăng ký thành công", description: "Chào mừng bạn!", variant: "success" });
       navigate("/dashboard");
     } catch (err) {
