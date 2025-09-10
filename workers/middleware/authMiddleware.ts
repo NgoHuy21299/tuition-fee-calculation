@@ -11,9 +11,16 @@ export async function apiAuthGuard(c: Context<{ Bindings: Env; Variables: { user
     return next();
   }
 
-  const cookieHeader = c.req.header("Cookie");
-  const cookies = parseCookies(cookieHeader);
-  const token = cookies[COOKIE_NAME];
+  // Prefer Authorization header (Bearer token). Fallback to cookie for compatibility during migration.
+  const authHeader = c.req.header("Authorization") || c.req.header("authorization");
+  let token: string | undefined;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.slice("Bearer ".length).trim();
+  } else {
+    const cookieHeader = c.req.header("Cookie");
+    const cookies = parseCookies(cookieHeader);
+    token = cookies[COOKIE_NAME];
+  }
   if (!token) {
     return c.json({ error: "Unauthorized" }, 401);
   }
@@ -30,3 +37,4 @@ export async function apiAuthGuard(c: Context<{ Bindings: Env; Variables: { user
   c.set("user", payload);
   await next();
 }
+
