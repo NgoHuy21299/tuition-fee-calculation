@@ -17,6 +17,9 @@ export function createHealthRouter() {
     return c.json({ status: ready ? "ready" : "not-ready" }, ready ? 200 : 503);
   });
 
+  // Authentication check
+  router.get('/auth-check', (c) => c.json({ status: "authenticated"}));
+
   return router;
 }
 
