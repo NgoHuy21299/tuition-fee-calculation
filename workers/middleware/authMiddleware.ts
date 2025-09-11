@@ -1,6 +1,5 @@
 import { verifyJWT, type JwtPayload } from "../services/jwtService";
-import { parseCookies } from "../services/cookiesService";
-import { COOKIE_NAME, PUBLIC_API_PATHS } from "../constants";
+import { PUBLIC_API_PATHS } from "../constants";
 import type { Context, Next } from "hono";
 
 // Auth guard for /api/* except PUBLIC_API_PATHS
@@ -11,9 +10,12 @@ export async function apiAuthGuard(c: Context<{ Bindings: Env; Variables: { user
     return next();
   }
 
-  const cookieHeader = c.req.header("Cookie");
-  const cookies = parseCookies(cookieHeader);
-  const token = cookies[COOKIE_NAME];
+  // Phase 3: Only accept Authorization header (Bearer <token>)
+  const authHeader = c.req.header("Authorization") || c.req.header("authorization");
+  let token: string | undefined;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.slice("Bearer ".length).trim();
+  }
   if (!token) {
     return c.json({ error: "Unauthorized" }, 401);
   }
@@ -30,3 +32,4 @@ export async function apiAuthGuard(c: Context<{ Bindings: Env; Variables: { user
   c.set("user", payload);
   await next();
 }
+

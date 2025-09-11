@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router";
 import UserDropdown from "./UserDropdown";
+import { clearToken } from "@/utils/auth.client";
 
 type DashboardHeaderProps = {
   onChangePassword?: () => void;
@@ -13,6 +14,7 @@ export default function DashboardHeader({ onChangePassword }: DashboardHeaderPro
     try {
       await fetch("/api/auth/logout", { method: "POST" });
     } finally {
+      clearToken();
       navigate("/login?reason=logout", { replace: true });
     }
   }

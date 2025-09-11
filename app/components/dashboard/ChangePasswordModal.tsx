@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/commons/Toast";
 import LoadingSpinner from "@/components/commons/LoadingSpinner";
+import { apiFetch } from "@/utils/auth.client";
 
 export type ChangePasswordModalProps = {
   open: boolean;
@@ -76,7 +77,7 @@ export default function ChangePasswordModal({
     if (!validate()) return;
     setSubmitting(true);
     try {
-      const res = await fetch("/api/auth/change-password", {
+      const res = await apiFetch("/api/auth/change-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ oldPassword, newPassword }),

@@ -1,8 +1,7 @@
 import { Hono } from "hono";
 import { AuthService } from "../services/authService";
 import { signJWT, type JwtPayload } from "../services/jwtService";
-import { serializeCookie } from "../services/cookiesService";
-import { COOKIE_MAX_AGE, COOKIE_NAME } from "../constants";
+import { COOKIE_MAX_AGE } from "../constants";
 import { toAppError } from "../errors";
 import { t } from "../i18n/messages";
 
@@ -27,29 +26,16 @@ export function createAuthRouter() {
     const payload = auth.buildJwtPayload(user, COOKIE_MAX_AGE);
     const token = await signJWT(payload, JWT_SECRET);
 
-    const cookie = serializeCookie(COOKIE_NAME, token, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "Lax",
-      path: "/",
-      maxAge: COOKIE_MAX_AGE,
-    });
-
-    return new Response(null, {
-      status: 204,
-      headers: { "Set-Cookie": cookie },
+    // Return token in body for client-side storage (no cookies in Phase 3)
+    return new Response(JSON.stringify({ token }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
     });
   });
 
-  router.post("/logout", async (c) => {
-    const cookie = serializeCookie(COOKIE_NAME, "", {
-      httpOnly: true,
-      secure: true,
-      sameSite: "Lax",
-      path: "/",
-      maxAge: 0,
-    });
-    return new Response(null, { status: 204, headers: { "Set-Cookie": cookie } });
+  router.post("/logout", async () => {
+    // No cookie to clear in Phase 3; clients should delete local token
+    return new Response(null, { status: 204 });
   });
 
   // Change password (requires apiAuthGuard set user variable)
@@ -98,15 +84,11 @@ export function createAuthRouter() {
       const payload = auth.buildJwtPayload(created, COOKIE_MAX_AGE);
       const token = await signJWT(payload, JWT_SECRET);
 
-      const cookie = serializeCookie(COOKIE_NAME, token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: "Lax",
-        path: "/",
-        maxAge: COOKIE_MAX_AGE,
+      // Return token in body for client-side storage (no cookies in Phase 3)
+      return new Response(JSON.stringify({ token }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
       });
-
-      return new Response(null, { status: 204, headers: { "Set-Cookie": cookie } });
     } catch (err) {
       const e = toAppError(err, { code: "AUTH_REGISTER_FAILED" });
       // Specialize status for email exists if not provided by service
