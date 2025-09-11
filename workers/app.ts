@@ -7,6 +7,35 @@ import { createSSRHandler } from "./handlers/ssr";
 
 const app = new Hono<{ Bindings: Env; Variables: { user: JwtPayload } }>();
 
+// --- CORS middleware (Phase 3: token-based auth) ---
+app.use("*", async (c, next) => {
+  const origin = c.req.header("Origin") || "*";
+  await next();
+  if (!c.res) return; // no response to decorate
+  const headers = new Headers(c.res.headers);
+  headers.set("Access-Control-Allow-Origin", origin === "null" ? "*" : origin);
+  headers.set("Vary", "Origin");
+  headers.set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+  headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
+  headers.set("Access-Control-Max-Age", "600");
+  c.res = new Response(c.res.body, { status: c.res.status, headers });
+});
+
+// Handle OPTIONS preflight early
+app.options("*", (c) => {
+  const origin = c.req.header("Origin") || "*";
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": origin === "null" ? "*" : origin,
+      "Vary": "Origin",
+      "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+      "Access-Control-Allow-Headers": "Authorization, Content-Type",
+      "Access-Control-Max-Age": "600",
+    },
+  });
+});
+
 // --- Middleware for /api/* ---
 app.use("/api/*", apiAuthGuard);
 
