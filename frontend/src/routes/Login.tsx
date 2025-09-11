@@ -1,17 +1,39 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import client from "../api/client";
 import { setToken } from "../utils/auth";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
+import LoadingSpinner from "../components/commons/LoadingSpinner";
+import { useEffect, useRef } from "react";
+import { useToast } from "../components/commons/Toast";
 
 export default function Login() {
   const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const shownRef = useRef(false);
+  const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (shownRef.current) return;
+    const reason = params.get("reason");
+    if (!reason) return;
+    shownRef.current = true;
+    if (reason === "auth") {
+      toast({ title: "Yêu cầu đăng nhập", description: "Vui lòng đăng nhập để tiếp tục.", variant: "warning" });
+    } else if (reason === "logout") {
+      toast({ title: "Đã đăng xuất", description: "Hẹn gặp lại bạn!", variant: "success" });
+    }
+    setParams((prev) => {
+      prev.delete("reason");
+      return prev;
+    }, { replace: true });
+  }, [params, setParams, toast]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -21,6 +43,7 @@ export default function Login() {
       const { data } = await client.post("/api/auth/login", { email, password });
       if (data?.token) {
         setToken(data.token);
+        toast({ title: "Đăng nhập thành công", variant: "success" });
         navigate("/dashboard", { replace: true });
       } else {
         setError("Phản hồi không hợp lệ từ máy chủ");
@@ -38,26 +61,63 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md bg-white rounded-lg shadow p-6">
-        <h1 className="text-2xl font-semibold mb-4 text-center">Đăng nhập</h1>
-        {error && <div className="mb-3 text-red-600 text-sm">{error}</div>}
+    <div className="min-h-dvh flex items-center justify-center bg-white text-black dark:bg-gray-950 dark:text-white px-4">
+      <div className="w-full max-w-sm border border-gray-200 dark:border-gray-800 rounded-xl p-6 shadow-sm">
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight">Đăng nhập</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Nhập email và mật khẩu để tiếp tục</p>
+        </div>
+
+        {error && (
+          <div className="mb-4 text-sm text-red-600 dark:text-red-400">{error}</div>
+        )}
+
         <form onSubmit={onSubmit} className="space-y-4">
-          <div>
-            <Label className="mb-1 block" htmlFor="email">Email</Label>
-            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+            />
           </div>
-          <div>
-            <Label className="mb-1 block" htmlFor="password">Mật khẩu</Label>
-            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+
+          <div className="space-y-2">
+            <Label htmlFor="password">Mật khẩu</Label>
+            <Input
+              id="password"
+              type="password"
+              required
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+            />
           </div>
-          <Button type="submit" className="w-full cursor-pointer" disabled={loading} aria-busy={loading}>
-            {loading ? "Đang xử lý..." : "Đăng nhập"}
+
+          <Button type="submit" disabled={loading} aria-busy={loading} className="w-full h-10 cursor-pointer">
+            {loading ? <LoadingSpinner size={18} padding={3} /> : "Đăng nhập"}
           </Button>
         </form>
-        <p className="text-sm mt-4">
-          Chưa có tài khoản? <Link to="/register" className="text-blue-600">Đăng ký</Link>
-        </p>
+
+        <div className="mt-6 text-center">
+          <Link
+            to="/register"
+            className="block text-sm text-gray-500 hover:text-gray-900 dark:hover:text-gray-200 underline underline-offset-4"
+          >
+            Chưa có tài khoản? Đăng ký
+          </Link>
+          <Link
+            to="/"
+            className="text-sm text-gray-500 hover:text-gray-900 dark:hover:text-gray-200 underline underline-offset-4"
+          >
+            Quay lại trang chủ
+          </Link>
+        </div>
       </div>
     </div>
   );

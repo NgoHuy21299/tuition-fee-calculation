@@ -7,9 +7,22 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, type 
   return (
     <input
       type={type}
+      data-slot="input"
       className={cn(
-        "flex h-9 w-full rounded-md border border-gray-200 bg-transparent px-3 py-2 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black disabled:cursor-not-allowed disabled:opacity-50",
-        className,
+        // Base appearance
+        "flex h-9 w-full min-w-0 rounded-md border px-3 py-2 text-sm outline-none transition-colors",
+        // Background + border (light/dark)
+        "bg-gray-50 border-gray-200 placeholder:text-gray-500",
+        "dark:bg-white/5 dark:border-gray-800 dark:placeholder:text-gray-400",
+        // Selection color
+        "selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black",
+        // Focus states subtle
+        "focus-visible:border-neutral-400 focus-visible:ring-2 focus-visible:ring-neutral-300",
+        "dark:focus-visible:border-gray-700 dark:focus-visible:ring-gray-700/50",
+        // Invalid states
+        "aria-invalid:border-red-500 aria-invalid:focus-visible:ring-red-300",
+        "dark:aria-invalid:border-red-400 dark:aria-invalid:focus-visible:ring-red-700/40",
+        className
       )}
       ref={ref}
       {...props}
