@@ -2,6 +2,9 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import client from "../api/client";
 import { setToken } from "../utils/auth";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -37,36 +40,20 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow p-6">
-        <h1 className="text-2xl font-semibold mb-4">Đăng nhập</h1>
+        <h1 className="text-2xl font-semibold mb-4 text-center">Đăng nhập</h1>
         {error && <div className="mb-3 text-red-600 text-sm">{error}</div>}
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
-            <input
-              type="email"
-              className="w-full border rounded px-3 py-2"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+            <Label className="mb-1 block" htmlFor="email">Email</Label>
+            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Mật khẩu</label>
-            <input
-              type="password"
-              className="w-full border rounded px-3 py-2"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <Label className="mb-1 block" htmlFor="password">Mật khẩu</Label>
+            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
-          <button
-            type="submit"
-            className="w-full bg-black text-white rounded py-2 disabled:opacity-50"
-            disabled={loading}
-          >
+          <Button type="submit" className="w-full cursor-pointer" disabled={loading} aria-busy={loading}>
             {loading ? "Đang xử lý..." : "Đăng nhập"}
-          </button>
+          </Button>
         </form>
         <p className="text-sm mt-4">
           Chưa có tài khoản? <Link to="/register" className="text-blue-600">Đăng ký</Link>
