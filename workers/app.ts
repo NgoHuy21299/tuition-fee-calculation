@@ -17,7 +17,7 @@ app.use("*", async (c, next) => {
   headers.set("Vary", "Origin");
   headers.set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
   headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
-  headers.set("Access-Control-Max-Age", "600");
+  headers.set("Access-Control-Max-Age", "86400");
   c.res = new Response(c.res.body, { status: c.res.status, headers });
 });
 
@@ -31,7 +31,7 @@ app.options("*", (c) => {
       "Vary": "Origin",
       "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
       "Access-Control-Allow-Headers": "Authorization, Content-Type",
-      "Access-Control-Max-Age": "600",
+      "Access-Control-Max-Age": "86400",
     },
   });
 });
