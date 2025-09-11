@@ -48,12 +48,10 @@
     "wrangler": "^4.33.0"
   },
   "scripts": {
-    "build": "react-router build",
-    "cf-typegen": "wrangler types",
-    "deploy": "npm run build && npm run db:migrate:remote && wrangler deploy",
-    "dev": "npm run typecheck && react-router dev",
-    "preview": "npm run build && vite preview",
-    "typecheck": "npm run cf-typegen && react-router typegen && tsc -b",
+    "dev": "npm run build && wrangler dev --port=5173",
+    "build": "tsc -b",
+    "deploy": "npm run db:migrate:remote && wrangler deploy",
+    "typecheck": "wrangler types && tsc -b --noEmit",
     "db:migrate:local": "wrangler d1 migrations apply tuition-fee-calculation --local",
     "db:migrate:remote": "wrangler d1 migrations apply tuition-fee-calculation --remote"
   }

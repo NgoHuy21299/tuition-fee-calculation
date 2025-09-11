@@ -3,7 +3,7 @@ import type { JwtPayload } from "./services/jwtService";
 import { apiAuthGuard } from "./middleware/authMiddleware";
 import { createAuthRouter } from "./routes/authRoute";
 import { createHealthRouter } from "./routes/healthRoute";
-import { createSSRHandler } from "./handlers/ssr";
+// SSR handler removed: this Worker now serves API-only via Hono
 
 const app = new Hono<{ Bindings: Env; Variables: { user: JwtPayload } }>();
 
@@ -50,9 +50,7 @@ app.get("/.well-known/appspecific/com.chrome.devtools.json", (c) => {
   return new Response(null, { status: 204 });
 });
 
-app.get("*", (c) => {
-  const ssr = createSSRHandler();
-  return ssr(c.req.raw, c.env, c.executionCtx);
-});
+// Optional: respond at root with a simple message so the Worker isn't empty
+app.get("/", (c) => c.text("OK: API is running."));
 
 export default app;
