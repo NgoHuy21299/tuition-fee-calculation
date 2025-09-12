@@ -6,16 +6,22 @@ export type UserRepoDeps = { db: D1Database };
 export class UserRepository {
   constructor(private readonly deps: UserRepoDeps) {}
 
+  async isExistedNormalizedEmail(normalizedEmail: string): Promise<boolean> {
+    const sql = "SELECT 1 AS one FROM User WHERE normalizedEmail = ? LIMIT 1";
+    const row = await selectOne<{ one: number }>(this.deps.db, sql, [normalizedEmail]);
+    return row != null;
+  }
+
   async getByNormalizedEmail(normalizedEmail: string): Promise<User | null> {
     const sql =
-      "SELECT id, email, normalizedEmail, password_hash, name, createdAt FROM User WHERE normalizedEmail = ? LIMIT 1";
+      "SELECT id, email, normalizedEmail, password_hash, name FROM User WHERE normalizedEmail = ? LIMIT 1";
     const row = await selectOne<User>(this.deps.db, sql, [normalizedEmail]);
     return row ?? null;
   }
 
   async getById(id: string): Promise<User | null> {
     const sql =
-      "SELECT id, email, normalizedEmail, password_hash, name, createdAt FROM User WHERE id = ? LIMIT 1";
+      "SELECT id, email, normalizedEmail, password_hash, name FROM User WHERE id = ? LIMIT 1";
     const row = await selectOne<User>(this.deps.db, sql, [id]);
     return row ?? null;
   }

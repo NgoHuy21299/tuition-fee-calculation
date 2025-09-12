@@ -22,11 +22,14 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250425.0",
+    "concurrently": "^9.1.2",
     "typescript": "5.8.3",
     "wrangler": "^4.33.0"
   },
   "scripts": {
-    "dev": "npm run build && wrangler dev --port=5173",
+    "dev": "concurrently -n API,FE -c blue,green \"npm:dev:api\" \"npm:dev:fe\"",
+    "dev:api": "wrangler dev --port=5173 --inspector-port=9229",
+    "dev:fe": "npm run dev --prefix frontend",
     "build": "tsc -b",
     "deploy": "npm run db:migrate:remote && wrangler deploy",
     "typecheck": "wrangler types && tsc -b --noEmit",

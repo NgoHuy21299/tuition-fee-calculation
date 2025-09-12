@@ -10,5 +10,13 @@ export default defineConfig({
     host: 'localhost',
     port: 3000,
     strictPort: true,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5173',
+        changeOrigin: true,
+        // Do not rewrite, keep /api prefix as backend expects /api/* routes
+        // rewrite: (path) => path
+      },
+    },
   },
 })

@@ -54,7 +54,7 @@ export class AuthService {
 
   async createUser(params: { id?: string; email: string; password: string; name?: string | null }): Promise<User> {
     const normalizedEmail = normalizeEmail(params.email);
-    const exists = await this.userRepository.getByNormalizedEmail(normalizedEmail);
+    const exists = await this.userRepository.isExistedNormalizedEmail(normalizedEmail);
     if (exists) throw new AppError("AUTH_EMAIL_EXISTS");
 
     const id = params.id ?? crypto.randomUUID();
