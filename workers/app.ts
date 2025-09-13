@@ -3,6 +3,7 @@ import type { JwtPayload } from "./services/jwtService";
 import { apiAuthGuard } from "./middleware/authMiddleware";
 import { createAuthRouter } from "./routes/authRoute";
 import { createHealthRouter } from "./routes/healthRoute";
+import { createClassRouter } from "./routes/classRoute";
 // SSR handler removed: this Worker now serves API-only via Hono
 
 const app = new Hono<{ Bindings: Env; Variables: { user: JwtPayload } }>();
@@ -44,6 +45,9 @@ app.route("/api/auth", createAuthRouter());
 
 // --- Health routes ---
 app.route("/api", createHealthRouter());
+
+// --- Classes routes ---
+app.route("/api/classes", createClassRouter());
 
 // --- Silence Chrome DevTools probe route ---
 app.get("/.well-known/appspecific/com.chrome.devtools.json", (c) => {
