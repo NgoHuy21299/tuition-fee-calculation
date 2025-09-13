@@ -11,7 +11,7 @@ type DashboardShellProps = {
 export default function DashboardShell({ children }: DashboardShellProps) {
   const [openChangePw, setOpenChangePw] = useState(false);
   return (
-    <div className="min-h-dvh flex flex-col bg-white text-black dark:bg-gray-950 dark:text-white">
+    <div className="min-h-dvh flex flex-col bg-gray-950 text-white">
       <DashboardHeader onChangePassword={() => setOpenChangePw(true)} />
       <div className="flex flex-1">
         <DashboardSidebar />

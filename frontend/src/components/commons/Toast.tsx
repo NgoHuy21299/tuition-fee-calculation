@@ -96,9 +96,9 @@ function ToastItem({ toast: t, onDismiss }: { toast: Toast; onDismiss: () => voi
       role="status"
       className={[
         "min-w-[260px] max-w-[380px] rounded-md border px-4 py-3 shadow-lg backdrop-blur",
-        "bg-white/90 dark:bg-gray-900/90 border-gray-200 dark:border-gray-800",
+        "bg-gray-900/90 border-gray-800",
         // Text colors for readability
-        "text-gray-900 dark:text-gray-100",
+        "text-gray-100",
         // Animation
         "transition-all duration-200",
         visible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-2 scale-95",
@@ -118,14 +118,14 @@ function ToastItem({ toast: t, onDismiss }: { toast: Toast; onDismiss: () => voi
           ].join(" ")}
         />
         <div className="flex-1">
-          {t.title && <div className="text-sm font-medium leading-none text-gray-900 dark:text-gray-100">{t.title}</div>}
+          {t.title && <div className="text-sm font-medium leading-none text-gray-100">{t.title}</div>}
           {t.description && (
-            <div className="mt-1 text-sm text-gray-700 dark:text-gray-300">{t.description}</div>
+            <div className="mt-1 text-sm text-gray-300">{t.description}</div>
           )}
         </div>
         <button
           aria-label="Close"
-          className="text-xs text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+          className="text-xs text-gray-300 hover:text-white"
           onClick={startClose}
         >
           ×

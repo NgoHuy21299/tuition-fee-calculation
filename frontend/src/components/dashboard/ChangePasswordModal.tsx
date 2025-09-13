@@ -4,7 +4,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { useToast } from "../commons/Toast";
 import LoadingSpinner from "../commons/LoadingSpinner";
-import client from "../../api/client";
+import { authService } from "../../services/authService";
 
 export type ChangePasswordModalProps = {
   open: boolean;
@@ -66,11 +66,7 @@ export default function ChangePasswordModal({ open, onOpenChange }: ChangePasswo
     if (!validate()) return;
     setSubmitting(true);
     try {
-      await client.post(
-        "/api/auth/change-password",
-        { oldPassword, newPassword },
-        { headers: { "Content-Type": "application/json" } },
-      );
+      await authService.changePassword({ oldPassword, newPassword });
       toast({ title: "Thành công", description: "Đã thay đổi mật khẩu", variant: "success" });
       onOpenChange(false);
     } catch (err: unknown) {
@@ -93,11 +89,11 @@ export default function ChangePasswordModal({ open, onOpenChange }: ChangePasswo
       <div
         role="dialog"
         aria-modal="true"
-        className="relative z-10 w-full max-w-sm rounded-md border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-lg p-4"
+        className="relative z-10 w-full max-w-sm rounded-md border border-gray-800 bg-gray-950 shadow-lg p-4"
       >
         <div className="mb-3">
           <h2 className="text-lg font-semibold">Thay đổi mật khẩu</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Vui lòng nhập mật khẩu cũ và mật khẩu mới.</p>
+          <p className="text-sm text-gray-400">Vui lòng nhập mật khẩu cũ và mật khẩu mới.</p>
         </div>
         <form onSubmit={onSubmit} className="space-y-3">
           <div className="space-y-1">

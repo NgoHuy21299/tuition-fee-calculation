@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import client from "../api/client";
 import { setToken } from "../utils/auth";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import LoadingSpinner from "../components/commons/LoadingSpinner";
 import { useToast } from "../components/commons/Toast";
+import { Card } from "../components/ui/card";
+import { authService } from "../services/authService";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -22,10 +23,14 @@ export default function Register() {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await client.post("/api/auth/register", { email, password, name });
+      const data = await authService.register({ email, password, name });
       if (data?.token) {
         setToken(data.token);
-        toast({ title: "Đăng ký thành công", description: "Chào mừng bạn!", variant: "success" });
+        toast({
+          title: "Đăng ký thành công",
+          description: "Chào mừng bạn!",
+          variant: "success",
+        });
         navigate("/dashboard", { replace: true });
       } else {
         setError("Phản hồi không hợp lệ từ máy chủ");
@@ -33,7 +38,10 @@ export default function Register() {
     } catch (err: unknown) {
       let message = "Đăng ký thất bại";
       if (typeof err === "object" && err !== null) {
-        const anyErr = err as { response?: { data?: { error?: string } }; message?: string };
+        const anyErr = err as {
+          response?: { data?: { error?: string } };
+          message?: string;
+        };
         message = anyErr.response?.data?.error || anyErr.message || message;
       }
       setError(message);
@@ -43,14 +51,14 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white text-black dark:bg-gray-950 dark:text-white px-4">
-      <div className="w-full max-w-sm border border-gray-200 dark:border-gray-800 rounded-xl p-6 shadow-sm">
+    <div className="min-h-screen flex items-center justify-center bg-gray-950 text-white px-4">
+      <Card className="w-full max-w-sm p-6">
         <div className="mb-6 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">Đăng ký</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Tạo tài khoản để bắt đầu</p>
+          <p className="text-sm text-gray-400 mt-1">Tạo tài khoản để bắt đầu</p>
         </div>
 
-        {error && <div className="mb-4 text-sm text-red-600 dark:text-red-400">{error}</div>}
+        {error && <div className="mb-4 text-sm text-red-400">{error}</div>}
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -91,7 +99,12 @@ export default function Register() {
             />
           </div>
 
-          <Button type="submit" disabled={loading} aria-busy={loading} className="w-full h-10 cursor-pointer">
+          <Button
+            type="submit"
+            disabled={loading}
+            aria-busy={loading}
+            className="w-full h-10 cursor-pointer"
+          >
             {loading ? <LoadingSpinner size={18} padding={3} /> : "Đăng ký"}
           </Button>
         </form>
@@ -99,18 +112,18 @@ export default function Register() {
         <div className="mt-6 text-center space-y-1">
           <Link
             to="/login"
-            className="block text-sm text-gray-500 hover:text-gray-900 dark:hover:text-gray-200 underline underline-offset-4"
+            className="block text-sm text-gray-400 hover:text-gray-200 underline underline-offset-4"
           >
             Đã có tài khoản? Đăng nhập
           </Link>
           <Link
             to="/"
-            className="block text-sm text-gray-500 hover:text-gray-900 dark:hover:text-gray-200 underline underline-offset-4"
+            className="block text-sm text-gray-400 hover:text-gray-200 underline underline-offset-4"
           >
             Quay lại trang chủ
           </Link>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
