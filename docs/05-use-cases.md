@@ -115,7 +115,7 @@ Ghi chú định dạng UC:
 - Endpoint: `POST /api/classes/:id/sessions`, `GET /api/classes/:id/sessions`, `PUT/DELETE /api/sessions/:id`.
 - AC: Buổi được sinh đúng thời gian; hiển thị trên UI.
 
-## UC-05: Gửi email nhắc giờ học (Cron + Queues)
+## UC-05: Gửi email nhắc giờ học (Cron + Queues) - Chưa thực hiện bây giờS
 - Mục tiêu: Nhắc giáo viên trước giờ học kèm link điểm danh.
 - Actor: Hệ thống.
 - Tiền đề: Cron Triggers, Queues, provider Email + secrets.
@@ -127,7 +127,7 @@ Ghi chú định dạng UC:
 - Endpoint: Producer/Consumer nội bộ; có thể `POST /api/notifications/send` (thủ công).
 - AC: Email được gửi đúng thời điểm; không gửi trùng (idempotent).
 
-## UC-06: Điểm danh học sinh
+## UC-06: Điểm danh học sinh - Ưu tiên thực hiện hơn.
 - Mục tiêu: Đánh dấu tham dự/absent/late cho từng học sinh trong buổi.
 - Actor: Giáo viên.
 - Tiền đề: Có buổi học, có học sinh trong lớp; đã đăng nhập.
@@ -139,7 +139,7 @@ Ghi chú định dạng UC:
 - Endpoint: `GET/POST /api/sessions/:id/attendance`.
 - AC: Dữ liệu lưu chính xác; tổng buổi tính đúng.
 
-## UC-07: Báo cáo theo tháng
+## UC-07: Báo cáo theo tháng - Ưu tiên thực hiện hơn
 - Mục tiêu: Xem/tạo báo cáo mỗi học sinh đã học những buổi nào, tổng buổi, tổng tiền.
 - Actor: Giáo viên.
 - Tiền đề: Dữ liệu Attendance/Sessions đầy đủ.
@@ -151,7 +151,7 @@ Ghi chú định dạng UC:
 - Endpoint: `GET /api/reports/monthly?classId=&month=YYYY-MM`.
 - AC: Số buổi và tiền tính đúng theo rule; performance ổn.
 
-## UC-08: Sinh nội dung tin nhắn cho phụ huynh
+## UC-08: Sinh nội dung tin nhắn cho phụ huynh - Ưu tiên thực hiện hơn
 - Mục tiêu: Sinh template “Tháng MM/YYYY, học sinh A tham gia X buổi, học phí Y VNĐ”.
 - Actor: Giáo viên.
 - Tiền đề: Có báo cáo tháng.
@@ -181,7 +181,7 @@ Ghi chú định dạng UC:
 
 ## Lộ trình thực hiện đề xuất (Roadmap theo sprint)
 - Sprint 1: UC-01, skeleton API/DB + UI chính (`/login`, `/dashboard`).
-- Sprint 2: UC-03, UC-04 (CRUD lớp, học sinh, liên kết), bảo vệ route trong loader.
-- Sprint 3: UC-05 (lịch/buổi, lặp), UC-06 (điểm danh cơ bản).
-- Sprint 4: UC-08 (báo cáo tháng), UC-09 (sinh tin nhắn), tối ưu hiệu năng truy vấn.
+- Sprint 2: UC-03, UC-04 (CRUD lớp, học sinh, liên kết).
+- Sprint 3: UC-06 (điểm danh cơ bản), UC-08 (báo cáo tháng), UC-09 (sinh tin nhắn), tối ưu hiệu năng truy vấn.
+- Sprint 4: UC-05 (lịch/buổi, lặp).
 - Sprint 5: UC-07 (Cron+Queues gửi nhắc), UC-10 (cài đặt), UC-11 (observability nâng cao), R2 nếu cần.

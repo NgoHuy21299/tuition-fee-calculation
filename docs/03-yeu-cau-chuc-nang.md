@@ -60,12 +60,13 @@ Tài liệu mô tả yêu cầu chức năng cho dự án cá nhân tính tiền
 
 ## Dữ liệu & mô hình (gợi ý)
 
-- Teacher: id, email, name, authProvider, createdAt.
-- Class: id, teacherId, name, subject, description, feePerSession, isActive, createdAt.
-- Student: id, name, parentEmail, parentPhone, note, createdAt.
-- ClassStudent: id, classId, studentId, unitPriceOverride?, joinedAt, leftAt?
-- Session: id, classId, startTime, durationMin, status, notes, createdAt.
-- Attendance: id, sessionId, studentId, status (present/absent/late), note, markedBy, markedAt.
+- User: id, email, normalizedEmail, password, name, createdAt.
+- Class: id, teacherId (fk with User - id), name, subject, description, isActive, createdAt.
+- Student: id, name, studentPhone, studentEmail, parentId (fk with Parent - id), note, createdAt.
+- Parent: id, email, phone, note, createdAt.
+- ClassStudent: id, classId (fk with Class - id), studentId (fk with Student - id), unitPriceOverride?, joinedAt, leftAt?
+- Session: id, classId (fk with Class - id), startTime, durationMin, status, notes, feePerSession, createdAt.
+- Attendance: id, sessionId (fk with Session - id), studentId (fk with Student - id), status (enum - present/absent/late), note, markedBy (fk with User - id), markedAt.
 - EmailJob/Notification: id, type, target, scheduleTime, payload, status.
 
 ## Trang UI (đề xuất)
