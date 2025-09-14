@@ -16,14 +16,14 @@
 - [X] Áp dụng `authMiddleware` cho toàn bộ endpoints, chỉ cần kiểm tra lại xem đã áp dụng tự động chưa, nếu tôi không nhầm thì chỉ có một vài api trong public mới không được áp dụng auth middleware.S
 
 ### 2.2 Repository & SQL
-- [ ] Tạo `workers/repos/classRepository.ts`
-  - [ ] `listByTeacher({ teacherId, page, pageSize, q, isActive, sort })`
-  - [ ] `create({ id, teacherId, name, subject, description, defaultFeePerSession, isActive })`
-  - [ ] `getById({ id, teacherId })`
-  - [ ] `update({ id, teacherId, patch })`
-  - [ ] `delete({ id, teacherId })`
-  - [ ] `hasStudents({ classId })` (từ `ClassStudent`)
-  - [ ] `hasSessions({ classId })` (từ `Session`)
+- [X] Tạo `workers/repos/classRepository.ts`
+  - [X] `listByTeacher({ teacherId, page, pageSize, q, isActive, sort })`
+  - [X] `create({ id, teacherId, name, subject, description, defaultFeePerSession, isActive })`
+  - [X] `getById({ id, teacherId })`
+  - [X] `update({ id, teacherId, patch })`
+  - [X] `delete({ id, teacherId })`
+  - [X] `hasStudents({ classId })` (từ `ClassStudent`)
+  - [X] `hasSessions({ classId })` (từ `Session`)
 
 ### 2.3 Validation & Types
 - [ ] Tạo `workers/types/classTypes.ts`
