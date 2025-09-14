@@ -46,10 +46,6 @@
   - [X] Thêm thông báo lỗi/i18n trong `workers/i18n/messages.ts`
   - [X] Chuẩn hóa trả lỗi: NOT_FOUND, FORBIDDEN, VALIDATION_ERROR
 
-### 2.3.2 Integration routes with service.
-- [ ] Tạo các request type tương ứng ở `workers/routes/classRoute.ts`, sau đó thay vào các payload trong parseCreateClassInput` và `parseUpdateClassInput` trong `workers/types/classTypes.ts`
-- [ ] Intergrate classRoute và classService trong các handler trong `workers/routes/classRoute.ts`
-
 ### 2.4 Integration với UCs tiếp theo
 - [ ] Trả về `defaultFeePerSession` trong GET để UC tạo `Session` có thể prefill `feePerSession`
 - [ ] Chuẩn bị `Students` tab (UC-03) và `Sessions` tab (UC-04) ở phần Frontend (placeholder dữ liệu)

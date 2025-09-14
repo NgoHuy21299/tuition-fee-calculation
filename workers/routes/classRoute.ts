@@ -3,7 +3,7 @@ import type { JwtPayload } from "../services/jwtService";
 import { t } from "../i18n/messages";
 import { toAppError } from "../errors";
 import { ClassService } from "../services/classService";
-import { parseListQuery, parseCreateClassInput, parseUpdateClassInput } from "../types/classTypes";
+import { validateCreateClass, validateUpdateClass, validateListQuery } from "../validation/class/classValidators";
 
 /**
  * Classes API (Base: /api/classes)
@@ -23,8 +23,11 @@ export function createClassRouter() {
     try {
       const svc = new ClassService({ db: c.env.DB });
       const url = new URL(c.req.url);
-      const { isActive, sort } = parseListQuery(url.searchParams);
-      const { items, total } = await svc.listByTeacher({ teacherId: String(user.sub), isActive, sort });
+      const parsed = validateListQuery(url.searchParams);
+      if (!parsed.ok) {
+        return c.json({ error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors }, 400 as 400);
+      }
+      const { items, total } = await svc.listByTeacher({ teacherId: String(user.sub), ...parsed.value });
       return c.json({ items, total }, 200 as 200);
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });
@@ -42,7 +45,7 @@ export function createClassRouter() {
     if (!user) return c.json({ error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" }, 401 as 401);
     try {
       const body = await c.req.json().catch(() => null);
-      const parsed = parseCreateClassInput(body);
+      const parsed = validateCreateClass(body);
       if (!parsed.ok) {
         return c.json({ error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors }, 400 as 400);
       }
@@ -85,7 +88,7 @@ export function createClassRouter() {
     try {
       const id = c.req.param("id");
       const body = await c.req.json().catch(() => null);
-      const parsed = parseUpdateClassInput(body);
+      const parsed = validateUpdateClass(body);
       if (!parsed.ok) {
         return c.json({ error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors }, 400 as 400);
       }
