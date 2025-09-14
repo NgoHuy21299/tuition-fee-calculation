@@ -58,44 +58,6 @@ Tài liệu mô tả yêu cầu chức năng cho dự án cá nhân tính tiền
 
 - Tạo lớp mới -> Thiết lập đơn giá/bộ lịch (lặp) -> Thêm học sinh -> Hệ thống tự sinh các buổi -> Trước giờ học gửi email cho giáo viên -> Giáo viên mở link và điểm danh -> Cuối tháng mở trang báo cáo -> Xem/tải/gửi email -> Tạo tin nhắn cho phụ huynh.
 
-## Dữ liệu & mô hình (gợi ý)
-
-- User: id, email, normalizedEmail, password, name, createdAt.
-- Class: id, teacherId (fk with User - id), name, subject, description, isActive, createdAt.
-- Student: id, name, studentPhone, studentEmail, parentId (fk with Parent - id), note, createdAt.
-- Parent: id, email, phone, note, createdAt.
-- ClassStudent: id, classId (fk with Class - id), studentId (fk with Student - id), unitPriceOverride?, joinedAt, leftAt?
-- Session: id, classId (fk with Class - id), startTime, durationMin, status, notes, feePerSession, createdAt.
-- Attendance: id, sessionId (fk with Session - id), studentId (fk with Student - id), status (enum - present/absent/late), note, markedBy (fk with User - id), markedAt.
-- EmailJob/Notification: id, type, target, scheduleTime, payload, status.
-
-## Trang UI (đề xuất)
-
-- /login: Đăng nhập.
-- /dashboard: Tổng quan lớp, buổi sắp diễn ra.
-- /classes: Danh sách lớp -> tạo/sửa/xoá.
-- /classes/:classId: Chi tiết lớp, tab Học sinh, tab Lịch học.
-- /classes/:classId/schedule: Tạo lịch/lặp.
-- /attendance/:classId/:sessionId: Điểm danh.
-- /reports/monthly: Báo cáo theo tháng (lọc lớp + tháng).
-- /settings: Cài đặt (email, múi giờ, mặc định nhắc lịch…).
-
-## API (đề xuất)
-
-- Auth: POST /api/auth/login, POST /api/auth/logout, GET /api/auth/me
-- Classes: GET/POST /api/classes, GET/PUT/DELETE /api/classes/:id
-- Students: GET/POST /api/students, liên kết lớp: POST/DELETE /api/classes/:id/students
-- Schedule/Sessions: POST /api/classes/:id/sessions(generators), GET /api/classes/:id/sessions
-- Attendance: GET/POST /api/sessions/:id/attendance
-- Reports: GET /api/reports/monthly?classId=&month=YYYY-MM
-- Notifications: POST /api/notifications/preview, POST /api/notifications/send
-
-## Email & thông báo
-
-- Tích hợp email provider (Cloudflare Email Workers, Resend, SendGrid…).
-- Cấu hình lịch gửi qua CRON Triggers của Workers (ví dụ mỗi phút quét buổi sắp diễn ra trong X phút tới để gửi mail nhắc).
-- Biến môi trường: EMAIL_API_KEY, EMAIL_SENDER, APP_BASE_URL, TIMEZONE.
-
 ## Tính tiền học & quy tắc
 
 - Mặc định: tiền học = số buổi điểm danh “có mặt” x feePerSession của lớp.
@@ -103,20 +65,9 @@ Tài liệu mô tả yêu cầu chức năng cho dự án cá nhân tính tiền
 - Quy ước điểm danh “muộn” vẫn tính buổi (có cấu hình).
 - Hỗ trợ bỏ qua buổi bị hủy.
 
-## Quy tắc điều hướng & bảo vệ route
-
-- Nếu chưa đăng nhập, redirect về `/login` cho mọi route trừ public assets.
-- Loader của mỗi route nên kiểm tra `context.cloudflare.env` + session để xác thực.
-
 ## Khả năng mở rộng (tương lai)
 
 - Nhiều giáo viên (multi-tenant), mời thêm trợ giảng.
 - Portal phụ huynh.
 - Thanh toán online, xuất hóa đơn.
 - Xuất PDF báo cáo.
-
-## Ghi chú triển khai với code hiện tại
-
-- Thêm middleware kiểm tra đăng nhập trong `workers/app.ts` cho các đường dẫn `/api/*`.
-- Ở phần React Router, kiểm tra auth trong `loader` của các trang chính, hoặc tạo higher-order loader để tái sử dụng.
-- Sử dụng `wrangler.jsonc` để thêm biến môi trường phục vụ email, base URL, timezone. Các biến đọc qua `context.cloudflare.env` (loader) hoặc `c.env` (Hono).

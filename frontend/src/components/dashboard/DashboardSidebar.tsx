@@ -11,9 +11,6 @@ export default function DashboardSidebar() {
 
   return (
     <aside className="transition-all duration-200 border-r border-gray-800 bg-gray-950 w-60">
-      <div className="p-3 text-xs uppercase tracking-wider text-gray-400">
-        Navigation
-      </div>
       <nav className="px-2 py-2 space-y-1 text-sm">
         <NavLink
           to="/dashboard/overview"

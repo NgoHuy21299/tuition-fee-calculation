@@ -18,7 +18,8 @@
     "publish": true
   },
   "dependencies": {
-    "hono": "^4.9.6"
+    "hono": "^4.9.6",
+    "valibot": "^0.34.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250425.0",

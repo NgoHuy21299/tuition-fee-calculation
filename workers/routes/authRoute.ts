@@ -4,15 +4,18 @@ import { signJWT, type JwtPayload } from "../services/jwtService";
 import { COOKIE_MAX_AGE } from "../constants";
 import { toAppError } from "../errors";
 import { t } from "../i18n/messages";
+import { LoginSchema, RegisterSchema, ChangePasswordSchema } from "../validation/auth/authSchemas";
+import { parseBodyWithSchema } from "../validation/common/request";
 
 export function createAuthRouter() {
   const router = new Hono<{ Bindings: Env; Variables: { user: JwtPayload } }>();
 
   router.post("/login", async (c) => {
-    const { email, password } = await c.req.json<{ email: string; password: string }>();
-    if (!email || !password) {
-      return c.json({ error: t("AUTH_MISSING_CREDENTIALS"), code: "AUTH_MISSING_CREDENTIALS" }, 400 as 400);
+    const parsed = await parseBodyWithSchema(c, LoginSchema);
+    if (!parsed.ok) {
+      return c.json({ error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors }, 400 as 400);
     }
+    const { email, password } = parsed.value;
     const auth = new AuthService({ db: c.env.DB });
     const user = await auth.verifyCredentials(email, password);
     if (!user) {
@@ -40,16 +43,11 @@ export function createAuthRouter() {
 
   // Change password (requires apiAuthGuard set user variable)
   router.post("/change-password", async (c) => {
-    const body = await c.req
-      .json<{ oldPassword: string; newPassword: string }>()
-      .catch(() => null);
-    if (!body) return c.json({ error: t("AUTH_INVALID_JSON"), code: "AUTH_INVALID_JSON" }, 400);
-    const { oldPassword, newPassword } = body;
-    if (!oldPassword || !newPassword)
-      return c.json({ error: t("AUTH_MISSING_FIELDS"), code: "AUTH_MISSING_FIELDS" }, 400);
-    if (newPassword.length < 8)
-      return c.json({ error: t("AUTH_PASSWORD_TOO_SHORT"), code: "AUTH_PASSWORD_TOO_SHORT" }, 400);
-
+    const parsed = await parseBodyWithSchema(c, ChangePasswordSchema);
+    if (!parsed.ok) {
+      return c.json({ error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors }, 400 as 400);
+    }
+    const { oldPassword, newPassword } = parsed.value;
     const user = c.get("user");
     const userId = (user?.sub as string) || "";
     if (!userId) return c.json({ error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" }, 401);
@@ -66,13 +64,11 @@ export function createAuthRouter() {
 
   // Register new user and set cookie
   router.post("/register", async (c) => {
-    const body = await c.req
-      .json<{ email: string; password: string; name?: string }>()
-      .catch(() => null);
-    if (!body || !body.email || !body.password) {
-      return c.json({ error: t("AUTH_MISSING_FIELDS"), code: "AUTH_MISSING_FIELDS" }, 400);
+    const parsed = await parseBodyWithSchema(c, RegisterSchema);
+    if (!parsed.ok) {
+      return c.json({ error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors }, 400 as 400);
     }
-    const { email, password, name } = body;
+    const { email, password, name } = parsed.value;
     const auth = new AuthService({ db: c.env.DB });
     try {
       const created = await auth.createUser({ email, password, name });

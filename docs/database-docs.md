@@ -67,6 +67,7 @@ Indexes:
 - name TEXT NOT NULL
 - subject TEXT
 - description TEXT
+- defaultFeePerSession INTEGER NULL  (default tuition to prefill new sessions)
 - isActive INTEGER NOT NULL DEFAULT 1 CHECK (isActive IN (0,1))
 - createdAt TEXT NOT NULL DEFAULT now
 
@@ -105,6 +106,10 @@ Indexes:
 
 Rationale for ad-hoc: allow a teacher to create 1-off or few-off sessions for one or multiple students without creating a formal class. These are tracked as `Session.type = 'ad_hoc'` and `Session.classId = NULL`.
 
+Note on fee defaulting when creating class sessions:
+- When creating a new Session for a Class, if `feePerSession` is not specified, the app should prefill from `Class.defaultFeePerSession`.
+- This defaulting happens at creation time; later edits to Class.defaultFeePerSession do not retroactively change existing sessions.
+
 ### Attendance
 - id TEXT PRIMARY KEY
 - sessionId TEXT NOT NULL REFERENCES Session(id) ON DELETE CASCADE
@@ -141,4 +146,5 @@ Indexes:
 ## Migration Notes
 - Existing migrations (0001-0004) establish `User` and its normalized email.
 - Migration `0005_domain_schema.sql` introduces domain tables and the ad-hoc session model.
+- Migration `0006_add_class_default_fee.sql` adds `Class.defaultFeePerSession` used to prefill new class sessions.
 - All foreign keys are enabled; cascading/SET NULL configured to preserve data integrity.
