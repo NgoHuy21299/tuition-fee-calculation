@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Button } from "../ui/button";
+import { Checkbox } from "../ui/checkbox";
 
 export type ClassFormValues = {
   name: string;
@@ -35,7 +36,7 @@ export default function ClassForm({ initialValues, onSubmit, submitText = "Lưu"
     setDefaultFeePerSession(
       initialValues.defaultFeePerSession === null || initialValues.defaultFeePerSession === undefined
         ? ""
-        : String(initialValues.defaultFeePerSession)
+        : Number(initialValues.defaultFeePerSession).toLocaleString("vi-VN")
     );
     setIsActive(initialValues.isActive ?? true);
   }, [initialValues]);
@@ -44,7 +45,7 @@ export default function ClassForm({ initialValues, onSubmit, submitText = "Lưu"
     const next: typeof errors = {};
     if (!name.trim()) next.name = "Tên lớp là bắt buộc";
     if (defaultFeePerSession !== "") {
-      const n = Number(defaultFeePerSession);
+      const n = Number(defaultFeePerSession.replace(/[^0-9]/g, ""));
       if (!Number.isFinite(n) || !Number.isInteger(n) || n < 0) {
         next.defaultFeePerSession = "Giá mặc định phải là số nguyên không âm hoặc để trống";
       }
@@ -63,7 +64,10 @@ export default function ClassForm({ initialValues, onSubmit, submitText = "Lưu"
         name: name.trim(),
         subject: subject.trim() === "" ? null : subject,
         description: description.trim() === "" ? null : description,
-        defaultFeePerSession: defaultFeePerSession === "" ? null : Number(defaultFeePerSession),
+        defaultFeePerSession:
+          defaultFeePerSession === ""
+            ? null
+            : Number(defaultFeePerSession.replace(/[^0-9]/g, "")),
         isActive,
       };
       await onSubmit(payload);
@@ -95,19 +99,27 @@ export default function ClassForm({ initialValues, onSubmit, submitText = "Lưu"
             id="defaultFeePerSession"
             inputMode="numeric"
             value={defaultFeePerSession}
-            onChange={(e) => setDefaultFeePerSession(e.target.value.replace(/[^0-9]/g, ""))}
+            onChange={(e) => {
+              const onlyDigits = e.target.value.replace(/[^0-9]/g, "");
+              if (onlyDigits === "") {
+                setDefaultFeePerSession("");
+              } else {
+                const n = Number(onlyDigits);
+                setDefaultFeePerSession(n.toLocaleString("vi-VN"));
+              }
+            }}
             disabled={disabled || submitting}
             placeholder="vd: 150000"
           />
           <p className="text-xs text-gray-400">Giá mặc định để điền sẵn khi tạo buổi học. Có thể thay đổi từng buổi.</p>
           {errors.defaultFeePerSession && <p className="text-sm text-red-500">{errors.defaultFeePerSession}</p>}
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1">
           <Label>Trạng thái</Label>
-          <label className="inline-flex items-center gap-2 text-sm text-gray-300 select-none">
-            <input type="checkbox" className="accent-gray-300" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} disabled={disabled || submitting} />
-            Đang hoạt động
-          </label>
+          <div className="flex items-center gap-2 text-sm text-gray-300 select-none pt-2.5">
+            <Checkbox id="is-active" checked={isActive} onCheckedChange={(v) => setIsActive(!!v)} disabled={disabled || submitting} />
+            <label htmlFor="is-active">Đang hoạt động</label>
+          </div>
         </div>
       </div>
       <div className="flex justify-end">

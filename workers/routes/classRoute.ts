@@ -3,7 +3,6 @@ import type { JwtPayload } from "../services/jwtService";
 import { t } from "../i18n/messages";
 import { toAppError } from "../errors";
 import { ClassService } from "../services/classService";
-import { validateListQuery } from "../validation/class/classValidators";
 import { CreateClassSchema, UpdateClassSchema } from "../validation/class/classSchemas";
 import { parseBodyWithSchema } from "../validation/common/request";
 
@@ -16,8 +15,10 @@ export function createClassRouter() {
 
   /**
    * GET /api/classes
-   * Query: page?, pageSize?, q?, isActive?, sort?
-   * Returns: { items: ClassDTO[], pageInfo: { page, pageSize, total } }
+   * Business rules:
+   * - Default: return up to 10 rows, only isActive = true, ordered by createdAt desc (latest first)
+   * - When query string isGetAll = true => return all (no limit, includes both active and inactive)
+   * Returns: { items: ClassDTO[], total: number }
    */
   router.get("/", async (c) => {
     const user = c.get("user");
@@ -25,11 +26,13 @@ export function createClassRouter() {
     try {
       const svc = new ClassService({ db: c.env.DB });
       const url = new URL(c.req.url);
-      const parsed = validateListQuery(url.searchParams);
-      if (!parsed.ok) {
-        return c.json({ error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors }, 400 as 400);
-      }
-      const { items, total } = await svc.listByTeacher({ teacherId: String(user.sub), ...parsed.value });
+      const isGetAll = (url.searchParams.get("isGetAll") || "").toLowerCase() === "true";
+      const { items, total } = await svc.listByTeacher({
+        teacherId: String(user.sub),
+        isActive: isGetAll ? undefined : true,
+        sort: "createdAt_desc",
+        limit: isGetAll ? undefined : 10,
+      });
       return c.json({ items, total }, 200 as 200);
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });

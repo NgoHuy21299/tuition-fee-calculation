@@ -109,6 +109,7 @@ export default function ClassDetail() {
           <p className="text-sm text-gray-400">Xem và chỉnh sửa thông tin lớp học.</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => navigate("/dashboard/classes")}>Quay về danh sách</Button>
           <Button variant="outline" onClick={onToggleActive} disabled={!item || saving}>
             {item?.isActive ? "Ngừng hoạt động" : "Bật hoạt động"}
           </Button>
@@ -134,7 +135,7 @@ export default function ClassDetail() {
               <div>
                 <h2 className="text-lg font-semibold">Thông tin lớp</h2>
                 {item && (
-                  <p className="text-sm text-gray-400">Tạo lúc: {new Date(item.createdAt).toLocaleString()}</p>
+                  <p className="text-sm text-gray-400">Tạo lúc: {formatLocal(item.createdAt)}</p>
                 )}
               </div>
               {item && (
@@ -184,4 +185,14 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
       {children}
     </button>
   );
+}
+
+function formatLocal(dt: string) {
+  const d = new Date(dt);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
 }

@@ -19,6 +19,7 @@ export type ListClassesParams = {
   isActive?: boolean;
   // Free-form sort matches backend accepted sort value, e.g. "createdAt:desc"
   sort?: string;
+  isGetAll?: boolean;
 };
 
 export type ListClassesResponse = {

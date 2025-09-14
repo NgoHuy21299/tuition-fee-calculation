@@ -24,6 +24,7 @@ export class ClassService {
     teacherId: string;
     isActive?: boolean;
     sort?: ClassSort;
+    limit?: number;
   }): Promise<{ items: ClassDTO[]; total: number }> {
     const { items, total } = await this.repo.listByTeacher(params);
     return { items: items.map(mapClassRowToDTO), total };
@@ -66,11 +67,13 @@ export class ClassService {
     const exists = await this.repo.isExistById(id, teacherId);
     if (!exists)
       throw new AppError("RESOURCE_NOT_FOUND", "Class not found", 404);
+    // IMPORTANT: Do NOT coalesce undefined to null here.
+    // Only pass fields that were explicitly provided by the client.
     await this.repo.update(id, teacherId, {
       name: patch.name,
-      subject: patch.subject ?? null,
-      description: patch.description ?? null,
-      defaultFeePerSession: patch.defaultFeePerSession ?? null,
+      subject: patch.subject, // keep undefined if not provided; repo will ignore
+      description: patch.description,
+      defaultFeePerSession: patch.defaultFeePerSession,
       isActive: patch.isActive,
     });
     const updated = await this.repo.getById(id, teacherId);

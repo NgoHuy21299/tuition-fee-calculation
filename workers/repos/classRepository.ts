@@ -31,6 +31,7 @@ export type ListClassesParams = {
   teacherId: string;
   isActive?: boolean;
   sort?: ClassSort;
+  limit?: number;
 };
 
 export class ClassRepository {
@@ -61,11 +62,12 @@ export class ClassRepository {
     }
 
     const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
+    const limitSql = typeof params.limit === "number" && Number.isFinite(params.limit) && params.limit > 0 ? `\n      LIMIT ${Math.floor(params.limit)}\n    ` : "";
     const sql = `
       SELECT id, teacherId, name, subject, description, defaultFeePerSession, isActive, createdAt
       FROM Class
       ${whereSql}
-      ORDER BY ${orderBy}
+      ORDER BY ${orderBy}${limitSql}
     `;
     const items = await selectAll<ClassRow>(this.deps.db, sql, binds);
     return { items, total: items.length };

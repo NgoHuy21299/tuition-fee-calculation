@@ -4,6 +4,7 @@ import { classService } from "../../services/classService";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useToast } from "../../components/commons/Toast";
+import { Button } from "../../components/ui/button";
 
 export default function ClassNew() {
   const navigate = useNavigate();
@@ -30,9 +31,12 @@ export default function ClassNew() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold">Tạo lớp mới</h1>
-        <p className="text-sm text-gray-400">Nhập thông tin lớp học. Bạn có thể chỉnh sửa sau.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold">Tạo lớp mới</h1>
+          <p className="text-sm text-gray-400">Nhập thông tin lớp học. Bạn có thể chỉnh sửa sau.</p>
+        </div>
+        <Button variant="outline" onClick={() => navigate("/dashboard/classes")}>Quay về danh sách</Button>
       </div>
       <Card>
         <ClassForm onSubmit={onSubmit} submitText="Tạo lớp" disabled={submitting} />

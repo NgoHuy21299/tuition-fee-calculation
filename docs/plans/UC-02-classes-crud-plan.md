@@ -56,23 +56,23 @@
   - [X] `deleteClass(id)`
 
 ### 3.2 Pages & Components
-- [ ] Danh sách lớp `/classes`
-  - [ ] Bảng: name, subject, defaultFeePerSession, isActive, createdAt, actions
-  - [ ] Bộ lọc: `q`, `isActive`, phân trang; sort mặc định `createdAt desc`
-  - [ ] Actions: Tạo mới, Xem/Sửa, Xóa
-- [ ] Form tạo/sửa `ClassForm`
-  - [ ] Trường: name (bắt buộc), subject, description, defaultFeePerSession (number), isActive (toggle)
-  - [ ] Validation UI; helper text: "Giá mặc định để điền sẵn khi tạo buổi học. Có thể thay đổi từng buổi."
-  - [ ] Loading/disabled state khi submit; hiển thị lỗi
-- [ ] Trang chi tiết `ClassDetail`
-  - [ ] Hiển thị metadata class
-  - [ ] Tabs: Overview | Students (placeholder UC-03) | Sessions (placeholder UC-04)
-  - [ ] Hành động: Lưu, Toggle Active, Xóa
-- [ ] Sidebar: Đảm bảo có link tới `/classes`
+- [X] Danh sách lớp `/classes`
+  - [X] Bảng: name, subject, defaultFeePerSession, isActive, createdAt, actions
+  - [X] Bộ lọc: `q`, `isActive`, phân trang; sort mặc định `createdAt desc`
+  - [X] Actions: Tạo mới, Xem/Sửa, Xóa
+- [X] Form tạo/sửa `ClassForm`
+  - [X] Trường: name (bắt buộc), subject, description, defaultFeePerSession (number), isActive (toggle)
+  - [X] Validation UI; helper text: "Giá mặc định để điền sẵn khi tạo buổi học. Có thể thay đổi từng buổi."
+  - [X] Loading/disabled state khi submit; hiển thị lỗi
+- [X] Trang chi tiết `ClassDetail`
+  - [X] Hiển thị metadata class
+  - [X] Tabs: Overview | Students (placeholder UC-03) | Sessions (placeholder UC-04)
+  - [X] Hành động: Lưu, Toggle Active, Xóa
+- [X] Sidebar: Đảm bảo có link tới `/classes`
 
 ### 3.3 UX/XOá lớp
-- [ ] Confirm modal khi xóa
-- [ ] Nếu API trả 409 `CLASS_HAS_DEPENDENCIES`, hiển thị hướng dẫn: "Không thể xoá lớp vì còn học sinh hoặc buổi học. Vui lòng xoá/di chuyển dữ liệu trước."
+- [X] Confirm modal khi xóa
+- [X] Nếu API trả 409 `CLASS_HAS_DEPENDENCIES`, hiển thị hướng dẫn: "Không thể xoá lớp vì còn học sinh hoặc buổi học. Vui lòng xoá/di chuyển dữ liệu trước."
 
 ## 4. Tests
 - [ ] Unit tests (repo): CRUD, filter/search, ownership, dependency checks
