@@ -1,8 +1,4 @@
 import type { ClassRow } from "../repos/classRepository";
-import type {
-  CreateClassInput as SchemaCreateClassInput,
-  UpdateClassInput as SchemaUpdateClassInput,
-} from "../validation/class/classSchemas";
 
 // OUTPUT DTO: dữ liệu trả về cho client khi thao tác với Class
 export type ClassDTO = {
@@ -14,10 +10,6 @@ export type ClassDTO = {
   isActive: boolean;
   createdAt: string; // ISO text from DB
 };
-
-// INPUT DTO: lấy trực tiếp từ Valibot schema (single source of truth)
-export type CreateClassInput = SchemaCreateClassInput;
-export type UpdateClassInput = SchemaUpdateClassInput;
 
 // Helpers for flag mapping
 export function dbFlagToBool(n: number): boolean {

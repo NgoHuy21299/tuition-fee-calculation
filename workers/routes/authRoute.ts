@@ -4,14 +4,14 @@ import { signJWT, type JwtPayload } from "../services/jwtService";
 import { COOKIE_MAX_AGE } from "../constants";
 import { toAppError } from "../errors";
 import { t } from "../i18n/messages";
-import { validateChangePassword, validateLogin, validateRegister } from "../validation/auth/authValidators";
+import { LoginSchema, RegisterSchema, ChangePasswordSchema } from "../validation/auth/authSchemas";
+import { parseBodyWithSchema } from "../validation/common/request";
 
 export function createAuthRouter() {
   const router = new Hono<{ Bindings: Env; Variables: { user: JwtPayload } }>();
 
   router.post("/login", async (c) => {
-    const body = await c.req.json().catch(() => null);
-    const parsed = validateLogin(body);
+    const parsed = await parseBodyWithSchema(c, LoginSchema);
     if (!parsed.ok) {
       return c.json({ error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors }, 400 as 400);
     }
@@ -43,8 +43,7 @@ export function createAuthRouter() {
 
   // Change password (requires apiAuthGuard set user variable)
   router.post("/change-password", async (c) => {
-    const body = await c.req.json().catch(() => null);
-    const parsed = validateChangePassword(body);
+    const parsed = await parseBodyWithSchema(c, ChangePasswordSchema);
     if (!parsed.ok) {
       return c.json({ error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors }, 400 as 400);
     }
@@ -65,8 +64,7 @@ export function createAuthRouter() {
 
   // Register new user and set cookie
   router.post("/register", async (c) => {
-    const body = await c.req.json().catch(() => null);
-    const parsed = validateRegister(body);
+    const parsed = await parseBodyWithSchema(c, RegisterSchema);
     if (!parsed.ok) {
       return c.json({ error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors }, 400 as 400);
     }

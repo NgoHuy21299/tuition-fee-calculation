@@ -6,12 +6,11 @@ import {
   type ClassSort,
 } from "../repos/classRepository";
 import type {
-  CreateClassInput,
-  UpdateClassInput,
   ClassDTO,
 } from "../types/classTypes";
 import { mapClassRowToDTO } from "../types/classTypes";
 import { AppError } from "../errors";
+import type { CreateClassInput, UpdateClassInput } from "workers/validation/class/classSchemas";
 
 export type ClassServiceDeps = { db: D1Database };
 

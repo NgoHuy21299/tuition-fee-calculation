@@ -3,7 +3,9 @@ import type { JwtPayload } from "../services/jwtService";
 import { t } from "../i18n/messages";
 import { toAppError } from "../errors";
 import { ClassService } from "../services/classService";
-import { validateCreateClass, validateUpdateClass, validateListQuery } from "../validation/class/classValidators";
+import { validateListQuery } from "../validation/class/classValidators";
+import { CreateClassSchema, UpdateClassSchema } from "../validation/class/classSchemas";
+import { parseBodyWithSchema } from "../validation/common/request";
 
 /**
  * Classes API (Base: /api/classes)
@@ -44,8 +46,7 @@ export function createClassRouter() {
     const user = c.get("user");
     if (!user) return c.json({ error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" }, 401 as 401);
     try {
-      const body: unknown = await c.req.json().catch(() => null);
-      const parsed = validateCreateClass(body);
+      const parsed = await parseBodyWithSchema(c, CreateClassSchema);
       if (!parsed.ok) {
         return c.json({ error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors }, 400 as 400);
       }
@@ -87,8 +88,7 @@ export function createClassRouter() {
     if (!user) return c.json({ error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" }, 401 as 401);
     try {
       const id = c.req.param("id");
-      const body: unknown = await c.req.json().catch(() => null);
-      const parsed = validateUpdateClass(body);
+      const parsed = await parseBodyWithSchema(c, UpdateClassSchema);
       if (!parsed.ok) {
         return c.json({ error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors }, 400 as 400);
       }
