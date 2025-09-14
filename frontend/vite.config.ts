@@ -18,5 +18,5 @@ export default defineConfig({
         // rewrite: (path) => path
       },
     },
-  },
+  }
 })

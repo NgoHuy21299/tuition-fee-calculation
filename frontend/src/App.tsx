@@ -9,6 +9,8 @@ import DashboardOverview from "./routes/dashboard/Overview";
 import DashboardClasses from "./routes/dashboard/Classes";
 import DashboardTuition from "./routes/dashboard/Tuition";
 import DashboardSettings from "./routes/dashboard/Settings";
+import ClassNew from "./routes/dashboard/ClassNew";
+import ClassDetail from "./routes/dashboard/ClassDetail";
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const token = getToken();
@@ -35,6 +37,8 @@ export default function App() {
             <Route index element={<Navigate to="overview" replace />} />
             <Route path="overview" element={<DashboardOverview />} />
             <Route path="classes" element={<DashboardClasses />} />
+            <Route path="classes/new" element={<ClassNew />} />
+            <Route path="classes/:id" element={<ClassDetail />} />
             <Route path="tuition" element={<DashboardTuition />} />
             <Route path="settings" element={<DashboardSettings />} />
           </Route>
