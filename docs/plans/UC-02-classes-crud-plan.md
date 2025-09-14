@@ -46,18 +46,14 @@
   - [X] Thêm thông báo lỗi/i18n trong `workers/i18n/messages.ts`
   - [X] Chuẩn hóa trả lỗi: NOT_FOUND, FORBIDDEN, VALIDATION_ERROR
 
-### 2.4 Integration với UCs tiếp theo
-- [ ] Trả về `defaultFeePerSession` trong GET để UC tạo `Session` có thể prefill `feePerSession`
-- [ ] Chuẩn bị `Students` tab (UC-03) và `Sessions` tab (UC-04) ở phần Frontend (placeholder dữ liệu)
-
 ## 3. Frontend (React)
 ### 3.1 API Client
-- [ ] Tạo `frontend/src/services/classService.ts`
-  - [ ] `listClasses(params)`
-  - [ ] `createClass(payload)`
-  - [ ] `getClass(id)`
-  - [ ] `updateClass(id, patch)`
-  - [ ] `deleteClass(id)`
+- [X] Tạo `frontend/src/services/classService.ts`
+  - [X] `listClasses(params)`
+  - [X] `createClass(payload)`
+  - [X] `getClass(id)`
+  - [X] `updateClass(id, patch)`
+  - [X] `deleteClass(id)`
 
 ### 3.2 Pages & Components
 - [ ] Danh sách lớp `/classes`
