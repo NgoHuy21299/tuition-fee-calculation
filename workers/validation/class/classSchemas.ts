@@ -13,6 +13,7 @@ import {
   literal,
   pipe,
 } from "valibot";
+import type { InferOutput } from "valibot";
 import type { ValidationCode } from "../common/types";
 
 // Define base messages (we use i18n codes at mapping stage; here we set minimal messages for Valibot)
@@ -110,3 +111,8 @@ export const ListQuerySchema = object({
 function Msg(code: ValidationCode) {
   return code; // we pass code as message and translate later via tv()
 }
+
+// Inferred types for reuse
+export type CreateClassInput = InferOutput<typeof CreateClassSchema>;
+export type UpdateClassInput = InferOutput<typeof UpdateClassSchema>;
+export type ListQueryInput = InferOutput<typeof ListQuerySchema>;

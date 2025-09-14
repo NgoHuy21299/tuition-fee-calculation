@@ -8,16 +8,21 @@ import type { ValidationErrorDetail } from "../common/types";
 import { mapValibotIssues } from "../common/mapIssues";
 import { CLASS_SORT, type ClassSort } from "../../repos/classRepository";
 import { validateWithSchema } from "../common/validate";
+import type { InferOutput } from "valibot";
 
 export function validateCreateClass(
   body: unknown
-): { ok: true; value: any } | { ok: false; errors: ValidationErrorDetail[] } {
+):
+  | { ok: true; value: InferOutput<typeof CreateClassSchema> }
+  | { ok: false; errors: ValidationErrorDetail[] } {
   return validateWithSchema(CreateClassSchema, body);
 }
 
 export function validateUpdateClass(
   body: unknown
-): { ok: true; value: any } | { ok: false; errors: ValidationErrorDetail[] } {
+):
+  | { ok: true; value: InferOutput<typeof UpdateClassSchema> }
+  | { ok: false; errors: ValidationErrorDetail[] } {
   return validateWithSchema(UpdateClassSchema, body);
 }
 

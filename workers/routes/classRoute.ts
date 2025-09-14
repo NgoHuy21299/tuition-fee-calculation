@@ -44,7 +44,7 @@ export function createClassRouter() {
     const user = c.get("user");
     if (!user) return c.json({ error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" }, 401 as 401);
     try {
-      const body = await c.req.json().catch(() => null);
+      const body: unknown = await c.req.json().catch(() => null);
       const parsed = validateCreateClass(body);
       if (!parsed.ok) {
         return c.json({ error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors }, 400 as 400);
@@ -87,7 +87,7 @@ export function createClassRouter() {
     if (!user) return c.json({ error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" }, 401 as 401);
     try {
       const id = c.req.param("id");
-      const body = await c.req.json().catch(() => null);
+      const body: unknown = await c.req.json().catch(() => null);
       const parsed = validateUpdateClass(body);
       if (!parsed.ok) {
         return c.json({ error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors }, 400 as 400);
