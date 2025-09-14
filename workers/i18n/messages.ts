@@ -13,6 +13,11 @@ export const viMessages: Record<ErrorCode, string> = {
   SERVER_MISCONFIGURED: "Máy chủ cấu hình sai: JWT_SECRET thiếu",
   RESOURCE_NOT_FOUND: "Không tìm thấy tài nguyên",
   UNKNOWN: "Đã xảy ra lỗi",
+  FORBIDDEN: "Không có quyền",
+  VALIDATION_ERROR: "Dữ liệu không hợp lệ",
+  CLASS_HAS_DEPENDENCIES: "Lớp có phụ thuộc",
+  CLASS_HAS_STUDENTS: "Lớp vẫn còn học sinh",
+  CLASS_HAS_SESSIONS: "Lớp vẫn còn buổi học"
 };
 
 export function t(code: ErrorCode, fallback?: string): string {

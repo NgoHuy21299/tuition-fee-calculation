@@ -95,6 +95,12 @@ export class ClassRepository {
     ]);
   }
 
+  async isExistById(id: string, teacherId: string): Promise<boolean> {
+    const sql = `SELECT 1 AS one FROM Class WHERE id = ? AND teacherId = ? LIMIT 1`;
+    const row = await selectOne<{ one: number }>(this.deps.db, sql, [id, teacherId]);
+    return row != null;
+  }
+
   async getById(id: string, teacherId: string): Promise<ClassRow | null> {
     // Id lookup is indexed by PK; also scope by teacherId (uses idx_class_teacherId)
     const sql = `

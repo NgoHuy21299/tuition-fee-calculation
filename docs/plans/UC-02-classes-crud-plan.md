@@ -26,18 +26,31 @@
   - [X] `hasSessions({ classId })` (từ `Session`)
 
 ### 2.3 Validation & Types
-- [ ] Tạo `workers/types/classTypes.ts`
-  - [ ] `CreateClassInput`, `UpdateClassInput`, `ClassDTO`
-  - [ ] Ràng buộc: `name` bắt buộc; `defaultFeePerSession` là số nguyên >= 0 hoặc null; độ dài `subject/description`
-- [ ] Map `isActive` (0/1) ↔ boolean trong DTO
+- [X] Tạo `workers/types/classTypes.ts`
+  - [X] `CreateClassInput`, `UpdateClassInput`, `ClassDTO`
+  - [X] Ràng buộc: `name` bắt buộc; `defaultFeePerSession` là số nguyên >= 0 hoặc null; độ dài `subject/description`
+- [X] Map `isActive` (0/1) ↔ boolean trong DTO
 
-### 2.4 Business Rules & Errors
-- [ ] Chỉ owner (`teacherId` từ auth) mới được CRUD class
-- [ ] Xóa lớp: nếu còn `ClassStudent` hoặc `Session` → trả 409 `CLASS_HAS_DEPENDENCIES`
-- [ ] Thêm thông báo lỗi/i18n trong `workers/i18n/messages.ts`
-- [ ] Chuẩn hóa trả lỗi: NOT_FOUND, FORBIDDEN, VALIDATION_ERROR
+### 2.3.1 Tạo service
+- [X] Tạo `workers/services/classService.ts`
+  - [X] `listByTeacher({ teacherId, page, pageSize, q, isActive, sort })`
+  - [X] `create({ id, teacherId, name, subject, description, defaultFeePerSession, isActive })`
+  - [X] `getById({ id, teacherId })`
+  - [X] `update({ id, teacherId, patch })`
+  - [X] `delete({ id, teacherId })`
+  - [X] `hasStudents({ classId })`
+  - [X] `hasSessions({ classId })`
+- [X] Business rules:
+  - [X] Chỉ owner (`teacherId` từ auth) mới được CRUD class
+  - [X] Xóa lớp: nếu còn `ClassStudent` hoặc `Session` → trả 409 `CLASS_HAS_DEPENDENCIES`
+  - [X] Thêm thông báo lỗi/i18n trong `workers/i18n/messages.ts`
+  - [X] Chuẩn hóa trả lỗi: NOT_FOUND, FORBIDDEN, VALIDATION_ERROR
 
-### 2.5 Integration với UCs tiếp theo
+### 2.3.2 Integration routes with service.
+- [ ] Tạo các request type tương ứng ở `workers/routes/classRoute.ts`, sau đó thay vào các payload trong parseCreateClassInput` và `parseUpdateClassInput` trong `workers/types/classTypes.ts`
+- [ ] Intergrate classRoute và classService trong các handler trong `workers/routes/classRoute.ts`
+
+### 2.4 Integration với UCs tiếp theo
 - [ ] Trả về `defaultFeePerSession` trong GET để UC tạo `Session` có thể prefill `feePerSession`
 - [ ] Chuẩn bị `Students` tab (UC-03) và `Sessions` tab (UC-04) ở phần Frontend (placeholder dữ liệu)
 
