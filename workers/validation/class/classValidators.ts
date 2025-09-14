@@ -7,47 +7,18 @@ import {
 import type { ValidationErrorDetail } from "../common/types";
 import { mapValibotIssues } from "../common/mapIssues";
 import { CLASS_SORT, type ClassSort } from "../../repos/classRepository";
+import { validateWithSchema } from "../common/validate";
 
 export function validateCreateClass(
   body: unknown
 ): { ok: true; value: any } | { ok: false; errors: ValidationErrorDetail[] } {
-  if (!body || typeof body !== "object") {
-    return {
-      ok: false,
-      errors: [
-        {
-          field: "body",
-          code: "INVALID_JSON_BODY",
-          message: "JSON không hợp lệ",
-        },
-      ],
-    };
-  }
-  const result = safeParse(CreateClassSchema, body);
-  if (!result.success)
-    return { ok: false, errors: mapValibotIssues(result.issues) };
-  return { ok: true, value: result.output };
+  return validateWithSchema(CreateClassSchema, body);
 }
 
 export function validateUpdateClass(
   body: unknown
 ): { ok: true; value: any } | { ok: false; errors: ValidationErrorDetail[] } {
-  if (!body || typeof body !== "object") {
-    return {
-      ok: false,
-      errors: [
-        {
-          field: "body",
-          code: "INVALID_JSON_BODY",
-          message: "JSON không hợp lệ",
-        },
-      ],
-    };
-  }
-  const result = safeParse(UpdateClassSchema, body);
-  if (!result.success)
-    return { ok: false, errors: mapValibotIssues(result.issues) };
-  return { ok: true, value: result.output };
+  return validateWithSchema(UpdateClassSchema, body);
 }
 
 export function validateListQuery(

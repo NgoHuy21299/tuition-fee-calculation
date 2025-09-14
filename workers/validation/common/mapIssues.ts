@@ -28,6 +28,7 @@ function getFieldFromPath(path: unknown): ValidationField {
   const p0 = first !== undefined ? String(first) : "body";
   // Narrow to known fields; fallback to 'body'
   const known: ValidationField[] = [
+    // Class fields
     "body",
     "query",
     "name",
