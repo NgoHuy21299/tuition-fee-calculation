@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Button } from "../ui/button";
+import { Button, type ButtonProps } from "../ui/button";
 
 export type ConfirmDialogProps = {
   open: boolean;
@@ -8,6 +8,7 @@ export type ConfirmDialogProps = {
   confirmText?: string;
   cancelText?: string;
   loading?: boolean;
+  confirmVariant?: ButtonProps["variant"];
   onConfirm: () => void;
   onCancel: () => void;
 };
@@ -19,6 +20,7 @@ export default function ConfirmDialog({
   confirmText = "Xác nhận",
   cancelText = "Hủy",
   loading = false,
+  confirmVariant = "default",
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -56,7 +58,7 @@ export default function ConfirmDialog({
           <Button variant="outline" onClick={onCancel} disabled={loading}>
             {cancelText}
           </Button>
-          <Button onClick={onConfirm} disabled={loading} aria-busy={loading}>
+          <Button variant={confirmVariant} onClick={onConfirm} disabled={loading} aria-busy={loading}>
             {confirmText}
           </Button>
         </div>

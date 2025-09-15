@@ -6,6 +6,7 @@ import ClassForm, {
   type ClassFormValues,
 } from "../../components/dashboard/ClassForm";
 import ConfirmDialog from "../../components/commons/ConfirmDialog";
+import BackNavigation from "../../components/commons/BackNavigation";
 import { classService, type ClassDTO } from "../../services/classService";
 import { useToast } from "../../components/commons/Toast";
 
@@ -137,29 +138,24 @@ export default function ClassDetail() {
 
   return (
     <div className="space-y-4">
+      <BackNavigation to="/dashboard/classes" />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold">Chi tiết lớp</h1>
           <p className="text-sm text-gray-400">
-            Xem và chỉnh sửa thông tin lớp học.
+            Xem và chỉnh sửa thông tin lớp học
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button
-            variant="outline"
-            onClick={() => navigate("/dashboard/classes")}
-          >
-            Quay về danh sách
-          </Button>
-          <Button
-            variant="outline"
+            variant={item?.isActive ? "danger" : "success"}
             onClick={onToggleActive}
             disabled={!item || saving}
           >
             {item?.isActive ? "Ngừng hoạt động" : "Bật hoạt động"}
           </Button>
           <Button
-            variant="outline"
+            variant="danger"
             onClick={() => setConfirmDelete(true)}
             disabled={saving}
           >
@@ -234,6 +230,7 @@ export default function ClassDetail() {
         title="Xoá lớp"
         description="Bạn có chắc muốn xoá lớp này? Hành động không thể hoàn tác."
         confirmText="Xoá"
+        confirmVariant="danger"
         onCancel={() => setConfirmDelete(false)}
         onConfirm={onDelete}
       />

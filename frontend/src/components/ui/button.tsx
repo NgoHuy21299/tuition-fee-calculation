@@ -13,6 +13,10 @@ const buttonVariants = cva(
         // Dark-friendly ghost
         ghost: "text-gray-200 hover:bg-white/10",
         link: "text-blue-600 underline-offset-4 hover:underline",
+        // Subtle danger (red) variant matching dark theme
+        danger: "border border-red-800 text-red-300 hover:bg-red-500/10",
+        // Subtle success (green) variant matching dark theme
+        success: "border border-green-800 text-green-300 hover:bg-green-500/10",
       },
       size: {
         default: "h-9 px-4 py-2",

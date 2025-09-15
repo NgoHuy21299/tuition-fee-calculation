@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Button } from "../ui/button";
@@ -35,6 +35,14 @@ export default function ClassForm({
     name?: string;
     defaultFeePerSession?: string;
   }>({});
+  // Keep a normalized snapshot of the initial values to detect dirty state reliably
+  const initialSnapshotRef = useRef<{
+    name: string;
+    subject: string | null;
+    description: string | null;
+    defaultFeePerSession: number | null;
+    isActive: boolean;
+  } | null>(null);
 
   useEffect(() => {
     if (!initialValues) return;
@@ -48,7 +56,51 @@ export default function ClassForm({
         : Number(initialValues.defaultFeePerSession).toLocaleString("vi-VN")
     );
     setIsActive(initialValues.isActive ?? true);
+    // Store normalized snapshot to compare
+    initialSnapshotRef.current = {
+      name: (initialValues.name ?? "").trim(),
+      subject:
+        (initialValues.subject ?? "").trim() === ""
+          ? null
+          : (initialValues.subject as string),
+      description:
+        (initialValues.description ?? "").trim() === ""
+          ? null
+          : (initialValues.description as string),
+      defaultFeePerSession:
+        initialValues.defaultFeePerSession === null ||
+        initialValues.defaultFeePerSession === undefined
+          ? null
+          : Number(initialValues.defaultFeePerSession),
+      isActive: initialValues.isActive ?? true,
+    };
   }, [initialValues]);
+
+  const normalizedCurrent = useMemo(() => {
+    return {
+      name: name.trim(),
+      subject: subject.trim() === "" ? null : subject,
+      description: description.trim() === "" ? null : description,
+      defaultFeePerSession:
+        defaultFeePerSession === ""
+          ? null
+          : Number(defaultFeePerSession.replace(/[^0-9]/g, "")),
+      isActive,
+    };
+  }, [name, subject, description, defaultFeePerSession, isActive]);
+
+  const isDirty = useMemo(() => {
+    if (!initialSnapshotRef.current) return true; // If no initial snapshot, treat as dirty to allow creating
+    const a = initialSnapshotRef.current;
+    const b = normalizedCurrent;
+    return (
+      a.name !== b.name ||
+      a.subject !== b.subject ||
+      a.description !== b.description ||
+      a.defaultFeePerSession !== b.defaultFeePerSession ||
+      a.isActive !== b.isActive
+    );
+  }, [normalizedCurrent]);
 
   function validate() {
     const next: typeof errors = {};
@@ -164,7 +216,8 @@ export default function ClassForm({
       <div className="flex justify-end">
         <Button
           type="submit"
-          disabled={disabled || submitting}
+          variant="success"
+          disabled={disabled || submitting || !isDirty}
           aria-busy={submitting}
         >
           {submitText}
