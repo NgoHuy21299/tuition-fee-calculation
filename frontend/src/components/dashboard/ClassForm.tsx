@@ -19,14 +19,22 @@ export type ClassFormProps = {
   onSubmit: (values: ClassFormValues) => Promise<void> | void;
 };
 
-export default function ClassForm({ initialValues, onSubmit, submitText = "Lưu", disabled = false }: ClassFormProps) {
+export default function ClassForm({
+  initialValues,
+  onSubmit,
+  submitText = "Lưu",
+  disabled = false,
+}: ClassFormProps) {
   const [name, setName] = useState("");
   const [subject, setSubject] = useState<string | "">("");
   const [description, setDescription] = useState<string | "">("");
   const [defaultFeePerSession, setDefaultFeePerSession] = useState<string>("");
   const [isActive, setIsActive] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors] = useState<{ name?: string; defaultFeePerSession?: string }>({});
+  const [errors, setErrors] = useState<{
+    name?: string;
+    defaultFeePerSession?: string;
+  }>({});
 
   useEffect(() => {
     if (!initialValues) return;
@@ -34,7 +42,8 @@ export default function ClassForm({ initialValues, onSubmit, submitText = "Lưu"
     setSubject(initialValues.subject ?? "");
     setDescription(initialValues.description ?? "");
     setDefaultFeePerSession(
-      initialValues.defaultFeePerSession === null || initialValues.defaultFeePerSession === undefined
+      initialValues.defaultFeePerSession === null ||
+        initialValues.defaultFeePerSession === undefined
         ? ""
         : Number(initialValues.defaultFeePerSession).toLocaleString("vi-VN")
     );
@@ -47,7 +56,8 @@ export default function ClassForm({ initialValues, onSubmit, submitText = "Lưu"
     if (defaultFeePerSession !== "") {
       const n = Number(defaultFeePerSession.replace(/[^0-9]/g, ""));
       if (!Number.isFinite(n) || !Number.isInteger(n) || n < 0) {
-        next.defaultFeePerSession = "Giá mặc định phải là số nguyên không âm hoặc để trống";
+        next.defaultFeePerSession =
+          "Giá mặc định phải là số nguyên không âm hoặc để trống";
       }
     }
     setErrors(next);
@@ -81,20 +91,37 @@ export default function ClassForm({ initialValues, onSubmit, submitText = "Lưu"
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1">
           <Label htmlFor="name">Tên lớp</Label>
-          <Input id="name" value={name} onChange={(e) => setName(e.target.value)} disabled={disabled || submitting} />
+          <Input
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={disabled || submitting}
+          />
           {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
         </div>
         <div className="space-y-1">
           <Label htmlFor="subject">Môn học</Label>
-          <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} disabled={disabled || submitting} />
+          <Input
+            id="subject"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            disabled={disabled || submitting}
+          />
         </div>
         <div className="space-y-1 md:col-span-2">
           <Label htmlFor="description">Mô tả</Label>
-          <Input id="description" value={description} onChange={(e) => setDescription(e.target.value)} disabled={disabled || submitting} />
-          <p className="text-xs text-gray-400 mt-1">Giới thiệu ngắn gọn về lớp học.</p>
+          <Input
+            id="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            disabled={disabled || submitting}
+          />
+          <p className="text-xs text-gray-400 mt-1">
+            Giới thiệu ngắn gọn về lớp học.
+          </p>
         </div>
         <div className="space-y-1">
-          <Label htmlFor="defaultFeePerSession">Giá mặc định mỗi buổi</Label>
+          <Label htmlFor="defaultFeePerSession">Học phí mặc định</Label>
           <Input
             id="defaultFeePerSession"
             inputMode="numeric"
@@ -111,19 +138,35 @@ export default function ClassForm({ initialValues, onSubmit, submitText = "Lưu"
             disabled={disabled || submitting}
             placeholder="vd: 150000"
           />
-          <p className="text-xs text-gray-400">Giá mặc định để điền sẵn khi tạo buổi học. Có thể thay đổi từng buổi.</p>
-          {errors.defaultFeePerSession && <p className="text-sm text-red-500">{errors.defaultFeePerSession}</p>}
+          <p className="text-xs text-gray-400">
+            Học phí mặc định để điền sẵn khi tạo buổi học. Có thể thay đổi từng
+            buổi.
+          </p>
+          {errors.defaultFeePerSession && (
+            <p className="text-sm text-red-500">
+              {errors.defaultFeePerSession}
+            </p>
+          )}
         </div>
         <div className="space-y-1">
           <Label>Trạng thái</Label>
           <div className="flex items-center gap-2 text-sm text-gray-300 select-none pt-2.5">
-            <Checkbox id="is-active" checked={isActive} onCheckedChange={(v) => setIsActive(!!v)} disabled={disabled || submitting} />
+            <Checkbox
+              id="is-active"
+              checked={isActive}
+              onCheckedChange={(v) => setIsActive(!!v)}
+              disabled={disabled || submitting}
+            />
             <label htmlFor="is-active">Đang hoạt động</label>
           </div>
         </div>
       </div>
       <div className="flex justify-end">
-        <Button type="submit" disabled={disabled || submitting} aria-busy={submitting}>
+        <Button
+          type="submit"
+          disabled={disabled || submitting}
+          aria-busy={submitting}
+        >
           {submitText}
         </Button>
       </div>

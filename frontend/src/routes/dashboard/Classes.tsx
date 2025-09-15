@@ -22,7 +22,9 @@ export default function DashboardClasses() {
   const [loading, setLoading] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [q, setQ] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "inactive"
+  >("all");
   const [viewAll, setViewAll] = useState(false);
 
   // Derived filtered items (client-side)
@@ -56,13 +58,18 @@ export default function DashboardClasses() {
   async function load() {
     setLoading(true);
     try {
-      const { items, total } = await classService.listClasses({ isGetAll: viewAll });
+      const { items, total } = await classService.listClasses({
+        isGetAll: viewAll,
+      });
       setItems(items);
       setTotal(total);
     } catch (err: unknown) {
       let message = "Tải danh sách lớp thất bại";
       if (typeof err === "object" && err !== null) {
-        const anyErr = err as { response?: { data?: { error?: string } }; message?: string };
+        const anyErr = err as {
+          response?: { data?: { error?: string } };
+          message?: string;
+        };
         message = anyErr.response?.data?.error || anyErr.message || message;
       }
       toast({ title: "Lỗi", description: message, variant: "error" });
@@ -90,18 +97,25 @@ export default function DashboardClasses() {
     if (!confirmDeleteId) return;
     try {
       await classService.deleteClass(confirmDeleteId);
-      toast({ title: "Đã xóa", description: "Xóa lớp thành công", variant: "success" });
+      toast({
+        title: "Đã xóa",
+        description: "Xóa lớp thành công",
+        variant: "success",
+      });
       setConfirmDeleteId(null);
       load();
     } catch (err: unknown) {
       let description = "Xóa lớp thất bại";
       let variant: "error" | "warning" = "error";
       if (typeof err === "object" && err !== null) {
-        const anyErr = err as { response?: { data?: { code?: string; error?: string } } };
+        const anyErr = err as {
+          response?: { data?: { code?: string; error?: string } };
+        };
         const code = anyErr.response?.data?.code;
         if (code === "CLASS_HAS_STUDENTS" || code === "CLASS_HAS_SESSIONS") {
           variant = "warning";
-          description = "Không thể xoá lớp vì còn học sinh hoặc buổi học. Vui lòng xoá/di chuyển dữ liệu trước.";
+          description =
+            "Không thể xoá lớp vì còn học sinh hoặc buổi học. Vui lòng xoá/di chuyển dữ liệu trước.";
         } else {
           description = anyErr.response?.data?.error || description;
         }
@@ -115,9 +129,13 @@ export default function DashboardClasses() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold">Lớp học</h1>
-          <p className="text-sm text-gray-400">Quản lý danh sách lớp, sĩ số, lịch học và giáo viên phụ trách.</p>
+          <p className="text-sm text-gray-400">
+            Quản lý danh sách lớp, sĩ số, lịch học và giáo viên phụ trách.
+          </p>
         </div>
-        <Button onClick={() => navigate("/dashboard/classes/new")}>Tạo lớp</Button>
+        <Button onClick={() => navigate("/dashboard/classes/new")}>
+          Tạo lớp
+        </Button>
       </div>
 
       <Card>
@@ -132,20 +150,34 @@ export default function DashboardClasses() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
-                  {statusFilter === "all" ? "Tất cả trạng thái" : statusFilter === "active" ? "Đang hoạt động" : "Ngừng hoạt động"}
+                  {statusFilter === "all"
+                    ? "Tất cả trạng thái"
+                    : statusFilter === "active"
+                    ? "Đang hoạt động"
+                    : "Ngừng hoạt động"}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
-                <DropdownMenuItem onClick={() => setStatusFilter("all")}>Tất cả trạng thái</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setStatusFilter("active")}>Đang hoạt động</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setStatusFilter("inactive")}>Ngừng hoạt động</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setStatusFilter("all")}>
+                  Tất cả trạng thái
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setStatusFilter("active")}>
+                  Đang hoạt động
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setStatusFilter("inactive")}>
+                  Ngừng hoạt động
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             <div
               className="inline-flex items-center gap-2 text-sm text-gray-300 select-none"
               title="Khi chọn sẽ xem tất cả các lớp bao gồm cả các lớp cũ đã tạo từ lâu hoặc đã ngừng hoạt động"
             >
-              <Checkbox id="view-all" checked={viewAll} onCheckedChange={(v) => setViewAll(!!v)} />
+              <Checkbox
+                id="view-all"
+                checked={viewAll}
+                onCheckedChange={(v) => setViewAll(!!v)}
+              />
               <label htmlFor="view-all">Xem tất cả các lớp</label>
             </div>
           </div>
@@ -190,7 +222,9 @@ export default function DashboardClasses() {
             </table>
           </div>
           <div className="flex items-center justify-between pt-2">
-            <p className="text-xs text-gray-400">Tổng: {filtered.length} lớp. (Đã tải {total} từ server)</p>
+            <p className="text-xs text-gray-400">
+              Tổng: {filtered.length} lớp. (Đã tải {total} từ server)
+            </p>
           </div>
         </div>
       </Card>
@@ -207,15 +241,33 @@ export default function DashboardClasses() {
   );
 }
 
-function Row({ c, onView, onDelete, formatLocal }: { c: ClassDTO; onView: () => void; onDelete: () => void; formatLocal: (s: string) => string }) {
+function Row({
+  c,
+  onView,
+  onDelete,
+  formatLocal,
+}: {
+  c: ClassDTO;
+  onView: () => void;
+  onDelete: () => void;
+  formatLocal: (s: string) => string;
+}) {
   return (
     <tr className="border-t border-gray-800">
       <td className="py-2 pr-3">
         <div className="font-medium">{c.name}</div>
-        {c.description && <div className="text-xs text-gray-400 line-clamp-1">{c.description}</div>}
+        {c.description && (
+          <div className="text-xs text-gray-400 line-clamp-1">
+            {c.description}
+          </div>
+        )}
       </td>
       <td className="py-2 pr-3">{c.subject ?? "-"}</td>
-      <td className="py-2 pr-3">{c.defaultFeePerSession === null ? "-" : c.defaultFeePerSession.toLocaleString("vi-VN")}</td>
+      <td className="py-2 pr-3">
+        {c.defaultFeePerSession === null
+          ? "-"
+          : c.defaultFeePerSession.toLocaleString("vi-VN")}
+      </td>
       <td className="py-2 pr-3">
         <span
           className={[
@@ -231,8 +283,12 @@ function Row({ c, onView, onDelete, formatLocal }: { c: ClassDTO; onView: () => 
       <td className="py-2 pr-3">{formatLocal(c.createdAt)}</td>
       <td className="py-2 pr-0 text-right">
         <div className="inline-flex items-center gap-2">
-          <Button variant="outline" onClick={onView}>Xem</Button>
-          <Button variant="outline" onClick={onDelete}>Xoá</Button>
+          <Button variant="outline" onClick={onView}>
+            Xem
+          </Button>
+          <Button variant="outline" onClick={onDelete}>
+            Xoá
+          </Button>
         </div>
       </td>
     </tr>
