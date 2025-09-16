@@ -15,9 +15,9 @@ Ghi chú:
 
 ## 2. Backend (Cloudflare Workers)
 ### 2.1 Routes & Middleware
-- [ ] Tạo route `workers/routes/studentRoute.ts`
-  - [ ] `GET /api/students` (filter: `classId`). Luôn lấy theo teacher id, hiện tại chưa cần pagination (pagination sẽ xử lý ở FE).
-  - [ ] `POST /api/students` (create). API cần phải hỗ trợ việc bulk insert (tạo nhiều học sinh cùng lúc) và hỗ trợ tạo `Parent` kèm theo một cách optional (parentInline).
+- [X] Tạo route `workers/routes/studentRoute.ts`
+  - [X] `GET /api/students` (filter: `classId`). Luôn lấy theo teacher id, hiện tại chưa cần pagination (pagination sẽ xử lý ở FE).
+  - [X] `POST /api/students` (create). API cần phải hỗ trợ việc bulk insert (tạo nhiều học sinh cùng lúc) và hỗ trợ tạo `Parent` kèm theo một cách optional (parentInline).
     - Body (single create) gợi ý:
       ```json
       {
@@ -35,27 +35,27 @@ Ghi chú:
       }
       ```
     - Quy tắc: nếu có `parentInline` → backend tạo Parent trước, sau đó tạo Student gắn với Parent vừa tạo. Nếu không có `parentInline` → tạo Student không gắn Parent.
-  - [ ] `GET /api/students/:id` (detail)
-  - [ ] `PUT /api/students/:id` (update)
-  - [ ] `DELETE /api/students/:id` (delete – giai đoạn đầu hard delete). Cần kiểm tra xem student đang có trong lớp nào không hoặc đã tham gia tiết học nào chưa -> nếu đã phát sinh liên kết với hệ thống thì không cho xóa (chỉ cho phép left khỏi class).
-- [ ] Tạo route `workers/routes/classStudentRoute.ts`
-  - [ ] `POST /api/classes/:id/students` (add student to class, body: `{ studentId, unitPriceOverride? }`)
-  - [ ] `DELETE /api/classes/:id/students/:classStudentId` (remove; hoặc `PUT` để set `leftAt`)
-- [ ] Đăng ký routes trên `workers/app.ts` và áp dụng `authMiddleware` toàn bộ endpoints (giáo viên phải đăng nhập).
+  - [X] `GET /api/students/:id` (detail)
+  - [X] `PUT /api/students/:id` (update)
+  - [X] `DELETE /api/students/:id` (delete – giai đoạn đầu hard delete). Cần kiểm tra xem student đang có trong lớp nào không hoặc đã tham gia tiết học nào chưa -> nếu đã phát sinh liên kết với hệ thống thì không cho xóa (chỉ cho phép left khỏi class).
+- [X] Tạo route `workers/routes/classStudentRoute.ts`
+  - [X] `POST /api/classes/:id/students` (add student to class, body: `{ studentId, unitPriceOverride? }`)
+  - [X] `DELETE /api/classes/:id/students/:classStudentId` (remove; hoặc `PUT` để set `leftAt`)
+- [X] Đăng ký routes trên `workers/app.ts` và áp dụng `authMiddleware` toàn bộ endpoints (giáo viên phải đăng nhập).
 
 ### 2.2 Repository & SQL
-- [ ] Tạo `workers/repos/studentRepository.ts`
-  - [ ] `listByTeacher({ teacherId, classId? })` - Hiện tại chưa cần pagination hoặc filter nâng cao.
-  - [ ] `create({ id, teacherId, name, email?, phone?, note?, parentInline? })`
-  - [ ] `getById({ id, teacherId })`
-  - [ ] `update({ id, teacherId, patch })`
-  - [ ] `delete({ id, teacherId })`
-  - [ ] (Hỗ trợ) `existsDuplicate({ teacherId, name, phone?, email? })`
-- [ ] Tạo `workers/repos/classStudentRepository.ts`
-  - [ ] `add({ id, classId, studentId, unitPriceOverride? })`
-  - [ ] `leave({ classStudentId, leftAt })`
-  - [ ] `listByClass({ classId, page, pageSize })`
-  - [ ] `isMember({ classId, studentId })`
+- [X] Tạo `workers/repos/studentRepository.ts`
+  - [X] `listByTeacher({ teacherId, classId? })` - Hiện tại chưa cần pagination hoặc filter nâng cao.
+  - [X] `create({ id, teacherId, name, email?, phone?, note?, parentInline? })`
+  - [X] `getById({ id, teacherId })`
+  - [X] `update({ id, teacherId, patch })`
+  - [X] `delete({ id, teacherId })`
+  - [X] (Hỗ trợ) `existsDuplicate({ teacherId, name, phone?, email? })`
+- [X] Tạo `workers/repos/classStudentRepository.ts`
+  - [X] `add({ id, classId, studentId, unitPriceOverride? })`
+  - [X] `leave({ classStudentId, leftAt })`
+  - [X] `listByClass({ classId, page, pageSize })`
+  - [X] `isMember({ classId, studentId })`
 
 Lưu ý SQL/D1:
 - `Class` đã có `teacherId`; khi query students theo teacher cần join qua các quan hệ sở hữu phù hợp (tuỳ chính sách dữ liệu: học sinh thuộc giáo viên).
