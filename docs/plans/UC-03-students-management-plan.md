@@ -62,15 +62,15 @@ Lưu ý SQL/D1:
 - Ít nhất, filter theo `teacherId` từ Auth để ngăn truy cập chéo.
 
 ### 2.3 Validation & Types
-- [ ] Tạo `workers/types/studentTypes.ts`
-  - [ ] `CreateStudentInput`, `UpdateStudentInput`, `StudentDTO`
-  - [ ] `ParentInlineInput { relationship: 'father'|'mother'|'grandfather'|'grandmother', name?, phone?, email?, note? }`
-  - [ ] Ràng buộc: `name` bắt buộc; `email` hợp lệ; `phone` định dạng số/chuẩn; `note` độ dài tối đa.
-  - [ ] Chuẩn hoá trả về: `StudentDTO { id, name, phone, email, parentName?, parentPhone?, note, createdAt }` (ẩn chi tiết parentId ở DTO; nếu cần thêm chi tiết parent thì tạo `ParentDTO` lồng bên trong).
-- [ ] Tạo `workers/types/classStudentTypes.ts`
-  - [ ] `AddClassStudentInput { studentId, unitPriceOverride? }`
-  - [ ] `ClassStudentDTO { id, classId, studentId, unitPriceOverride, joinedAt, leftAt }`
-- [ ] i18n: thêm messages/validation vào `workers/i18n/messages.ts` và `workers/i18n/validationMessages.ts`.
+- [X] Tạo `workers/types/studentTypes.ts`
+  - [X] `CreateStudentInput`, `UpdateStudentInput`, `StudentDTO`
+  - [X] `ParentInlineInput { relationship: 'father'|'mother'|'grandfather'|'grandmother', name?, phone?, email?, note? }`
+  - [X] Ràng buộc: `name` bắt buộc; `email` hợp lệ; `phone` định dạng số/chuẩn; `note` độ dài tối đa.
+  - [X] Chuẩn hoá trả về: `StudentDTO { id, name, phone, email, parentName?, parentPhone?, note, createdAt }` (ẩn chi tiết parentId ở DTO; nếu cần thêm chi tiết parent thì tạo `ParentDTO` lồng bên trong).
+- [X] Tạo `workers/types/classStudentTypes.ts`
+  - [X] `AddClassStudentInput { studentId, unitPriceOverride? }`
+  - [X] `ClassStudentDTO { id, classId, studentId, unitPriceOverride, joinedAt, leftAt }`
+- [X] i18n: thêm messages/validation vào `workers/i18n/messages.ts` và `workers/i18n/validationMessages.ts`.
 
 ### 2.4 Services (Business Rules)
 - [ ] `workers/services/studentService.ts`
@@ -90,6 +90,11 @@ Lưu ý SQL/D1:
   - [ ] `add(...)` – enforce UNIQUE(classId, studentId), có thể ghi `unitPriceOverride`.
   - [ ] `leave(...)` – cập nhật `leftAt`.
   - [ ] Business rules: chỉ owner class được thao tác; không thêm học sinh đã rời nếu chính sách không cho phép.
+
+### 2.5 Integrate with API
+- [ ] Integrate services and validations to correct endpoint API
+  - [ ] Kiểm tra các endpoint trong `workers/routes/studentRoute.ts`, sử dụng `studentServices.ts` và validate sử dụng `studentSchemas.ts`
+  - [ ] Kiểm tra các endpoint trong `workers/routes/classStudentRoute.ts`, sử dụng `classStudentServices.ts` và validate sử dụng `classStudentSchemas.ts`
 
 ## 3. Frontend (React)
 ### 3.1 API Client
