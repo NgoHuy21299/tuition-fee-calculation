@@ -4,7 +4,11 @@ import { signJWT, type JwtPayload } from "../services/jwtService";
 import { COOKIE_MAX_AGE } from "../constants";
 import { toAppError } from "../errors";
 import { t } from "../i18n/messages";
-import { LoginSchema, RegisterSchema, ChangePasswordSchema } from "../validation/auth/authSchemas";
+import {
+  LoginSchema,
+  RegisterSchema,
+  ChangePasswordSchema,
+} from "../validation/auth/authSchemas";
 import { parseBodyWithSchema } from "../validation/common/request";
 
 export function createAuthRouter() {
@@ -13,18 +17,34 @@ export function createAuthRouter() {
   router.post("/login", async (c) => {
     const parsed = await parseBodyWithSchema(c, LoginSchema);
     if (!parsed.ok) {
-      return c.json({ error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors }, 400 as 400);
+      return c.json(
+        {
+          error: t("VALIDATION_ERROR"),
+          code: "VALIDATION_ERROR",
+          details: parsed.errors,
+        },
+        400 as 400
+      );
     }
     const { email, password } = parsed.value;
     const auth = new AuthService({ db: c.env.DB });
     const user = await auth.verifyCredentials(email, password);
     if (!user) {
-      return c.json({ error: t("AUTH_INVALID_CREDENTIALS"), code: "AUTH_INVALID_CREDENTIALS" }, 401 as 401);
+      return c.json(
+        {
+          error: t("AUTH_INVALID_CREDENTIALS"),
+          code: "AUTH_INVALID_CREDENTIALS",
+        },
+        401 as 401
+      );
     }
 
     const JWT_SECRET = c.env.JWT_SECRET;
     if (!JWT_SECRET) {
-      return c.json({ error: t("SERVER_MISCONFIGURED"), code: "SERVER_MISCONFIGURED" }, 500 as 500);
+      return c.json(
+        { error: t("SERVER_MISCONFIGURED"), code: "SERVER_MISCONFIGURED" },
+        500 as 500
+      );
     }
     const payload = auth.buildJwtPayload(user, COOKIE_MAX_AGE);
     const token = await signJWT(payload, JWT_SECRET);
@@ -45,12 +65,23 @@ export function createAuthRouter() {
   router.post("/change-password", async (c) => {
     const parsed = await parseBodyWithSchema(c, ChangePasswordSchema);
     if (!parsed.ok) {
-      return c.json({ error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors }, 400 as 400);
+      return c.json(
+        {
+          error: t("VALIDATION_ERROR"),
+          code: "VALIDATION_ERROR",
+          details: parsed.errors,
+        },
+        400 as 400
+      );
     }
     const { oldPassword, newPassword } = parsed.value;
     const user = c.get("user");
     const userId = (user?.sub as string) || "";
-    if (!userId) return c.json({ error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" }, 401);
+    if (!userId)
+      return c.json(
+        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
+        401
+      );
 
     const auth = new AuthService({ db: c.env.DB });
     try {
@@ -58,7 +89,10 @@ export function createAuthRouter() {
       return new Response(null, { status: 204 });
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });
-      return c.json({ error: t(e.code, e.message), code: e.code }, e.status as any);
+      return c.json(
+        { error: t(e.code, e.message), code: e.code },
+        e.status as any
+      );
     }
   });
 
@@ -66,7 +100,14 @@ export function createAuthRouter() {
   router.post("/register", async (c) => {
     const parsed = await parseBodyWithSchema(c, RegisterSchema);
     if (!parsed.ok) {
-      return c.json({ error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors }, 400 as 400);
+      return c.json(
+        {
+          error: t("VALIDATION_ERROR"),
+          code: "VALIDATION_ERROR",
+          details: parsed.errors,
+        },
+        400 as 400
+      );
     }
     const { email, password, name } = parsed.value;
     const auth = new AuthService({ db: c.env.DB });
@@ -75,7 +116,10 @@ export function createAuthRouter() {
 
       const JWT_SECRET = c.env.JWT_SECRET;
       if (!JWT_SECRET) {
-        return c.json({ error: t("SERVER_MISCONFIGURED"), code: "SERVER_MISCONFIGURED" }, 500);
+        return c.json(
+          { error: t("SERVER_MISCONFIGURED"), code: "SERVER_MISCONFIGURED" },
+          500
+        );
       }
       const payload = auth.buildJwtPayload(created, COOKIE_MAX_AGE);
       const token = await signJWT(payload, JWT_SECRET);
@@ -88,8 +132,14 @@ export function createAuthRouter() {
     } catch (err) {
       const e = toAppError(err, { code: "AUTH_REGISTER_FAILED" });
       // Specialize status for email exists if not provided by service
-      const status = e.code === "AUTH_EMAIL_EXISTS" && e.status === 400 ? (409 as const) : e.status;
-      return c.json({ error: t(e.code, e.message), code: e.code }, status as any);
+      const status =
+        e.code === "AUTH_EMAIL_EXISTS" && e.status === 400
+          ? (409 as const)
+          : e.status;
+      return c.json(
+        { error: t(e.code, e.message), code: e.code },
+        status as any
+      );
     }
   });
 

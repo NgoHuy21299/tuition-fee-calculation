@@ -3,7 +3,10 @@ import type { JwtPayload } from "../services/jwtService";
 import { t } from "../i18n/messages";
 import { toAppError } from "../errors";
 import { ClassService } from "../services/classService";
-import { CreateClassSchema, UpdateClassSchema } from "../validation/class/classSchemas";
+import {
+  CreateClassSchema,
+  UpdateClassSchema,
+} from "../validation/class/classSchemas";
 import { parseBodyWithSchema } from "../validation/common/request";
 
 /**
@@ -22,11 +25,16 @@ export function createClassRouter() {
    */
   router.get("/", async (c) => {
     const user = c.get("user");
-    if (!user) return c.json({ error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" }, 401 as 401);
+    if (!user)
+      return c.json(
+        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
+        401 as 401
+      );
     try {
       const svc = new ClassService({ db: c.env.DB });
       const url = new URL(c.req.url);
-      const isGetAll = (url.searchParams.get("isGetAll") || "").toLowerCase() === "true";
+      const isGetAll =
+        (url.searchParams.get("isGetAll") || "").toLowerCase() === "true";
       const { items, total } = await svc.listByTeacher({
         teacherId: String(user.sub),
         isActive: isGetAll ? undefined : true,
@@ -36,7 +44,10 @@ export function createClassRouter() {
       return c.json({ items, total }, 200 as 200);
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });
-      return c.json({ error: t(e.code, e.message), code: e.code }, e.status as any);
+      return c.json(
+        { error: t(e.code, e.message), code: e.code },
+        e.status as any
+      );
     }
   });
 
@@ -47,11 +58,22 @@ export function createClassRouter() {
    */
   router.post("/", async (c) => {
     const user = c.get("user");
-    if (!user) return c.json({ error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" }, 401 as 401);
+    if (!user)
+      return c.json(
+        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
+        401 as 401
+      );
     try {
       const parsed = await parseBodyWithSchema(c, CreateClassSchema);
       if (!parsed.ok) {
-        return c.json({ error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors }, 400 as 400);
+        return c.json(
+          {
+            error: t("VALIDATION_ERROR"),
+            code: "VALIDATION_ERROR",
+            details: parsed.errors,
+          },
+          400 as 400
+        );
       }
       const svc = new ClassService({ db: c.env.DB });
       const id = crypto.randomUUID();
@@ -59,7 +81,10 @@ export function createClassRouter() {
       return c.json(dto, 201 as 201);
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });
-      return c.json({ error: t(e.code, e.message), code: e.code }, e.status as any);
+      return c.json(
+        { error: t(e.code, e.message), code: e.code },
+        e.status as any
+      );
     }
   });
 
@@ -69,7 +94,11 @@ export function createClassRouter() {
    */
   router.get("/:id", async (c) => {
     const user = c.get("user");
-    if (!user) return c.json({ error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" }, 401 as 401);
+    if (!user)
+      return c.json(
+        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
+        401 as 401
+      );
     try {
       const id = c.req.param("id");
       const svc = new ClassService({ db: c.env.DB });
@@ -77,7 +106,10 @@ export function createClassRouter() {
       return c.json(dto, 200 as 200);
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });
-      return c.json({ error: t(e.code, e.message), code: e.code }, e.status as any);
+      return c.json(
+        { error: t(e.code, e.message), code: e.code },
+        e.status as any
+      );
     }
   });
 
@@ -88,19 +120,33 @@ export function createClassRouter() {
    */
   router.put("/:id", async (c) => {
     const user = c.get("user");
-    if (!user) return c.json({ error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" }, 401 as 401);
+    if (!user)
+      return c.json(
+        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
+        401 as 401
+      );
     try {
       const id = c.req.param("id");
       const parsed = await parseBodyWithSchema(c, UpdateClassSchema);
       if (!parsed.ok) {
-        return c.json({ error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors }, 400 as 400);
+        return c.json(
+          {
+            error: t("VALIDATION_ERROR"),
+            code: "VALIDATION_ERROR",
+            details: parsed.errors,
+          },
+          400 as 400
+        );
       }
       const svc = new ClassService({ db: c.env.DB });
       const dto = await svc.update(String(user.sub), id, parsed.value);
       return c.json(dto, 200 as 200);
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });
-      return c.json({ error: t(e.code, e.message), code: e.code }, e.status as any);
+      return c.json(
+        { error: t(e.code, e.message), code: e.code },
+        e.status as any
+      );
     }
   });
 
@@ -110,7 +156,11 @@ export function createClassRouter() {
    */
   router.delete("/:id", async (c) => {
     const user = c.get("user");
-    if (!user) return c.json({ error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" }, 401 as 401);
+    if (!user)
+      return c.json(
+        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
+        401 as 401
+      );
     try {
       const id = c.req.param("id");
       const svc = new ClassService({ db: c.env.DB });
@@ -118,7 +168,10 @@ export function createClassRouter() {
       return new Response(null, { status: 204 });
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });
-      return c.json({ error: t(e.code, e.message), code: e.code }, e.status as any);
+      return c.json(
+        { error: t(e.code, e.message), code: e.code },
+        e.status as any
+      );
     }
   });
 

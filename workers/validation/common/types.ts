@@ -16,7 +16,18 @@ export type ValidationCode =
   | "PASSWORD_REQUIRED"
   | "PASSWORD_TOO_SHORT"
   | "NAME_INVALID"
-  | "NAME_TOO_LONG";
+  | "NAME_TOO_LONG"
+  // Student-specific
+  | "PHONE_INVALID"
+  | "NOTE_TOO_LONG"
+  | "RELATIONSHIP_INVALID"
+  | "PARENT_NAME_INVALID"
+  | "PARENT_EMAIL_INVALID"
+  | "PARENT_PHONE_INVALID"
+  | "PARENT_NOTE_TOO_LONG"
+  // ClassStudent-specific
+  | "STUDENT_ID_REQUIRED"
+  | "UNIT_PRICE_INVALID";
 
 export type ValidationField =
   | "body"
@@ -30,7 +41,18 @@ export type ValidationField =
   | "email"
   | "password"
   | "oldPassword"
-  | "newPassword";
+  | "newPassword"
+  // Student-specific
+  | "phone"
+  | "note"
+  | "parentInline.relationship"
+  | "parentInline.name"
+  | "parentInline.email"
+  | "parentInline.phone"
+  | "parentInline.note"
+  // ClassStudent-specific
+  | "studentId"
+  | "unitPriceOverride";
 
 export type ValidationErrorDetail = {
   field: ValidationField;

@@ -17,22 +17,43 @@ export function createClassStudentRouter() {
   // POST /api/classes/:id/students
   router.post("/:id/students", async (c) => {
     const user = c.get("user");
-    if (!user) return c.json({ error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" }, 401 as 401);
-    return c.json({ error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" }, 501 as 501);
+    if (!user)
+      return c.json(
+        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
+        401 as 401
+      );
+    return c.json(
+      { error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" },
+      501 as 501
+    );
   });
 
   // DELETE /api/classes/:id/students/:classStudentId
   router.delete("/:id/students/:classStudentId", async (c) => {
     const user = c.get("user");
-    if (!user) return c.json({ error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" }, 401 as 401);
-    return c.json({ error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" }, 501 as 501);
+    if (!user)
+      return c.json(
+        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
+        401 as 401
+      );
+    return c.json(
+      { error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" },
+      501 as 501
+    );
   });
 
   // PUT /api/classes/:id/students/:classStudentId (set leftAt)
   router.put("/:id/students/:classStudentId", async (c) => {
     const user = c.get("user");
-    if (!user) return c.json({ error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" }, 401 as 401);
-    return c.json({ error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" }, 501 as 501);
+    if (!user)
+      return c.json(
+        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
+        401 as 401
+      );
+    return c.json(
+      { error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" },
+      501 as 501
+    );
   });
 
   return router;

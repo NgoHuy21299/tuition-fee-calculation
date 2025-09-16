@@ -14,36 +14,71 @@ export function createStudentRouter() {
   // GET /api/students?classId=
   router.get("/", async (c) => {
     const user = c.get("user");
-    if (!user) return c.json({ error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" }, 401 as 401);
-    return c.json({ error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" }, 501 as 501);
+    if (!user)
+      return c.json(
+        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
+        401 as 401
+      );
+    return c.json(
+      { error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" },
+      501 as 501
+    );
   });
 
   // POST /api/students  (supports bulk and parentInline)
   router.post("/", async (c) => {
     const user = c.get("user");
-    if (!user) return c.json({ error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" }, 401 as 401);
-    return c.json({ error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" }, 501 as 501);
+    if (!user)
+      return c.json(
+        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
+        401 as 401
+      );
+    return c.json(
+      { error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" },
+      501 as 501
+    );
   });
 
   // GET /api/students/:id
   router.get("/:id", async (c) => {
     const user = c.get("user");
-    if (!user) return c.json({ error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" }, 401 as 401);
-    return c.json({ error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" }, 501 as 501);
+    if (!user)
+      return c.json(
+        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
+        401 as 401
+      );
+    return c.json(
+      { error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" },
+      501 as 501
+    );
   });
 
   // PUT /api/students/:id
   router.put("/:id", async (c) => {
     const user = c.get("user");
-    if (!user) return c.json({ error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" }, 401 as 401);
-    return c.json({ error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" }, 501 as 501);
+    if (!user)
+      return c.json(
+        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
+        401 as 401
+      );
+    return c.json(
+      { error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" },
+      501 as 501
+    );
   });
 
   // DELETE /api/students/:id
   router.delete("/:id", async (c) => {
     const user = c.get("user");
-    if (!user) return c.json({ error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" }, 401 as 401);
-    return c.json({ error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" }, 501 as 501);
+    if (!user)
+      return c.json(
+        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
+        401 as 401
+      );
+    return c.json(
+      { error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" },
+      501 as 501
+    );
   });
 
   return router;
