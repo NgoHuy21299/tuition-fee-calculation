@@ -13,3 +13,10 @@ PRAGMA foreign_keys=ON;
 -- Rename columns (will fail if legacy columns do not exist)
 ALTER TABLE Student RENAME COLUMN studentPhone TO phone;
 ALTER TABLE Student RENAME COLUMN studentEmail TO email;
+
+-- Add createdByTeacher to simplify teacher scoping for Student ownership
+-- Note: SQLite/D1 supports simple ADD COLUMN; will fail if column already exists
+ALTER TABLE Student ADD COLUMN createdByTeacher TEXT REFERENCES User(id) ON DELETE CASCADE;
+
+-- Index for frequent lookups by teacher
+CREATE INDEX IF NOT EXISTS idx_student_createdByTeacher ON Student(createdByTeacher);

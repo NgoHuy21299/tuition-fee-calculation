@@ -57,11 +57,13 @@ Notes: `User` is WITHOUT ROWID as of migration `0004_user_without_rowid.sql`. Un
 - parentId TEXT REFERENCES Parent(id) ON DELETE SET NULL
 - note TEXT
 - createdAt TEXT NOT NULL DEFAULT now
+- createdByTeacher TEXT NULL REFERENCES User(id) ON DELETE CASCADE  (teacher who created/owns the student)
 
 Indexes:
 - idx_student_parentId(parentId)
+- idx_student_createdByTeacher(createdByTeacher)
 
-Alignment note: In migration `0005_domain_schema.sql`, the Student contact columns were named `studentPhone` and `studentEmail`. A planned migration `0007_student_contact_rename.sql` will rename them to `phone` and `email` to standardize with API and docs. Until migration `0007` is applied, code should be aware of the actual column names present in the database.
+Alignment note: In migration `0005_domain_schema.sql`, the Student contact columns were named `studentPhone` and `studentEmail`. Migration `0007_student_contact_rename.sql` renames them to `phone` and `email` and also introduces `createdByTeacher` with an index to simplify teacher scoping (queries prefer `Student.createdByTeacher = :teacherId` to avoid unnecessary joins).
 
 ### Class
 - id TEXT PRIMARY KEY

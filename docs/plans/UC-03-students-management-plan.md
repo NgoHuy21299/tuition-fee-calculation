@@ -73,9 +73,9 @@ Lưu ý SQL/D1:
 - [X] i18n: thêm messages/validation vào `workers/i18n/messages.ts` và `workers/i18n/validationMessages.ts`.
 
 ### 2.4 Services (Business Rules)
-- [ ] `workers/services/studentService.ts`
-  - [ ] `listByTeacher(...)` – list đơn giản theo teacher id, classId?.
-  - [ ] `create(...)` – kiểm tra trùng (name + phone hoặc email). Hỗ trợ tạo `Parent` nội tuyến (không sử dụng `parentId` trên API):
+- [X] `workers/services/studentService.ts`
+  - [X] `listByTeacher(...)` – list đơn giản theo teacher id, classId?.
+  - [X] `create(...)` – kiểm tra trùng (name + phone hoặc email). Hỗ trợ tạo `Parent` nội tuyến (không sử dụng `parentId` trên API):
        - Nếu có `input.parentInline` → chuẩn hoá `parentInline.name`:
          - Nếu không truyền `name` hoặc rỗng → auto-generate theo format: `${prefix} ${studentName}` với prefix map theo `relationship`:
            - father → "Bố"
@@ -84,12 +84,12 @@ Lưu ý SQL/D1:
            - grandmother → "Bà"
          - Nếu đã truyền `name` → dùng nguyên giá trị (giáo viên có thể tuỳ biến).
        - Tạo Parent trước → lấy `parentId` nội bộ → tạo Student (API/DTO không trả `parentId`, chỉ trả thông tin hiển thị của Parent nếu cần).
-  - [ ] `update(...)` – không cho phép sửa gây trùng.
-  - [ ] `delete(...)` – hard delete; cảnh báo nếu đang là thành viên của lớp (option: ngăn xoá nếu còn membership); nếu đã từng tham gia lớp học thì không thể xóa (vì đã có record trong classStudent, classStudent chỉ có thể leave chứ không bị remove).
-- [ ] `workers/services/classStudentService.ts`
-  - [ ] `add(...)` – enforce UNIQUE(classId, studentId), có thể ghi `unitPriceOverride`.
-  - [ ] `leave(...)` – cập nhật `leftAt`.
-  - [ ] Business rules: chỉ owner class được thao tác; không thêm học sinh đã rời nếu chính sách không cho phép.
+  - [X] `update(...)` – không cho phép sửa gây trùng.
+  - [X] `delete(...)` – hard delete; cảnh báo nếu đang là thành viên của lớp (option: ngăn xoá nếu còn membership); nếu đã từng tham gia lớp học thì không thể xóa (vì đã có record trong classStudent, classStudent chỉ có thể leave chứ không bị remove).
+- [X] `workers/services/classStudentService.ts`
+  - [X] `add(...)` – enforce UNIQUE(classId, studentId), có thể ghi `unitPriceOverride`.
+  - [X] `leave(...)` – cập nhật `leftAt`.
+  - [X] Business rules: chỉ owner class được thao tác; không thêm học sinh đã rời nếu chính sách không cho phép.
 
 ### 2.5 Integrate with API
 - [ ] Integrate services and validations to correct endpoint API

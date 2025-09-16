@@ -18,6 +18,29 @@ export type ListStudentsParams = {
   classId?: string; // optional class filter
 };
 
+export type StudentDetail = {
+  student: StudentRow;
+  parents: Array<{
+    id: string;
+    name: string | null;
+    phone: string | null;
+    email: string | null;
+    note: string | null;
+  }>;
+  classes: Array<{
+    id: string;
+    name: string;
+    subject: string | null;
+    description: string | null;
+    defaultFeePerSession: number | null;
+    isActive: number;
+    createdAt: string;
+    classStudentId: string;
+    joinedAt: string;
+    leftAt: string | null;
+    unitPriceOverride: number | null;
+  }>;
+};
 
 /**
  * StudentRepository
@@ -39,33 +62,29 @@ export class StudentRepository {
    * Optional filter:
    * - classId: limit to students who are/used-to-be in the specified class (regardless of leftAt state).
    *
-   * Returns basic student fields with parent display fields (parentName, parentPhone).
+   * Returns basic student fields (no parent fields). Parent/class details are provided by getDetailById().
    */
   async listByTeacher(params: ListStudentsParams): Promise<StudentRow[]> {
-    const binds: unknown[] = [params.teacherId];
-    let where = "WHERE c.teacherId = ?";
-    if (params.classId) {
-      where += " AND cs.classId = ?";
-      binds.push(params.classId);
+    if (!params.classId) {
+      // Simple path: list by owner
+      const sql = `
+        SELECT s.id, s.name, s.phone AS phone, s.email AS email, s.note, s.createdAt
+        FROM Student s
+        WHERE s.createdByTeacher = ?
+        ORDER BY s.createdAt DESC
+      `;
+      return await selectAll<StudentRow>(this.deps.db, sql, [params.teacherId]);
+    } else {
+      // With class filter: still avoid teacher join; only filter by owner and classId
+      const sql = `
+        SELECT DISTINCT s.id, s.name, s.phone AS phone, s.email AS email, s.note, s.createdAt
+        FROM Student s
+        JOIN ClassStudent cs ON cs.studentId = s.id
+        WHERE s.createdByTeacher = ? AND cs.classId = ?
+        ORDER BY s.createdAt DESC
+      `;
+      return await selectAll<StudentRow>(this.deps.db, sql, [params.teacherId, params.classId]);
     }
-    const sql = `
-      SELECT DISTINCT
-        s.id,
-        s.name,
-        s.phone AS phone,
-        s.email AS email,
-        s.note,
-        s.createdAt,
-        p.name AS parentName,
-        p.phone AS parentPhone
-      FROM Student s
-      LEFT JOIN Parent p ON p.id = s.parentId
-      INNER JOIN ClassStudent cs ON cs.studentId = s.id
-      INNER JOIN Class c ON c.id = cs.classId
-      ${where}
-      ORDER BY s.createdAt DESC
-    `;
-    return await selectAll<StudentRow>(this.deps.db, sql, binds);
   }
 
   /**
@@ -83,10 +102,11 @@ export class StudentRepository {
     note?: string | null;
     // Parent linkage will be handled by service; repository focuses on Student row
     parentIdInternal?: string | null;
+    createdByTeacher: string;
   }): Promise<void> {
     const sql = `
-      INSERT INTO Student (id, name, phone, email, parentId, note)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO Student (id, name, phone, email, parentId, note, createdByTeacher)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
     await execute(this.deps.db, sql, [
       input.id,
@@ -95,6 +115,7 @@ export class StudentRepository {
       input.email ?? null,
       input.parentIdInternal ?? null,
       input.note ?? null,
+      input.createdByTeacher,
     ]);
   }
 
@@ -105,20 +126,55 @@ export class StudentRepository {
    */
   async getById(id: string, teacherId: string): Promise<StudentRow | null> {
     const sql = `
-      SELECT s.id, s.name, s.phone AS phone, s.email AS email, s.note, s.createdAt,
-             p.name AS parentName, p.phone AS parentPhone
+      SELECT s.id, s.name, s.phone AS phone, s.email AS email, s.note, s.createdAt
       FROM Student s
-      LEFT JOIN Parent p ON p.id = s.parentId
-      WHERE s.id = ?
-        AND EXISTS (
-          SELECT 1 FROM ClassStudent cs
-          JOIN Class c ON c.id = cs.classId
-          WHERE cs.studentId = s.id AND c.teacherId = ?
-        )
+      WHERE s.id = ? AND s.createdByTeacher = ?
       LIMIT 1
     `;
     const row = await selectOne<StudentRow>(this.deps.db, sql, [id, teacherId]);
     return row ?? null;
+  }
+
+  /**
+   * Detailed student fetch: includes basic student row, parent details, and classes this student has (past and present).
+   */
+  async getDetailById(id: string, teacherId: string): Promise<StudentDetail | null> {
+    // Ensure visibility by teacher ownership (via createdByTeacher)
+    const base = await this.getById(id, teacherId);
+    if (!base) return null;
+
+    // Parent details (single parentId relation in current schema)
+    const parents = await selectAll<{ id: string; name: string | null; phone: string | null; email: string | null; note: string | null }>(
+      this.deps.db,
+      `SELECT id, name, phone, email, note FROM Parent WHERE id = (SELECT parentId FROM Student WHERE id = ?)`,
+      [id]
+    );
+
+    // Classes list for this student (ownership already verified via createdByTeacher)
+    const classes = await selectAll<{
+      id: string;
+      name: string;
+      subject: string | null;
+      description: string | null;
+      defaultFeePerSession: number | null;
+      isActive: number;
+      createdAt: string;
+      classStudentId: string;
+      joinedAt: string;
+      leftAt: string | null;
+      unitPriceOverride: number | null;
+    }>(
+      this.deps.db,
+      `SELECT c.id, c.name, c.subject, c.description, c.defaultFeePerSession, c.isActive, c.createdAt,
+              cs.id AS classStudentId, cs.joinedAt, cs.leftAt, cs.unitPriceOverride
+       FROM ClassStudent cs
+       JOIN Class c ON c.id = cs.classId
+       WHERE cs.studentId = ?
+       ORDER BY cs.joinedAt DESC`,
+      [id]
+    );
+
+    return { student: base, parents: parents ?? null, classes: classes ?? null };
   }
 
   /**
@@ -151,12 +207,7 @@ export class StudentRepository {
 
     const sql = `
       UPDATE Student SET ${sets.join(", ")}
-      WHERE id = ?
-        AND EXISTS (
-          SELECT 1 FROM ClassStudent cs
-          JOIN Class c ON c.id = cs.classId
-          WHERE cs.studentId = Student.id AND c.teacherId = ?
-        )
+      WHERE id = ? AND createdByTeacher = ?
     `;
     binds.push(id, teacherId);
     await execute(this.deps.db, sql, binds);
@@ -171,6 +222,16 @@ export class StudentRepository {
    * - Reject if the requester (teacherId) has no related class membership linked to the student.
    */
   async delete(id: string, teacherId: string): Promise<void> {
+    // Ensure the requester is the creator/owner
+    const owner = await selectOne<{ one: number }>(
+      this.deps.db,
+      `SELECT 1 AS one FROM Student WHERE id = ? AND createdByTeacher = ? LIMIT 1`,
+      [id, teacherId]
+    );
+    if (!owner) {
+      throw new Error("FORBIDDEN");
+    }
+
     // Only allow delete if the student has no membership history and no attendance
     const hasMembershipEver = await selectOne<{ one: number }>(
       this.deps.db,
@@ -198,11 +259,14 @@ export class StudentRepository {
    *
    * Caller should decide exact duplicate policy; this method exposes a simple presence check.
    */
-  async existsDuplicate(params: { name: string; phone?: string | null; email?: string | null }): Promise<boolean> {
-    const where: string[] = ["name = ?"]; const binds: unknown[] = [params.name];
-    if (params.phone) { where.push(`phone = ?`); binds.push(params.phone); }
-    if (params.email) { where.push(`email = ?`); binds.push(params.email); }
-    const sql = `SELECT 1 AS one FROM Student WHERE ${where.join(" OR ")} LIMIT 1`;
+  async existsDuplicate(params: { teacherId: string; name: string; phone?: string | null; email?: string | null }): Promise<boolean> {
+    const conds: string[] = [];
+    const binds: unknown[] = [params.teacherId];
+    conds.push("name = ?"); binds.push(params.name);
+    if (params.phone) { conds.push(`phone = ?`); binds.push(params.phone); }
+    if (params.email) { conds.push(`email = ?`); binds.push(params.email); }
+    const where = conds.length ? ` AND (${conds.join(" OR ")})` : "";
+    const sql = `SELECT 1 AS one FROM Student WHERE createdByTeacher = ?${where} LIMIT 1`;
     const row = await selectOne<{ one: number }>(this.deps.db, sql, binds);
     return row != null;
   }

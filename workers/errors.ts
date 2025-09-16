@@ -19,6 +19,9 @@ export type ErrorCode =
   | "CLASS_HAS_DEPENDENCIES"
   | "CLASS_HAS_STUDENTS"
   | "CLASS_HAS_SESSIONS"
+  // Business rules for Student & Membership
+  | "DUPLICATE_STUDENT"
+  | "ALREADY_MEMBER"
 // Unknown
   | "UNKNOWN";
 
