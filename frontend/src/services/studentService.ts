@@ -9,6 +9,7 @@ export type StudentDTO = {
   email: string | null;
   note: string | null;
   createdAt: string; // ISO string
+  currentClasses?: string | null;
 };
 
 export type ParentDTO = {

@@ -300,20 +300,20 @@ Errors (common)
 - Status: 501 Not Implemented (policy uses PUT to set `leftAt`).
 
 ### 3.1 API Client
-- [ ] Tạo `frontend/src/services/studentService.ts`
-  - [ ] `listStudents(params)` - Chú ý đối chiếu với backend để đưa params phù hợp.
-  - [ ] `createStudent(payload)`
-  - [ ] `getStudent(id)`
-  - [ ] `updateStudent(id, patch)`
-  - [ ] `deleteStudent(id)`
-- [ ] Cập nhật/định nghĩa `frontend/src/services/classStudentService.ts`
-  - [ ] `addStudentToClass(classId, payload)`
-  - [ ] `leaveStudentFromClass(classId, classStudentId, leftAt)` - leftAt lấy current theo giờ UTC để lưu vào backend cho chuẩn hóa.
+- [X] Tạo `frontend/src/services/studentService.ts`
+  - [X] `listStudents(params)` - Chú ý đối chiếu với backend để đưa params phù hợp.
+  - [X] `createStudent(payload)`
+  - [X] `getStudent(id)`
+  - [X] `updateStudent(id, patch)`
+  - [X] `deleteStudent(id)`
+- [X] Cập nhật/định nghĩa `frontend/src/services/classStudentService.ts`
+  - [X] `addStudentToClass(classId, payload)`
+  - [X] `leaveStudentFromClass(classId, classStudentId, leftAt)` - leftAt lấy current theo giờ UTC để lưu vào backend cho chuẩn hóa.
 
 ### 3.2 Pages & Components
 - [ ] Sidebar: thêm mục "Học sinh" → route `/students`
 - [ ] Trang danh sách `/students`
-  - [ ] Bảng: Name, Phone, ParentName, Classes, Actions
+  - [ ] Bảng: Name, Phone, Classes, Actions
   - [ ] Bộ lọc: `classId` (tuỳ chọn).
   - [ ] Actions: Tạo mới, Xem/Sửa, Xoá
 - [ ] Modal/Form `StudentForm`

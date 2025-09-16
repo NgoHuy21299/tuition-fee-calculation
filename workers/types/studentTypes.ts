@@ -12,6 +12,8 @@ export type StudentDTO = {
   // Display-only parent info (không trả parentId ra ngoài API theo plan)
   parentName?: string | null;
   parentPhone?: string | null;
+  // Concatenated current classes (leftAt IS NULL), comma-separated
+  currentClasses?: string | null;
 };
 
 export function mapStudentRowToDTO(row: StudentRow): StudentDTO {
@@ -24,6 +26,7 @@ export function mapStudentRowToDTO(row: StudentRow): StudentDTO {
     createdAt: row.createdAt,
     parentName: row.parentName ?? null,
     parentPhone: row.parentPhone ?? null,
+    currentClasses: row.currentClasses ?? null,
   };
 }
 

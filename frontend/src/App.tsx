@@ -11,6 +11,8 @@ import DashboardTuition from "./routes/dashboard/Tuition";
 import DashboardSettings from "./routes/dashboard/Settings";
 import ClassNew from "./routes/dashboard/ClassNew";
 import ClassDetail from "./routes/dashboard/ClassDetail";
+import Students from "./routes/dashboard/Students";
+import StudentNew from "./routes/dashboard/StudentNew";
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const token = getToken();
@@ -39,6 +41,8 @@ export default function App() {
             <Route path="classes" element={<DashboardClasses />} />
             <Route path="classes/new" element={<ClassNew />} />
             <Route path="classes/:id" element={<ClassDetail />} />
+            <Route path="students" element={<Students />} />
+            <Route path="students/new" element={<StudentNew />} />
             <Route path="tuition" element={<DashboardTuition />} />
             <Route path="settings" element={<DashboardSettings />} />
           </Route>

@@ -26,6 +26,12 @@ export default function DashboardSidebar() {
           Lớp học
         </NavLink>
         <NavLink
+          to="/dashboard/students"
+          className={({ isActive }) => itemClasses(isActive)}
+        >
+          Học sinh
+        </NavLink>
+        <NavLink
           to="/dashboard/tuition"
           className={({ isActive }) => itemClasses(isActive)}
         >

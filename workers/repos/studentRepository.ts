@@ -11,6 +11,7 @@ export type StudentRow = {
   createdAt: string;
   parentName?: string | null;
   parentPhone?: string | null;
+  currentClasses?: string | null;
 };
 
 export type ListStudentsParams = {
@@ -68,14 +69,26 @@ export class StudentRepository {
     if (!params.classId) {
       // Simple path: list by owner
       const sql = `
-        SELECT s.id, s.name, s.phone AS phone, s.email AS email, s.note, s.createdAt
+        SELECT s.id,
+               s.name,
+               s.phone AS phone,
+               s.email AS email,
+               s.note,
+               s.createdAt,
+               (
+                 SELECT GROUP_CONCAT(c.name, ', ')
+                 FROM ClassStudent cs
+                 JOIN Class c ON c.id = cs.classId
+                 WHERE cs.studentId = s.id
+                   AND cs.leftAt IS NULL
+                   AND c.teacherId = s.createdByTeacher
+               ) AS currentClasses
         FROM Student s
         WHERE s.createdByTeacher = ?
         ORDER BY s.createdAt DESC
       `;
       return await selectAll<StudentRow>(this.deps.db, sql, [params.teacherId]);
     } else {
-      // With class filter: still avoid teacher join; only filter by owner and classId
       const sql = `
         SELECT DISTINCT s.id, s.name, s.phone AS phone, s.email AS email, s.note, s.createdAt
         FROM Student s
