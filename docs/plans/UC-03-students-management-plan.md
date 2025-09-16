@@ -1,13 +1,13 @@
 # UC-03: Quản lý học sinh và gán vào lớp – Implementation Plan
 
 ## 1. Database & Model
-- [ ] Xác nhận domain tables đã có trong `0005_domain_schema.sql`: `Parent`, `Student(studentPhone, studentEmail)`, `Class`, `ClassStudent`, `Session`, `Attendance`.
-- [ ] (Planned) Tạo migration chuẩn hóa contact fields của `Student` (không chạy ngay):
+- [X] Xác nhận domain tables đã có trong `0005_domain_schema.sql`: `Parent`, `Student(studentPhone, studentEmail)`, `Class`, `ClassStudent`, `Session`, `Attendance`.
+- [X] (Planned) Tạo migration chuẩn hóa contact fields của `Student` (không chạy ngay):
   - File đề xuất: `0007_student_contact_rename.sql`
   - Đổi tên cột: `studentPhone -> phone`, `studentEmail -> email`
   - Giữ nguyên index `idx_student_parentId(parentId)`
-- [ ] Cập nhật `docs/database-docs.md` nếu cần, đảm bảo phần Student phản ánh đúng cột sử dụng bởi API.
-- [ ] Không thay đổi cấu trúc `ClassStudent` (giữ `unitPriceOverride`, `joinedAt`, `leftAt`, UNIQUE(classId, studentId)).
+- [X] Cập nhật `docs/database-docs.md` nếu cần, đảm bảo phần Student phản ánh đúng cột sử dụng bởi API.
+- [X] Không thay đổi cấu trúc `ClassStudent` (giữ `unitPriceOverride`, `joinedAt`, `leftAt`, UNIQUE(classId, studentId)).
 
 Ghi chú:
 - Luồng giá: `Attendance.feeOverride` > `ClassStudent.unitPriceOverride` > `Session.feePerSession`.

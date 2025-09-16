@@ -61,6 +61,8 @@ Notes: `User` is WITHOUT ROWID as of migration `0004_user_without_rowid.sql`. Un
 Indexes:
 - idx_student_parentId(parentId)
 
+Alignment note: In migration `0005_domain_schema.sql`, the Student contact columns were named `studentPhone` and `studentEmail`. A planned migration `0007_student_contact_rename.sql` will rename them to `phone` and `email` to standardize with API and docs. Until migration `0007` is applied, code should be aware of the actual column names present in the database.
+
 ### Class
 - id TEXT PRIMARY KEY
 - teacherId TEXT NOT NULL REFERENCES User(id) ON DELETE CASCADE
@@ -127,7 +129,8 @@ Indexes:
 
 Price resolution order for a given Attendance:
 1) Attendance.feeOverride if not NULL.
-2) If Session.Fields (alignment note): In migration `0005_domain_schema.sql` the columns were named `studentPhone` and `studentEmail`. A follow-up migration will rename them to `phone` and `email` for consistency with API specs and docs here.
+2) If Session.type = 'class' and student is a member, use ClassStudent.unitPriceOverride if not NULL.
+3) Otherwise use Session.feePerSession.
 
 ### EmailJob
 - id TEXT PRIMARY KEY
@@ -183,5 +186,4 @@ Indexes:
 Indexes:
 - idx_assessment_studentId(studentId)
 - idx_assessment_date(assessmentDate)
-defaultFeePerSession` used to prefill new class sessions.
-- All foreign keys are enabled; cascading/SET NULL configured to preserve data integrity.
+
