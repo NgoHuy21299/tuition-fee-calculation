@@ -52,8 +52,8 @@ Notes: `User` is WITHOUT ROWID as of migration `0004_user_without_rowid.sql`. Un
 ### Student
 - id TEXT PRIMARY KEY
 - name TEXT NOT NULL
-- studentPhone TEXT
-- studentEmail TEXT
+- phone TEXT
+- email TEXT
 - parentId TEXT REFERENCES Parent(id) ON DELETE SET NULL
 - note TEXT
 - createdAt TEXT NOT NULL DEFAULT now
@@ -127,8 +127,7 @@ Indexes:
 
 Price resolution order for a given Attendance:
 1) Attendance.feeOverride if not NULL.
-2) If Session.type = 'class' and student is a member, use ClassStudent.unitPriceOverride if not NULL.
-3) Otherwise use Session.feePerSession.
+2) If Session.Fields (alignment note): In migration `0005_domain_schema.sql` the columns were named `studentPhone` and `studentEmail`. A follow-up migration will rename them to `phone` and `email` for consistency with API specs and docs here.
 
 ### EmailJob
 - id TEXT PRIMARY KEY
@@ -147,4 +146,42 @@ Indexes:
 - Existing migrations (0001-0004) establish `User` and its normalized email.
 - Migration `0005_domain_schema.sql` introduces domain tables and the ad-hoc session model.
 - Migration `0006_add_class_default_fee.sql` adds `Class.defaultFeePerSession` used to prefill new class sessions.
+- Migration `0007_student_contact_rename.sql` renames `Student.studentPhone` → `phone` and `Student.studentEmail` → `email` to standardize contact field names.
+- All foreign keys are enabled; cascading/SET NULL configured to preserve data integrity.
+
+## Planned (UC-03.1)
+
+### PersonalData (planned)
+- id TEXT PRIMARY KEY
+- studentId TEXT NULL UNIQUE REFERENCES Student(id) ON DELETE CASCADE
+- parentId TEXT NULL UNIQUE REFERENCES Parent(id) ON DELETE CASCADE
+- address TEXT
+- birthYear INTEGER
+- hometown TEXT
+- note TEXT
+- createdAt TEXT NOT NULL DEFAULT now
+
+Constraints:
+- CHECK that exactly one of `studentId` or `parentId` is NOT NULL.
+
+Indexes:
+- idx_personaldata_studentId(studentId)
+- idx_personaldata_parentId(parentId)
+
+### StudentAssessment (planned)
+- id TEXT PRIMARY KEY
+- studentId TEXT NOT NULL REFERENCES Student(id) ON DELETE CASCADE
+- assessmentDate TEXT NOT NULL
+- subject TEXT
+- term TEXT
+- type TEXT
+- score REAL
+- maxScore REAL
+- note TEXT
+- createdAt TEXT NOT NULL DEFAULT now
+
+Indexes:
+- idx_assessment_studentId(studentId)
+- idx_assessment_date(assessmentDate)
+defaultFeePerSession` used to prefill new class sessions.
 - All foreign keys are enabled; cascading/SET NULL configured to preserve data integrity.

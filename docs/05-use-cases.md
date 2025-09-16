@@ -94,14 +94,55 @@ Ghi chú định dạng UC:
 ## UC-03: Quản lý học sinh và gán vào lớp
 - Mục tiêu: Quản lý học sinh và liên kết với lớp.
 - Actor: Giáo viên.
-- Tiền đề: Bảng `Student`, `ClassStudent`.
+- Tiền đề: Các bảng `Parent`, `Student`, `ClassStudent` đã có (tạo/kiểm tra qua migrations).
 - Luồng chính:
-  1) Tạo học sinh: name, parentEmail, parentPhone, note.
-  2) Thêm học sinh vào lớp: `ClassStudent` (có thể unitPriceOverride?).
-  3) Gỡ học sinh khỏi lớp (giữ lịch sử nếu cần: `leftAt`).
-- Luồng thay thế: Nhập nhanh danh sách; kiểm tra trùng.
-- Endpoint: `GET/POST /api/students`, `POST/DELETE /api/classes/:id/students`.
-- AC: Học sinh hiển thị trong tab lớp; dữ liệu liên kết chính xác.
+  1) Tạo học sinh: name, email (optional), phone (optional), parentId (optional), note.
+  2) Quản lý tab/lộ trình "Học sinh": trang riêng trong sidebar trái, cho phép CRUD học sinh, tìm kiếm/lọc theo lớp/parent.
+  3) Thêm học sinh vào lớp: ghi vào `ClassStudent` (có thể `unitPriceOverride`).
+  4) Gỡ học sinh khỏi lớp: cập nhật `leftAt` để giữ lịch sử.
+- Luồng thay thế:
+  - Nhập nhanh danh sách (CSV) → preview → phát hiện trùng theo cặp name+phone hoặc email.
+  - Tự động gợi ý tạo `Parent` nếu cung cấp parentEmail/parentPhone.
+- Dữ liệu/Migrations:
+  - Xác nhận domain tables đã được tạo tại `0005_domain_schema.sql` (`Parent`, `Student`, `Class`, `ClassStudent`, ...).
+  - Tạo migration mới: `0007_student_contact_rename.sql` để đồng bộ tên cột `Student.studentPhone` → `phone`, `Student.studentEmail` → `email` cho thống nhất với tài liệu và API.
+  - (Không thay đổi dữ liệu) Giữ nguyên indexes: `idx_student_parentId`, `idx_classStudent_classId`, `idx_classStudent_studentId`.
+- Endpoint:
+  - `GET /api/students` (query: q, classId, parentId, page, pageSize)
+  - `POST /api/students` (body: {name, email?, phone?, parentId?, note?})
+  - `PUT /api/students/:id`
+  - `DELETE /api/students/:id` (soft/hard delete: giai đoạn đầu hard delete, cân nhắc soft sau)
+  - `POST /api/classes/:id/students` (body: {studentId, unitPriceOverride?})
+  - `DELETE /api/classes/:id/students/:classStudentId` hoặc `PUT` đặt `leftAt`
+  - (Tùy chọn) `GET /api/parents`, `POST /api/parents` để tạo nhanh Parent.
+- UI/UX:
+  - Sidebar thêm mục "Học sinh" → route `/students`.
+  - Bảng danh sách: cột Name, Phone, Email, Parent, Classes, CreatedAt, Actions.
+  - Modal tạo/sửa học sinh; dialog xác nhận khi xóa.
+  - Từ trang lớp (`/classes/:classId`), tab Học sinh hiển thị thành viên lớp và cho phép Add/Remove.
+- AC:
+  - Học sinh được tạo/sửa/xóa từ trang "Học sinh"; có thể liên kết/gỡ khỏi lớp từ trang Lớp.
+  - Dữ liệu `ClassStudent` liên kết chính xác; `leftAt` ghi nhận khi gỡ.
+  - Migration 0007 chạy thành công, các API hoạt động với field `phone`, `email` của `Student`.
+
+## UC-03.1: Bổ sung hồ sơ cá nhân và bảng điểm (Deferred)
+- Mục tiêu: Lưu trữ thông tin cá nhân chi tiết và điểm/đánh giá theo kỳ/đợt kiểm tra cho học sinh.
+- Actor: Giáo viên (quản lý); Hệ thống không dùng ngay cho các luồng chính.
+- Tiền đề: UC-03 hoàn tất; không ảnh hưởng đến UI/luồng chính ở giai đoạn này.
+- Phạm vi (định nghĩa, chưa triển khai ngay):
+  1) Bảng `PersonalData` (đề xuất) liên kết đến `Student` và `Parent` để chứa thông tin: địa chỉ, năm sinh, quê quán, ghi chú.
+     - Thiết kế gợi ý: `PersonalData(id, studentId NULL UNIQUE, parentId NULL UNIQUE, address, birthYear, hometown, note, createdAt)`
+     - Ràng buộc: CHECK chỉ một trong hai `studentId` hoặc `parentId` khác NULL.
+  2) Bảng điểm học sinh (đề xuất tên: `StudentAssessment`):
+     - `StudentAssessment(id, studentId, assessmentDate, subject, term, type, score, maxScore, note, createdAt)`
+     - Chỉ số dùng cho báo cáo tương lai; không ảnh hưởng tính học phí/attendance.
+- Migrations (planned):
+  - `0008_personal_data.sql`: tạo bảng `PersonalData` như trên, indexes theo `studentId`, `parentId`.
+  - `0009_student_assessment.sql`: tạo bảng `StudentAssessment` với FK `studentId` → `Student(id)` và indexes theo `studentId`, `assessmentDate`.
+- Endpoint (planned):
+  - `GET/POST/PUT/DELETE /api/students/:id/personal-data`
+  - `GET/POST/PUT/DELETE /api/students/:id/assessments`
+- AC (planned): Tài liệu DB cập nhật, chưa cần UI; không phá vỡ các luồng UC-03/UC-04/UC-06.
 
 ## UC-04: Tạo lịch/buổi học (Sessions)
 - Mục tiêu: Tạo các buổi học cho lớp, có thể theo lặp.
