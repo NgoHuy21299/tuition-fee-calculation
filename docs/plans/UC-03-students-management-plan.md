@@ -92,11 +92,213 @@ Lưu ý SQL/D1:
   - [X] Business rules: chỉ owner class được thao tác; không thêm học sinh đã rời nếu chính sách không cho phép.
 
 ### 2.5 Integrate with API
-- [ ] Integrate services and validations to correct endpoint API
-  - [ ] Kiểm tra các endpoint trong `workers/routes/studentRoute.ts`, sử dụng `studentServices.ts` và validate sử dụng `studentSchemas.ts`
-  - [ ] Kiểm tra các endpoint trong `workers/routes/classStudentRoute.ts`, sử dụng `classStudentServices.ts` và validate sử dụng `classStudentSchemas.ts`
+- [X] Integrate services and validations to correct endpoint API
+  - [X] Kiểm tra các endpoint trong `workers/routes/studentRoute.ts`, sử dụng `studentServices.ts` và validate sử dụng `studentSchemas.ts`
+  - [X] Kiểm tra các endpoint trong `workers/routes/classStudentRoute.ts`, sử dụng `classStudentServices.ts` và validate sử dụng `classStudentSchemas.ts`
 
 ## 3. Frontend (React)
+
+### 3.0 API Info (Backend Reference)
+
+Below is the API spec for Students and Class-Student membership, aligned with current backend implementation. Use these to generate TS types and API clients.
+
+#### Students
+
+1) GET /api/students
+- Method: GET
+- Query params:
+  - classId?: string – optional, filter students that are/used-to-be in a given class
+- Auth: required (teacher)
+- Response 200:
+  ```json
+  {
+    "items": [
+      {
+        "id": "string",
+        "name": "string",
+        "phone": "string|null",
+        "email": "string|null",
+        "note": "string|null",
+        "createdAt": "ISO string"
+      }
+    ],
+    "total": 1
+  }
+  ```
+- Notes:
+  - The list uses ownership scope `Student.createdByTeacher = teacherId`.
+  - Parent info is not included in list for performance reasons; fetch detail via GET /api/students/:id when needed.
+
+2) POST /api/students
+- Method: POST
+- Body (CreateStudentInput):
+  ```json
+  {
+    "name": "string",
+    "email": "string|null",
+    "phone": "string|null",
+    "note": "string|null",
+    "parentInline": {
+      "relationship": "father|mother|grandfather|grandmother",
+      "name": "string|null",   // optional; if empty, backend auto-generates "<prefix> <studentName>"
+      "phone": "string|null",
+      "email": "string|null",
+      "note": "string|null"
+    }
+  }
+  ```
+- Auth: required (teacher)
+- Response 201 (StudentDTO):
+  ```json
+  {
+    "id": "string",
+    "name": "string",
+    "phone": "string|null",
+    "email": "string|null",
+    "note": "string|null",
+    "createdAt": "ISO string"
+  }
+  ```
+- Notes:
+  - Duplicate detection on name/phone/email within the current teacher’s scope. Error `DUPLICATE_STUDENT` (409) when duplicate.
+  - If `parentInline` provided, backend creates Parent first, then Student referencing it (parentId is internal and not returned).
+
+3) GET /api/students/:id
+- Method: GET
+- Params:
+  - id: string
+- Auth: required (teacher)
+- Response 200 (StudentDetailDTO):
+  ```json
+  {
+    "student": {
+      "id": "string",
+      "name": "string",
+      "phone": "string|null",
+      "email": "string|null",
+      "note": "string|null",
+      "createdAt": "ISO string"
+    },
+    "parents": [
+      {
+        "id": "string",
+        "name": "string|null",
+        "phone": "string|null",
+        "email": "string|null",
+        "note": "string|null"
+      }
+    ],
+    "classes": [
+      {
+        "id": "string",
+        "name": "string",
+        "subject": "string|null",
+        "description": "string|null",
+        "defaultFeePerSession": 0,
+        "isActive": true,
+        "createdAt": "ISO string",
+        "classStudentId": "string",
+        "joinedAt": "ISO string",
+        "leftAt": "ISO string|null",
+        "unitPriceOverride": 0
+      }
+    ]
+  }
+  ```
+- Notes:
+  - Ownership enforced via `Student.createdByTeacher`.
+  - `parents` is an array to support potential future multi-parent design (currently one parent in schema; array length 0 or 1).
+
+4) PUT /api/students/:id
+- Method: PUT
+- Params:
+  - id: string
+- Body (UpdateStudentInput):
+  ```json
+  {
+    "name": "string?",
+    "email": "string|null?",
+    "phone": "string|null?",
+    "note": "string|null?",
+    "parentInline": {
+      "relationship": "father|mother|grandfather|grandmother",
+      "name": "string|null",
+      "phone": "string|null",
+      "email": "string|null",
+      "note": "string|null"
+    }
+  }
+  ```
+- Auth: required (teacher)
+- Response 200 (StudentDTO)
+- Notes:
+  - Update is ignored for fields not provided.
+  - Duplicate detection applies if `name`/`phone`/`email` would conflict (409 `DUPLICATE_STUDENT`).
+
+5) DELETE /api/students/:id
+- Method: DELETE
+- Params:
+  - id: string
+- Auth: required (teacher)
+- Response: 204 No Content
+- Notes:
+  - Only the creator (matching `createdByTeacher`) can delete.
+  - Deletion is blocked if there is any membership history in `ClassStudent` or any `Attendance` rows.
+
+Errors (common)
+- 401 `AUTH_UNAUTHORIZED` when missing/invalid auth.
+- 400 `VALIDATION_ERROR` with `details` array for schema failures.
+- 404 `RESOURCE_NOT_FOUND` when resource is missing or not owned by the teacher.
+- 409 `DUPLICATE_STUDENT` for duplicates; 409 `ALREADY_MEMBER` for re-adding an existing membership.
+
+#### Class-Student Membership
+
+1) POST /api/classes/:id/students
+- Method: POST
+- Params:
+  - id: classId (string)
+- Body (AddClassStudentInput):
+  ```json
+  {
+    "studentId": "string",
+    "unitPriceOverride": 0
+  }
+  ```
+- Auth: required (teacher, must be owner of the class)
+- Response 201 (ClassStudentDTO):
+  ```json
+  {
+    "id": "string",
+    "classId": "string",
+    "studentId": "string",
+    "unitPriceOverride": 0,
+    "joinedAt": "ISO string",
+    "leftAt": "ISO string|null"
+  }
+  ```
+- Notes:
+  - Enforces uniqueness per (classId, studentId). Returns 409 `ALREADY_MEMBER` if already active.
+
+2) PUT /api/classes/:id/students/:classStudentId
+- Method: PUT
+- Params:
+  - id: classId (string)
+  - classStudentId: membership id (string)
+- Body (LeaveClassStudentInput):
+  ```json
+  {
+    "leftAt": "ISO string" // optional on FE; BE may set default to now()
+  }
+  ```
+- Auth: required (teacher, must be owner of the class)
+- Response: 204 No Content
+- Notes:
+  - Preferred over DELETE to preserve history.
+
+3) DELETE /api/classes/:id/students/:classStudentId
+- Method: DELETE
+- Status: 501 Not Implemented (policy uses PUT to set `leftAt`).
+
 ### 3.1 API Client
 - [ ] Tạo `frontend/src/services/studentService.ts`
   - [ ] `listStudents(params)` - Chú ý đối chiếu với backend để đưa params phù hợp.

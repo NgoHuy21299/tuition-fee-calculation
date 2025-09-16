@@ -1,6 +1,10 @@
 import { Hono } from "hono";
 import type { JwtPayload } from "../services/jwtService";
 import { t } from "../i18n/messages";
+import { toAppError } from "../errors";
+import { StudentService } from "../services/studentService";
+import { parseBodyWithSchema } from "../validation/common/request";
+import { CreateStudentSchema, UpdateStudentSchema } from "../validation/student/studentSchemas";
 
 /**
  * Students API (Base: /api/students)
@@ -19,13 +23,22 @@ export function createStudentRouter() {
         { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
         401 as 401
       );
-    return c.json(
-      { error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" },
-      501 as 501
-    );
+    try {
+      const url = new URL(c.req.url);
+      const classId = url.searchParams.get("classId") || undefined;
+      const svc = new StudentService({ db: c.env.DB });
+      const { items, total } = await svc.listByTeacher({
+        teacherId: String(user.sub),
+        classId: classId || undefined,
+      });
+      return c.json({ items, total }, 200 as 200);
+    } catch (err) {
+      const e = toAppError(err, { code: "UNKNOWN" });
+      return c.json({ error: t(e.code, e.message), code: e.code }, e.status as any);
+    }
   });
 
-  // POST /api/students  (supports bulk and parentInline)
+  // POST /api/students  (supports inline parent)
   router.post("/", async (c) => {
     const user = c.get("user");
     if (!user)
@@ -33,13 +46,25 @@ export function createStudentRouter() {
         { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
         401 as 401
       );
-    return c.json(
-      { error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" },
-      501 as 501
-    );
+    try {
+      const parsed = await parseBodyWithSchema(c, CreateStudentSchema);
+      if (!parsed.ok) {
+        return c.json(
+          { error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors },
+          400 as 400
+        );
+      }
+      const svc = new StudentService({ db: c.env.DB });
+      const id = crypto.randomUUID();
+      const dto = await svc.create(String(user.sub), { id, ...parsed.value });
+      return c.json(dto, 201 as 201);
+    } catch (err) {
+      const e = toAppError(err, { code: "UNKNOWN" });
+      return c.json({ error: t(e.code, e.message), code: e.code }, e.status as any);
+    }
   });
 
-  // GET /api/students/:id
+  // GET /api/students/:id (detail)
   router.get("/:id", async (c) => {
     const user = c.get("user");
     if (!user)
@@ -47,10 +72,15 @@ export function createStudentRouter() {
         { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
         401 as 401
       );
-    return c.json(
-      { error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" },
-      501 as 501
-    );
+    try {
+      const id = c.req.param("id");
+      const svc = new StudentService({ db: c.env.DB });
+      const dto = await svc.getDetailById(String(user.sub), id);
+      return c.json(dto, 200 as 200);
+    } catch (err) {
+      const e = toAppError(err, { code: "UNKNOWN" });
+      return c.json({ error: t(e.code, e.message), code: e.code }, e.status as any);
+    }
   });
 
   // PUT /api/students/:id
@@ -61,10 +91,22 @@ export function createStudentRouter() {
         { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
         401 as 401
       );
-    return c.json(
-      { error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" },
-      501 as 501
-    );
+    try {
+      const parsed = await parseBodyWithSchema(c, UpdateStudentSchema);
+      if (!parsed.ok) {
+        return c.json(
+          { error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors },
+          400 as 400
+        );
+      }
+      const id = c.req.param("id");
+      const svc = new StudentService({ db: c.env.DB });
+      const dto = await svc.update(String(user.sub), id, parsed.value);
+      return c.json(dto, 200 as 200);
+    } catch (err) {
+      const e = toAppError(err, { code: "UNKNOWN" });
+      return c.json({ error: t(e.code, e.message), code: e.code }, e.status as any);
+    }
   });
 
   // DELETE /api/students/:id
@@ -75,10 +117,15 @@ export function createStudentRouter() {
         { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
         401 as 401
       );
-    return c.json(
-      { error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" },
-      501 as 501
-    );
+    try {
+      const id = c.req.param("id");
+      const svc = new StudentService({ db: c.env.DB });
+      await svc.delete(String(user.sub), id);
+      return new Response(null, { status: 204 });
+    } catch (err) {
+      const e = toAppError(err, { code: "UNKNOWN" });
+      return c.json({ error: t(e.code, e.message), code: e.code }, e.status as any);
+    }
   });
 
   return router;
