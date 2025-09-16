@@ -4,7 +4,8 @@ import { apiAuthGuard } from "./middleware/authMiddleware";
 import { createAuthRouter } from "./routes/authRoute";
 import { createHealthRouter } from "./routes/healthRoute";
 import { createClassRouter } from "./routes/classRoute";
-// SSR handler removed: this Worker now serves API-only via Hono
+import { createStudentRouter } from "./routes/studentRoute";
+import { createClassStudentRouter } from "./routes/classStudentRoute";
 
 const app = new Hono<{ Bindings: Env; Variables: { user: JwtPayload } }>();
 
@@ -48,6 +49,14 @@ app.route("/api", createHealthRouter());
 
 // --- Classes routes ---
 app.route("/api/classes", createClassRouter());
+
+// --- Students routes ---
+app.route("/api/students", createStudentRouter());
+
+// --- Class membership routes (students in classes) ---
+// Note: Mounted at the same base "/api/classes" to expose endpoints like
+// POST /api/classes/:id/students and DELETE/PUT for membership management.
+app.route("/api/classes", createClassStudentRouter());
 
 // --- Silence Chrome DevTools probe route ---
 app.get("/.well-known/appspecific/com.chrome.devtools.json", (c) => {
