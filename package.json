@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "hono": "^4.9.6",
+    "uuidv7": "^1.0.2",
     "valibot": "^0.34.0"
   },
   "devDependencies": {

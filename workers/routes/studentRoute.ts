@@ -5,6 +5,7 @@ import { toAppError } from "../errors";
 import { StudentService } from "../services/studentService";
 import { parseBodyWithSchema } from "../validation/common/request";
 import { CreateStudentSchema, UpdateStudentSchema } from "../validation/student/studentSchemas";
+import { uuidv7 } from "uuidv7";
 
 /**
  * Students API (Base: /api/students)
@@ -55,7 +56,7 @@ export function createStudentRouter() {
         );
       }
       const svc = new StudentService({ db: c.env.DB });
-      const id = crypto.randomUUID();
+      const id = uuidv7();
       const dto = await svc.create(String(user.sub), { id, ...parsed.value });
       return c.json(dto, 201 as 201);
     } catch (err) {

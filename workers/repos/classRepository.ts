@@ -46,10 +46,10 @@ export class ClassRepository {
       binds.push(params.isActive ? ACTIVE_FLAG.True : ACTIVE_FLAG.False);
     }
 
-    let orderBy = "createdAt DESC";
+    let orderBy = "id DESC";
     switch (params.sort) {
       case CLASS_SORT.CreatedAtAsc:
-        orderBy = "createdAt ASC";
+        orderBy = "id ASC";
         break;
       case CLASS_SORT.NameAsc:
         orderBy = "name ASC";
@@ -58,14 +58,14 @@ export class ClassRepository {
         orderBy = "name DESC";
         break;
       default:
-        orderBy = "createdAt DESC";
+        orderBy = "c.id DESC";
     }
 
     const whereSql = where.length ? `WHERE ${where.join(" AND ")}` : "";
     const limitSql = typeof params.limit === "number" && Number.isFinite(params.limit) && params.limit > 0 ? `\n      LIMIT ${Math.floor(params.limit)}\n    ` : "";
     const sql = `
       SELECT id, teacherId, name, subject, description, defaultFeePerSession, isActive, createdAt
-      FROM Class
+      FROM Class c
       ${whereSql}
       ORDER BY ${orderBy}${limitSql}
     `;

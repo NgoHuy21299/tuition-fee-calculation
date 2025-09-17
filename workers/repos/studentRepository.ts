@@ -90,7 +90,7 @@ export class StudentRepository {
                ) AS currentClasses
         FROM Student s
         WHERE s.createdByTeacher = ?
-        ORDER BY s.createdAt DESC
+        ORDER BY s.id DESC
       `;
       return await selectAll<StudentRow>(this.deps.db, sql, [params.teacherId]);
     } else {
@@ -99,7 +99,7 @@ export class StudentRepository {
         FROM Student s
         JOIN ClassStudent cs ON cs.studentId = s.id
         WHERE s.createdByTeacher = ? AND cs.classId = ?
-        ORDER BY s.createdAt DESC
+        ORDER BY s.id DESC
       `;
       return await selectAll<StudentRow>(this.deps.db, sql, [params.teacherId, params.classId]);
     }

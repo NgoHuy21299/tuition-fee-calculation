@@ -6,6 +6,7 @@ import type {
   CreateStudentInput,
   UpdateStudentInput,
 } from "workers/validation/student/studentSchemas";
+import { uuidv7 } from "uuidv7";
 
 export type StudentServiceDeps = { db: D1Database };
 
@@ -72,7 +73,7 @@ export class StudentService {
           parentName = `${prefix} ${input.name}`;
         }
         return {
-          id: crypto.randomUUID(),
+          id: uuidv7(),
           studentId: input.id, // ID của student
           name: parentName,
           phone: parent.phone ?? null,

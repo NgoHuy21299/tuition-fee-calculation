@@ -5,6 +5,7 @@ import { toAppError } from "../errors";
 import { ClassStudentService } from "../services/classStudentService";
 import { parseBodyWithSchema } from "../validation/common/request";
 import { AddClassStudentSchema, LeaveClassStudentSchema } from "../validation/classStudent/classStudentSchemas";
+import { uuidv7 } from "uuidv7";
 
 /**
  * Class-Student membership API (Mounted under /api/classes)
@@ -36,7 +37,7 @@ export function createClassStudentRouter() {
       }
       const classId = c.req.param("id");
       const svc = new ClassStudentService({ db: c.env.DB });
-      const id = crypto.randomUUID();
+      const id = uuidv7();
       const dto = await svc.add(String(user.sub), classId, { id, ...parsed.value });
       return c.json(dto, 201 as 201);
     } catch (err) {

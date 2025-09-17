@@ -8,6 +8,7 @@ import {
   UpdateClassSchema,
 } from "../validation/class/classSchemas";
 import { parseBodyWithSchema } from "../validation/common/request";
+import { uuidv7 } from "uuidv7";
 
 /**
  * Classes API (Base: /api/classes)
@@ -76,7 +77,7 @@ export function createClassRouter() {
         );
       }
       const svc = new ClassService({ db: c.env.DB });
-      const id = crypto.randomUUID();
+      const id = uuidv7();
       const dto = await svc.create(String(user.sub), { id, ...parsed.value });
       return c.json(dto, 201 as 201);
     } catch (err) {
