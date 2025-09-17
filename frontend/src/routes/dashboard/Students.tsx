@@ -72,11 +72,18 @@ export default function Students() {
   };
 
   const openCreate = () => {
-    navigate("/dashboard/students/new");
+    const classOptions = classes
+      .filter((c) => c.isActive)
+      .map((c) => ({ label: c.name, value: c.id }));
+    navigate("/dashboard/students/new", { state: { classOptions } });
   };
   const openEdit = (id: string) => {
-    // For now, reuse modal edit later or navigate to a detail page in future
-    navigate(`/dashboard/students?edit=${encodeURIComponent(id)}`);
+    const classOptions = classes
+      .filter((c) => c.isActive)
+      .map((c) => ({ label: c.name, value: c.id }));
+    navigate(`/dashboard/students/${encodeURIComponent(id)}/edit`, {
+      state: { classOptions },
+    });
   };
 
   const refresh = async () => {
@@ -193,7 +200,7 @@ export default function Students() {
                               variant="outline"
                               onClick={() => openEdit(s.id)}
                             >
-                              Xem/Sửa
+                              Sửa
                             </Button>
                             <Button
                               variant="outline"

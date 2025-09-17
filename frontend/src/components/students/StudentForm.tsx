@@ -77,13 +77,13 @@ export default function StudentForm({
   // Auto-generate parent name on relationship change if parentName not manually edited
   useEffect(() => {
     if (showParent && !nameEditedManuallyRef.current && name.trim()) {
-      setParents(prev => {
+      setParents((prev) => {
         if (prev.length > 0) {
           // Update the first parent's name suggestion
           const updated = [...prev];
           updated[0] = {
             ...updated[0],
-            name: `${REL_LABEL[updated[0].relationship]} ${name.trim()}`
+            name: `${REL_LABEL[updated[0].relationship]} ${name.trim()}`,
           };
           return updated;
         }
@@ -110,13 +110,13 @@ export default function StudentForm({
           // parents
           if (detail.parents && detail.parents.length > 0) {
             setShowParent(true);
-            const parentInfos: ParentInfo[] = detail.parents.map(parent => ({
+            const parentInfos: ParentInfo[] = detail.parents.map((parent) => ({
               id: parent.id,
               relationship: parent.relationship as Relationship,
               name: parent.name,
               phone: parent.phone,
               email: parent.email,
-              note: parent.note
+              note: parent.note,
             }));
             setParents(parentInfos);
           } else {
@@ -186,13 +186,15 @@ export default function StudentForm({
           phone,
           note,
           // Save the full parents array for new drafts
-          parents: showParent ? parents.map(p => ({
-            relationship: p.relationship,
-            name: p.name,
-            phone: p.phone,
-            email: p.email,
-            note: p.note
-          })) : undefined
+          parents: showParent
+            ? parents.map((p) => ({
+                relationship: p.relationship,
+                name: p.name,
+                phone: p.phone,
+                email: p.email,
+                note: p.note,
+              }))
+            : undefined,
         };
         localStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
       } catch {
@@ -218,7 +220,7 @@ export default function StudentForm({
           email,
           phone,
           note,
-          parents: parents
+          parents: parents,
         };
         await studentService.updateStudent(editingId, patch);
         toast({
@@ -285,21 +287,20 @@ export default function StudentForm({
   return (
     <>
       <div className="mt-4 grid grid-cols-1 gap-3">
-        {!isEdit && (
-          <div className="space-y-1">
-            <Label>Lớp theo học</Label>
-            <MultipleSelector
-              options={classOptions}
-              placeholder="Chọn lớp..."
-              emptyIndicator={
-                <p className="text-center text-sm leading-10 text-gray-600 dark:text-gray-400">
-                  Không có lớp phù hợp.
-                </p>
-              }
-              onChange={(opts) => setSelectedClasses(opts)}
-            />
-          </div>
-        )}
+        <div className="space-y-1">
+          <Label>Lớp theo học</Label>
+          <MultipleSelector
+            options={classOptions}
+            placeholder="Chọn lớp..."
+            emptyIndicator={
+              <p className="text-center text-sm leading-10 text-gray-600 dark:text-gray-400">
+                Không có lớp phù hợp.
+              </p>
+            }
+            onChange={(opts) => setSelectedClasses(opts)}
+          />
+        </div>
+
         <div className="space-y-1">
           <Label htmlFor="studentName">Tên học sinh</Label>
           <Input
@@ -365,18 +366,18 @@ export default function StudentForm({
                   nameEditedManuallyRef={nameEditedManuallyRef}
                   REL_LABEL={REL_LABEL}
                   onUpdate={(updatedParent) => {
-                          setParents(prev => prev.map((p, i) => 
-                      i === index ? updatedParent : p
-                          ));
-                        }}
+                    setParents((prev) =>
+                      prev.map((p, i) => (i === index ? updatedParent : p))
+                    );
+                  }}
                   onDelete={() => {
-                    setParents(prev => prev.filter((_, i) => i !== index));
+                    setParents((prev) => prev.filter((_, i) => i !== index));
                     saveDraftDebounced();
                   }}
-                      onBlur={saveDraftDebounced}
-                    />
+                  onBlur={saveDraftDebounced}
+                />
               ))}
-              
+
               <Button
                 variant="outline"
                 className="w-full text-sm"
@@ -387,9 +388,9 @@ export default function StudentForm({
                     name: null,
                     phone: null,
                     email: null,
-                    note: null
+                    note: null,
                   };
-                  setParents(prev => [...prev, newParent]);
+                  setParents((prev) => [...prev, newParent]);
                   saveDraftDebounced();
                 }}
               >

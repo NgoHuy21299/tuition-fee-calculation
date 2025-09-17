@@ -1,14 +1,15 @@
 import BackNavigation from "../../components/commons/BackNavigation";
 import { Card } from "../../components/ui/card";
 import StudentForm from "../../components/students/StudentForm";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import LoadingSpinner from "../../components/commons/LoadingSpinner";
-import { classService } from "../../services/classService";
 import type { Option } from "../../components/ui/multiple-selector";
+import { classService } from "../../services/classService";
+import LoadingSpinner from "../../components/commons/LoadingSpinner";
 
-export default function StudentNew() {
+export default function StudentEdit() {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const passedOptions =
     ((location.state as { classOptions?: Option[] } | null)?.classOptions ?? []) as Option[];
@@ -48,25 +49,16 @@ export default function StudentNew() {
       <BackNavigation to="/dashboard/students" />
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold">Tạo học sinh mới</h1>
-          <p className="text-sm text-gray-400">
-            Nhập thông tin học sinh. Bạn có thể chỉnh sửa sau.
-          </p>
+          <h1 className="text-xl font-semibold">Chỉnh sửa học sinh</h1>
+          <p className="text-sm text-gray-400">Cập nhật thông tin học sinh.</p>
         </div>
-        <div>
-          {loadingClasses && <LoadingSpinner size={18} padding={3} />}
-        </div>
+        <div>{loadingClasses && <LoadingSpinner size={18} padding={3} />}</div>
       </div>
       <Card>
         <div className="p-4">
-          <StudentForm
-            editingId={null}
-            onSaved={handleSaved}
-            classOptions={classOptions}
-          />
+          <StudentForm editingId={id ?? null} onSaved={handleSaved} classOptions={classOptions} />
         </div>
       </Card>
     </div>
   );
 }
-
