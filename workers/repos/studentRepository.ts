@@ -1,4 +1,5 @@
 import { selectAll, selectOne, execute } from "../helpers/queryHelpers";
+import { ParentRepository } from "./parentRepository";
 
 export type StudentRepoDeps = { db: D1Database };
 
@@ -53,7 +54,11 @@ export type StudentDetail = {
  * - Parent linkage is handled by services; repository only accepts an internal `parentIdInternal` when inserting.
  */
 export class StudentRepository {
-  constructor(private readonly deps: StudentRepoDeps) {}
+  private readonly parentRepo: ParentRepository;
+
+  constructor(private readonly deps: StudentRepoDeps) {
+    this.parentRepo = new ParentRepository({ db: deps.db });
+  }
 
   /**
    * List students for a given teacher.
@@ -113,20 +118,17 @@ export class StudentRepository {
     email?: string | null;
     phone?: string | null;
     note?: string | null;
-    // Parent linkage will be handled by service; repository focuses on Student row
-    parentIdInternal?: string | null;
     createdByTeacher: string;
   }): Promise<void> {
     const sql = `
-      INSERT INTO Student (id, name, phone, email, parentId, note, createdByTeacher)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO Student (id, name, phone, email, note, createdAt, createdByTeacher)
+      VALUES (?, ?, ?, ?, ?, COALESCE(datetime('now'), strftime('%Y-%m-%dT%H:%M:%fZ','now')), ?)
     `;
     await execute(this.deps.db, sql, [
       input.id,
       input.name,
       input.phone ?? null,
       input.email ?? null,
-      input.parentIdInternal ?? null,
       input.note ?? null,
       input.createdByTeacher,
     ]);
@@ -156,12 +158,8 @@ export class StudentRepository {
     const base = await this.getById(id, teacherId);
     if (!base) return null;
 
-    // Parent details (single parentId relation in current schema)
-    const parents = await selectAll<{ id: string; name: string | null; phone: string | null; email: string | null; note: string | null }>(
-      this.deps.db,
-      `SELECT id, name, phone, email, note FROM Parent WHERE id = (SELECT parentId FROM Student WHERE id = ?)`,
-      [id]
-    );
+    // Parent details (multiple parents relation in new schema)
+    const parents = await this.parentRepo.getByStudentId(id);
 
     // Classes list for this student (ownership already verified via createdByTeacher)
     const classes = await selectAll<{
@@ -187,7 +185,15 @@ export class StudentRepository {
       [id]
     );
 
-    return { student: base, parents: parents ?? null, classes: classes ?? null };
+    const parentDtos = (parents ?? []).map((p: any) => ({
+      id: p.id,
+      name: p.name ?? null,
+      phone: p.phone ?? null,
+      email: p.email ?? null,
+      note: p.note ?? null,
+    }));
+
+    return { student: base, parents: parentDtos, classes: classes ?? null };
   }
 
   /**

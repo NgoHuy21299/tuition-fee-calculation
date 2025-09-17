@@ -2,14 +2,15 @@ import { useState } from "react";
 import BackNavigation from "../../components/commons/BackNavigation";
 import { Card } from "../../components/ui/card";
 import StudentForm from "../../components/students/StudentForm";
+import { useNavigate } from "react-router-dom";
 
 // Reuses the same field behaviors as modal StudentForm but in a page layout
 export default function StudentNew() {
   const [open, setOpen] = useState(true);
+  const navigate = useNavigate();
 
   const handleSaved = () => {
-    // navigate back to list after successful creation
-    window.location.assign("/dashboard/students");
+    navigate("/dashboard/students");
   };
 
   return (
@@ -25,7 +26,7 @@ export default function StudentNew() {
       </div>
       <Card>
         <div className="p-4">
-          <StudentForm 
+          <StudentForm
             open={open}
             editingId={null}
             onOpenChange={setOpen}

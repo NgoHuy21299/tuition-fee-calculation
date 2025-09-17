@@ -62,23 +62,26 @@ export class StudentService {
         409
       );
 
-    // Handle inline parent creation (optional)
-    let parentIdInternal: string | null = null;
-    if (input.parentInline) {
-      const rel = input.parentInline.relationship;
-      let parentName = (input.parentInline.name ?? "").trim();
-      if (!parentName) {
-        const prefix = REL_PREFIX[rel];
-        parentName = `${prefix} ${input.name}`;
-      }
-      parentIdInternal = crypto.randomUUID();
-      await this.parentRepo.create({
-        id: parentIdInternal,
-        name: parentName,
-        phone: input.parentInline.phone ?? null,
-        email: input.parentInline.email ?? null,
-        note: input.parentInline.note ?? null,
+    if (input.parents && input.parents.length > 0) {
+      // Tạo nhiều parents cùng lúc
+      const parentInputs = input.parents.map(parent => {
+        const rel = parent.relationship;
+        let parentName = (parent.name ?? "").trim();
+        if (!parentName) {
+          const prefix = REL_PREFIX[rel];
+          parentName = `${prefix} ${input.name}`;
+        }
+        return {
+          id: crypto.randomUUID(),
+          studentId: input.id, // ID của student
+          name: parentName,
+          phone: parent.phone ?? null,
+          email: parent.email ?? null,
+          note: parent.note ?? null,
+        };
       });
+      
+      await this.parentRepo.bulkCreate(parentInputs);
     }
 
     // Create student
@@ -88,7 +91,6 @@ export class StudentService {
       email: input.email ?? null,
       phone: input.phone ?? null,
       note: input.note ?? null,
-      parentIdInternal,
       createdByTeacher: teacherId,
     });
 
@@ -122,6 +124,71 @@ export class StudentService {
           409
         );
     }
+    
+    // Handle parents update (optional)
+    if (patch.parents !== undefined) {
+      // 1. Lấy ra các parents của student hiện tại
+      const currentParents = await this.parentRepo.getByStudentId(id);
+      
+      // 2. Tạo map để dễ tìm kiếm
+      const currentParentMap = new Map(currentParents.map(p => [p.id, p]));
+      const patchParents = patch.parents || [];
+      const patchParentMap = new Map(patchParents.map((p: any) => [p.id, p]));
+      
+      // 3. So sánh và xử lý từng parent
+      // 3.1. Nếu parent db đã tồn tại thì update
+      for (const patchParent of patchParents) {
+        if (patchParent.id && currentParentMap.has(patchParent.id)) {
+          // Update parent nếu có sự thay đổi
+          const currentParent = currentParentMap.get(patchParent.id);
+          if (
+            currentParent &&
+            (currentParent.name !== (patchParent.name ?? null) ||
+              currentParent.phone !== (patchParent.phone ?? null) ||
+              currentParent.email !== (patchParent.email ?? null) ||
+              currentParent.note !== (patchParent.note ?? null))
+          ) {
+            await this.parentRepo.update({
+              id: patchParent.id,
+              studentId: id,
+              name: patchParent.name ?? "",
+              phone: patchParent.phone ?? null,
+              email: patchParent.email ?? null,
+              note: patchParent.note ?? null,
+            });
+          }
+        }
+      }
+      
+      // 3.2. Nếu parent db chưa tồn tại thì create
+      const newParents = patchParents.filter((p: any) => !currentParentMap.has(p.id));
+      if (newParents.length > 0) {
+        const parentInputs = newParents.map((parent: any) => {
+          let parentName = (parent.name ?? "").trim();
+          if (!parentName) {
+            // Note: REL_PREFIX không được định nghĩa trong update context
+            // Trong thực tế bạn có thể muốn truyền tên parent từ client
+            parentName = parent.name ?? "";
+          }
+          return {
+            id: parent.id,
+            studentId: id,
+            name: parentName,
+            phone: parent.phone ?? null,
+            email: parent.email ?? null,
+            note: parent.note ?? null,
+          };
+        });
+        await this.parentRepo.bulkCreate(parentInputs);
+      }
+      
+      // 3.3. Nếu parent db tồn tại nhưng parent api truyền vào không còn nữa thì delete
+      const deletedParents = currentParents.filter(p => !patchParentMap.has(p.id));
+      for (const deletedParent of deletedParents) {
+        await this.parentRepo.delete(deletedParent.id);
+      }
+    }
+    
     await this.repo.update(id, teacherId, {
       name: patch.name,
       email: patch.email ?? undefined,

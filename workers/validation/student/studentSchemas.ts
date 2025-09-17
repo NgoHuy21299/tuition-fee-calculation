@@ -9,6 +9,7 @@ import {
   regex,
   union,
   literal,
+  array,
 } from "valibot";
 import type { InferOutput } from "valibot";
 import type { ValidationCode } from "../common/types";
@@ -22,7 +23,8 @@ function Msg(code: ValidationCode) {
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^\+?[0-9\- ]{6,20}$/;
 
-export const ParentInlineSchema = object({
+export const ParentSchema = object({
+  id: optional(string()),
   relationship: union(
     [
       literal("father"),
@@ -93,7 +95,7 @@ export const CreateStudentSchema = object({
       pipe(string(Msg("NOTE_TOO_LONG")), maxLength(1000, Msg("NOTE_TOO_LONG")))
     )
   ),
-  parentInline: optional(nullable(ParentInlineSchema)),
+  parents: optional(nullable(array(ParentSchema))),
 });
 
 export const UpdateStudentSchema = object({
@@ -125,9 +127,9 @@ export const UpdateStudentSchema = object({
       pipe(string(Msg("NOTE_TOO_LONG")), maxLength(1000, Msg("NOTE_TOO_LONG")))
     )
   ),
-  parentInline: optional(nullable(ParentInlineSchema)),
+  parents: optional(nullable(array(ParentSchema))),
 });
 
-export type ParentInlineInput = InferOutput<typeof ParentInlineSchema>;
+export type ParentInput = InferOutput<typeof ParentSchema>;
 export type CreateStudentInput = InferOutput<typeof CreateStudentSchema>;
 export type UpdateStudentInput = InferOutput<typeof UpdateStudentSchema>;

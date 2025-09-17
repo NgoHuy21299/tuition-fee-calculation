@@ -142,14 +142,16 @@ export default function StudentForm({
               setNote(d.note ?? null);
               if (d.parents && d.parents.length > 0) {
                 setShowParent(true);
-                const parentInfos: ParentInfo[] = d.parents.map((parent) => ({
-                  id: '',
-                  relationship: parent.relationship as Relationship,
-                  name: parent.name ?? null,
-                  phone: parent.phone ?? null,
-                  email: parent.email ?? null,
-                  note: parent.note ?? null
-                }));
+                const parentInfos: ParentInfo[] = d.parents.map(
+                  (parent, index) => ({
+                    id: `${index}`,
+                    relationship: parent.relationship as Relationship,
+                    name: parent.name ?? null,
+                    phone: parent.phone ?? null,
+                    email: parent.email ?? null,
+                    note: parent.note ?? null,
+                  })
+                );
                 setParents(parentInfos);
               }
             }

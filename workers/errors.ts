@@ -36,6 +36,7 @@ export class AppError extends Error {
 }
 
 export function toAppError(err: unknown, fallback: { code: ErrorCode; status?: number } = { code: "UNKNOWN" }): AppError {
+  console.log("Error: ", err);
   if (err instanceof AppError) return err;
   const e = err as Error | undefined;
   return new AppError(fallback.code, e?.message, fallback.status ?? 400);

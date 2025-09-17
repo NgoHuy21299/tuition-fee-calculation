@@ -59,6 +59,7 @@ export function createStudentRouter() {
       const dto = await svc.create(String(user.sub), { id, ...parsed.value });
       return c.json(dto, 201 as 201);
     } catch (err) {
+      console.log(err);
       const e = toAppError(err, { code: "UNKNOWN" });
       return c.json({ error: t(e.code, e.message), code: e.code }, e.status as any);
     }
