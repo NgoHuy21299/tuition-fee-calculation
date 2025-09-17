@@ -1,7 +1,7 @@
 import { Card } from "../../components/ui/card";
 import ClassForm, {
   type ClassFormValues,
-} from "../../components/dashboard/ClassForm";
+} from "../../components/classes/ClassForm";
 import { classService } from "../../services/classService";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";

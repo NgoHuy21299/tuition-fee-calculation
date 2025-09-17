@@ -4,11 +4,12 @@ import { Card } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import ClassForm, {
   type ClassFormValues,
-} from "../../components/dashboard/ClassForm";
+} from "../../components/classes/ClassForm";
 import ConfirmDialog from "../../components/commons/ConfirmDialog";
 import BackNavigation from "../../components/commons/BackNavigation";
 import { classService, type ClassDTO } from "../../services/classService";
 import { useToast } from "../../components/commons/Toast";
+import LoadingSpinner from "../../components/commons/LoadingSpinner";
 
 export default function ClassDetail() {
   const { id } = useParams<{ id: string }>();
@@ -187,7 +188,7 @@ export default function ClassDetail() {
         </div>
         <div className="p-4">
           {loading ? (
-            <p className="text-sm text-gray-400">Đang tải...</p>
+            <LoadingSpinner size={18} padding={3} />
           ) : tab === "overview" ? (
             <div className="space-y-4">
               <div>

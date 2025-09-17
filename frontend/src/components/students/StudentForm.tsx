@@ -6,6 +6,10 @@ import {
   type UpdateStudentInput,
 } from "../../services/studentService";
 import { useToast } from "../commons/Toast";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Button } from "../ui/button";
+import LoadingSpinner from "../commons/LoadingSpinner";
 
 export type StudentFormProps = {
   open: boolean;
@@ -113,9 +117,12 @@ export default function StudentForm({
         }
       } else if (open && !editingId) {
         // Creating: offer to restore draft
+        // Use a flag to prevent showing the confirm dialog twice in development mode
+        const hasShownDraftPrompt = sessionStorage.getItem('studentFormDraftPromptShown');
         try {
           const raw = localStorage.getItem(DRAFT_KEY);
-          if (raw) {
+          if (raw && !hasShownDraftPrompt) {
+            sessionStorage.setItem('studentFormDraftPromptShown', 'true');
             const ok = window.confirm("Khôi phục bản nháp trước đó?");
             if (ok) {
               const d = JSON.parse(raw) as CreateStudentInput;
@@ -139,6 +146,8 @@ export default function StudentForm({
       } else if (!open) {
         // closed
         resetForm();
+        // Clear the flag when the form is closed
+        sessionStorage.removeItem('studentFormDraftPromptShown');
       }
     })();
     return () => {
@@ -251,165 +260,149 @@ export default function StudentForm({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-xl rounded-md border border-gray-800 bg-gray-950 p-4 shadow-xl">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">
-            {isEdit ? "Sửa học sinh" : "Tạo học sinh"}
-          </h2>
-          <button
-            className="text-gray-400 hover:text-gray-200"
-            onClick={() => onOpenChange(false)}
-          >
-            ×
-          </button>
+    <>
+      <div className="mt-4 grid grid-cols-1 gap-3">
+        <div className="space-y-1">
+          <Label htmlFor="studentName">Tên học sinh</Label>
+          <Input
+            id="studentName"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={saveDraftDebounced}
+            placeholder="Nhập tên học sinh"
+          />
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-3">
-          <div className="flex flex-col">
-            <label className="text-sm text-gray-400">Tên học sinh</label>
-            <input
-              className="bg-gray-900 border border-gray-800 rounded-md p-2"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1">
+            <Label htmlFor="studentEmail">Email</Label>
+            <Input
+              id="studentEmail"
+              value={email ?? ""}
+              onChange={(e) => setEmail(e.target.value || null)}
               onBlur={saveDraftDebounced}
-              placeholder="Nhập tên học sinh"
+              placeholder="email@example.com"
             />
           </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col">
-              <label className="text-sm text-gray-400">Email</label>
-              <input
-                className="bg-gray-900 border border-gray-800 rounded-md p-2"
-                value={email ?? ""}
-                onChange={(e) => setEmail(e.target.value || null)}
-                onBlur={saveDraftDebounced}
-                placeholder="email@example.com"
-              />
-            </div>
-            <div className="flex flex-col">
-              <label className="text-sm text-gray-400">Phone</label>
-              <input
-                className="bg-gray-900 border border-gray-800 rounded-md p-2"
-                value={phone ?? ""}
-                onChange={(e) => setPhone(e.target.value || null)}
-                onBlur={saveDraftDebounced}
-                placeholder="Số điện thoại"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col">
-            <label className="text-sm text-gray-400">Ghi chú</label>
-            <textarea
-              className="bg-gray-900 border border-gray-800 rounded-md p-2"
-              value={note ?? ""}
-              onChange={(e) => setNote(e.target.value || null)}
+          <div className="space-y-1">
+            <Label htmlFor="studentPhone">Phone</Label>
+            <Input
+              id="studentPhone"
+              value={phone ?? ""}
+              onChange={(e) => setPhone(e.target.value || null)}
               onBlur={saveDraftDebounced}
-              placeholder="Ghi chú thêm"
+              placeholder="Số điện thoại"
             />
           </div>
+        </div>
 
-          <div className="border-t border-gray-800 pt-3">
-            <button
-              className="text-sm text-blue-400 hover:text-blue-300"
-              onClick={() => setShowParent(!showParent)}
-            >
-              {showParent ? "Ẩn thông tin phụ huynh" : "+ Thêm phụ huynh"}
-            </button>
+        <div className="space-y-1">
+          <Label htmlFor="studentNote">Ghi chú</Label>
+          <Input
+            id="studentNote"
+            value={note ?? ""}
+            onChange={(e) => setNote(e.target.value || null)}
+            onBlur={saveDraftDebounced}
+            placeholder="Ghi chú thêm"
+          />
+        </div>
 
-            {showParent && (
-              <div className="mt-3 grid grid-cols-1 gap-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col">
-                    <label className="text-sm text-gray-400">Mối quan hệ</label>
-                    <select
-                      className="bg-gray-900 border border-gray-800 rounded-md p-2"
-                      value={rel}
-                      onChange={(e) => setRel(e.target.value as Relationship)}
-                      onBlur={saveDraftDebounced}
-                    >
-                      {Object.entries(REL_LABEL).map(([k, v]) => (
-                        <option key={k} value={k}>
-                          {v}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex flex-col">
-                    <label className="text-sm text-gray-400">
-                      Tên phụ huynh
-                    </label>
-                    <input
-                      className="bg-gray-900 border border-gray-800 rounded-md p-2"
-                      value={parentName ?? ""}
-                      onChange={(e) => {
-                        setParentName(e.target.value || null);
-                        nameEditedManuallyRef.current = true;
-                      }}
-                      onBlur={saveDraftDebounced}
-                      placeholder={`${REL_LABEL[rel]} ${name || "..."}`}
-                    />
-                  </div>
+        <div className="border-t border-gray-800 pt-3">
+          <Button
+            variant="ghost"
+            className="text-sm text-blue-400 hover:text-blue-300 p-0 h-auto"
+            onClick={() => setShowParent(!showParent)}
+          >
+            {showParent ? "Ẩn thông tin phụ huynh" : "+ Thêm phụ huynh"}
+          </Button>
+
+          {showParent && (
+            <div className="mt-3 grid grid-cols-1 gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="parentRelationship">Mối quan hệ</Label>
+                  <select
+                    id="parentRelationship"
+                    className="flex h-9 w-full min-w-0 rounded-md border px-3 py-2 text-sm outline-none transition-colors bg-white/5 border-gray-800"
+                    value={rel}
+                    onChange={(e) => setRel(e.target.value as Relationship)}
+                    onBlur={saveDraftDebounced}
+                  >
+                    {Object.entries(REL_LABEL).map(([k, v]) => (
+                      <option key={k} value={k}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex flex-col">
-                    <label className="text-sm text-gray-400">
-                      Parent Email
-                    </label>
-                    <input
-                      className="bg-gray-900 border border-gray-800 rounded-md p-2"
-                      value={parentEmail ?? ""}
-                      onChange={(e) => setParentEmail(e.target.value || null)}
-                      onBlur={saveDraftDebounced}
-                    />
-                  </div>
-                  <div className="flex flex-col">
-                    <label className="text-sm text-gray-400">
-                      Parent Phone
-                    </label>
-                    <input
-                      className="bg-gray-900 border border-gray-800 rounded-md p-2"
-                      value={parentPhone ?? ""}
-                      onChange={(e) => setParentPhone(e.target.value || null)}
-                      onBlur={saveDraftDebounced}
-                    />
-                  </div>
+                <div className="space-y-1">
+                  <Label htmlFor="parentName">Tên phụ huynh</Label>
+                  <Input
+                    id="parentName"
+                    value={parentName ?? ""}
+                    onChange={(e) => {
+                      setParentName(e.target.value || null);
+                      nameEditedManuallyRef.current = true;
+                    }}
+                    onBlur={saveDraftDebounced}
+                    placeholder={`${REL_LABEL[rel]} ${name || "..."}`}
+                  />
                 </div>
+              </div>
 
-                <div className="flex flex-col">
-                  <label className="text-sm text-gray-400">Parent Note</label>
-                  <textarea
-                    className="bg-gray-900 border border-gray-800 rounded-md p-2"
-                    value={parentNote ?? ""}
-                    onChange={(e) => setParentNote(e.target.value || null)}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label htmlFor="parentEmail">Parent Email</Label>
+                  <Input
+                    id="parentEmail"
+                    value={parentEmail ?? ""}
+                    onChange={(e) => setParentEmail(e.target.value || null)}
+                    onBlur={saveDraftDebounced}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="parentPhone">Parent Phone</Label>
+                  <Input
+                    id="parentPhone"
+                    value={parentPhone ?? ""}
+                    onChange={(e) => setParentPhone(e.target.value || null)}
                     onBlur={saveDraftDebounced}
                   />
                 </div>
               </div>
-            )}
-          </div>
-        </div>
 
-        <div className="mt-4 flex justify-end gap-2">
-          <button
-            className="px-3 py-2 rounded-md bg-gray-800 hover:bg-gray-700"
-            onClick={() => onOpenChange(false)}
-            disabled={submitting}
-          >
-            Huỷ
-          </button>
-          <button
-            className="px-3 py-2 rounded-md bg-blue-600 hover:bg-blue-500 disabled:opacity-50"
-            onClick={onSubmit}
-            disabled={submitting}
-          >
-            {submitting ? "Đang lưu..." : isEdit ? "Lưu" : "Tạo"}
-          </button>
+              <div className="space-y-1">
+                <Label htmlFor="parentNote">Parent Note</Label>
+                <Input
+                  id="parentNote"
+                  value={parentNote ?? ""}
+                  onChange={(e) => setParentNote(e.target.value || null)}
+                  onBlur={saveDraftDebounced}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
-    </div>
+
+      <div className="mt-4 flex justify-end gap-2">
+        <Button
+          variant="outline"
+          onClick={() => onOpenChange(false)}
+          disabled={submitting}
+        >
+          Huỷ
+        </Button>
+        <Button variant="success" onClick={onSubmit} disabled={submitting}>
+          {submitting ? (
+            <LoadingSpinner size={18} padding={3} />
+          ) : isEdit ? (
+            "Lưu"
+          ) : (
+            "Tạo"
+          )}
+        </Button>
+      </div>
+    </>
   );
 }

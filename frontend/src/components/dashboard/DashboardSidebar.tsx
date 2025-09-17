@@ -10,8 +10,8 @@ export default function DashboardSidebar() {
     ].join(" ");
 
   return (
-    <aside className="transition-all duration-200 border-r border-gray-800 bg-gray-950 w-60">
-      <nav className="px-2 py-2 space-y-1 text-sm">
+    <aside className="transition-all duration-200 border-r border-gray-800 bg-gray-950 w-60 h-[calc(100vh-64px)]">
+      <nav className="px-2 py-2 space-y-1 text-sm h-full overflow-y-auto">
         <NavLink
           to="/dashboard/overview"
           end

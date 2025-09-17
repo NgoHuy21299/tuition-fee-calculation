@@ -13,6 +13,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
+import LoadingSpinner from "../../components/commons/LoadingSpinner";
 
 export default function Students() {
   const { toast } = useToast();
@@ -37,11 +38,17 @@ export default function Students() {
   useEffect(() => {
     (async () => {
       try {
-        const { items, total } = await studentService.listStudents({ classId: classId || undefined });
+        const { items, total } = await studentService.listStudents({
+          classId: classId || undefined,
+        });
         setItems(items);
         setTotal(total);
       } catch {
-        toast({ variant: "error", title: "Lỗi", description: "Tải danh sách học sinh thất bại" });
+        toast({
+          variant: "error",
+          title: "Lỗi",
+          description: "Tải danh sách học sinh thất bại",
+        });
       }
     })();
   }, [classId, toast]);
@@ -59,7 +66,8 @@ export default function Students() {
 
   const setClassFilter = (value: string) => {
     const next = new URLSearchParams(searchParams);
-    if (!value) next.delete("classId"); else next.set("classId", value);
+    if (!value) next.delete("classId");
+    else next.set("classId", value);
     setSearchParams(next);
   };
 
@@ -74,7 +82,9 @@ export default function Students() {
   const refresh = async () => {
     setLoading(true);
     try {
-      const { items, total } = await studentService.listStudents({ classId: classId || undefined });
+      const { items, total } = await studentService.listStudents({
+        classId: classId || undefined,
+      });
       setItems(items);
       setTotal(total);
     } finally {
@@ -85,10 +95,18 @@ export default function Students() {
   const onDelete = async (id: string) => {
     try {
       await studentService.deleteStudent(id);
-      toast({ variant: "success", title: "Thành công", description: "Đã xoá học sinh" });
+      toast({
+        variant: "success",
+        title: "Thành công",
+        description: "Đã xoá học sinh",
+      });
       await refresh();
     } catch {
-      toast({ variant: "error", title: "Lỗi", description: "Xoá học sinh thất bại" });
+      toast({
+        variant: "error",
+        title: "Lỗi",
+        description: "Xoá học sinh thất bại",
+      });
     }
   };
 
@@ -97,7 +115,9 @@ export default function Students() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold">Học sinh</h1>
-          <p className="text-sm text-gray-400">Quản lý danh sách học sinh và thông tin liên lạc.</p>
+          <p className="text-sm text-gray-400">
+            Quản lý danh sách học sinh và thông tin liên lạc.
+          </p>
         </div>
         <Button onClick={openCreate}>Tạo học sinh</Button>
       </div>
@@ -116,9 +136,14 @@ export default function Students() {
                 <Button variant="outline">{selectedClassName}</Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
-                <DropdownMenuItem onClick={() => setClassFilter("")}>Tất cả lớp</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setClassFilter("")}>
+                  Tất cả lớp
+                </DropdownMenuItem>
                 {classes.map((c) => (
-                  <DropdownMenuItem key={c.id} onClick={() => setClassFilter(c.id)}>
+                  <DropdownMenuItem
+                    key={c.id}
+                    onClick={() => setClassFilter(c.id)}
+                  >
                     {c.name}
                   </DropdownMenuItem>
                 ))}
@@ -127,26 +152,30 @@ export default function Students() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-gray-400">
-                  <th className="py-2 pr-3 font-medium">Tên</th>
-                  <th className="py-2 pr-3 font-medium">Lớp đang theo học</th>
-                  <th className="py-2 pr-3 font-medium">Điện thoại</th>
-                  <th className="py-2 pr-3 font-medium text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={3} className="py-6 text-center text-gray-400">Đang tải...</td>
+            {loading ? (
+              <div className="text-center">
+                <LoadingSpinner size={32} padding={6} />
+              </div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-gray-400">
+                    <th className="py-2 pr-3 font-medium">Tên</th>
+                    <th className="py-2 pr-3 font-medium">Lớp đang theo học</th>
+                    <th className="py-2 pr-3 font-medium">Điện thoại</th>
+                    <th className="py-2 pr-3 font-medium text-right">
+                      Thao tác
+                    </th>
                   </tr>
-                ) : (
-                  items
+                </thead>
+                <tbody>
+                  {items
                     .filter((s) => {
                       const term = q.trim().toLowerCase();
                       if (!term) return true;
-                      const mix = [s.name ?? "", s.phone ?? ""].join(" ").toLowerCase();
+                      const mix = [s.name ?? "", s.phone ?? ""]
+                        .join(" ")
+                        .toLowerCase();
                       return mix.includes(term);
                     })
                     .map((s) => (
@@ -154,22 +183,36 @@ export default function Students() {
                         <td className="py-2 pr-3">
                           <div className="font-medium">{s.name}</div>
                         </td>
-                        <td className="py-2 pr-3 text-gray-300">{s.currentClasses || "-"}</td>
+                        <td className="py-2 pr-3 text-gray-300">
+                          {s.currentClasses || "-"}
+                        </td>
                         <td className="py-2 pr-3">{s.phone || "-"}</td>
                         <td className="py-2 pr-0 text-right">
                           <div className="inline-flex items-center gap-2">
-                            <Button variant="outline" onClick={() => openEdit(s.id)}>Xem/Sửa</Button>
-                            <Button variant="outline" onClick={() => setConfirmDeleteId(s.id)}>Xoá</Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => openEdit(s.id)}
+                            >
+                              Xem/Sửa
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setConfirmDeleteId(s.id)}
+                            >
+                              Xoá
+                            </Button>
                           </div>
                         </td>
                       </tr>
-                    ))
-                )}
-              </tbody>
-            </table>
+                    ))}
+                </tbody>
+              </table>
+            )}
           </div>
           <div className="flex items-center justify-between pt-2">
-            <p className="text-xs text-gray-400">Tổng: {items.length} học sinh. (Đã tải {total} từ server)</p>
+            <p className="text-xs text-gray-400">
+              Tổng: {items.length} học sinh. (Đã tải {total} từ server)
+            </p>
           </div>
         </div>
       </Card>
@@ -180,9 +223,13 @@ export default function Students() {
         description="Bạn có chắc muốn xoá học sinh này? Hành động không thể hoàn tác."
         confirmText="Xoá"
         onCancel={() => setConfirmDeleteId(null)}
-        onConfirm={async () => { if (confirmDeleteId) { await onDelete(confirmDeleteId); setConfirmDeleteId(null); } }}
+        onConfirm={async () => {
+          if (confirmDeleteId) {
+            await onDelete(confirmDeleteId);
+            setConfirmDeleteId(null);
+          }
+        }}
       />
-
     </div>
   );
 }

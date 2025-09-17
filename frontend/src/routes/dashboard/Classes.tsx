@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
 import { Checkbox } from "../../components/ui/checkbox";
+import LoadingSpinner from "../../components/commons/LoadingSpinner";
 
 export default function DashboardClasses() {
   const navigate = useNavigate();
@@ -196,11 +197,7 @@ export default function DashboardClasses() {
               </thead>
               <tbody>
                 {loading ? (
-                  <tr>
-                    <td colSpan={6} className="py-6 text-center text-gray-400">
-                      Đang tải...
-                    </td>
-                  </tr>
+                  <LoadingSpinner size={18} padding={3} />
                 ) : filtered.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-6 text-center text-gray-400">
