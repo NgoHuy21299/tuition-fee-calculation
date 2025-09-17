@@ -1,4 +1,5 @@
 import client from "../api/client";
+import type { Relationship } from "../components/students/StudentForm";
 import { toQueryString } from "../utils/paramUtils";
 
 // Keep in sync with backend workers/types/studentTypes.ts (DTOs section in docs 3.0)
@@ -18,6 +19,7 @@ export type ParentDTO = {
   phone: string | null;
   email: string | null;
   note: string | null;
+  relationship: Relationship | null;
 };
 
 export type ClassWithMembershipDTO = {
@@ -62,7 +64,7 @@ export type CreateStudentInput = {
   email?: string | null;
   phone?: string | null;
   note?: string | null;
-  parentInline?: ParentInlineInput | null;
+  parents?: ParentInlineInput[] | null;
 };
 
 export type UpdateStudentInput = Partial<CreateStudentInput>;

@@ -10,6 +10,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Button } from "../ui/button";
 import LoadingSpinner from "../commons/LoadingSpinner";
+import ParentForm from "./ParentForm";
 
 export type StudentFormProps = {
   open: boolean;
@@ -20,13 +21,22 @@ export type StudentFormProps = {
 
 const DRAFT_KEY = "students.form.draft"; // could be extended with userId if needed
 
-type Relationship = "father" | "mother" | "grandfather" | "grandmother";
+export type Relationship = "father" | "mother" | "grandfather" | "grandmother";
 
 const REL_LABEL: Record<Relationship, string> = {
   father: "Bố",
   mother: "Mẹ",
   grandfather: "Ông",
   grandmother: "Bà",
+};
+
+type ParentInfo = {
+  id: string; // ID tạm thời để quản lý trong form
+  relationship: Relationship;
+  name: string | null;
+  phone: string | null;
+  email: string | null;
+  note: string | null;
 };
 
 export default function StudentForm({
@@ -45,11 +55,7 @@ export default function StudentForm({
   const [note, setNote] = useState<string | null>(null);
 
   const [showParent, setShowParent] = useState(false);
-  const [rel, setRel] = useState<Relationship>("father");
-  const [parentName, setParentName] = useState<string | null>(null);
-  const [parentPhone, setParentPhone] = useState<string | null>(null);
-  const [parentEmail, setParentEmail] = useState<string | null>(null);
-  const [parentNote, setParentNote] = useState<string | null>(null);
+  const [parents, setParents] = useState<ParentInfo[]>([]);
 
   const nameEditedManuallyRef = useRef(false);
   const debounceTimer = useRef<number | null>(null);
@@ -60,26 +66,25 @@ export default function StudentForm({
     setPhone(null);
     setNote(null);
     setShowParent(false);
-    setRel("father");
-    setParentName(null);
-    setParentPhone(null);
-    setParentEmail(null);
-    setParentNote(null);
+    setParents([]);
     nameEditedManuallyRef.current = false;
   }
 
   // Auto-generate parent name on relationship change if parentName not manually edited
   useEffect(() => {
-    if (showParent && !nameEditedManuallyRef.current) {
-      if (name.trim()) setParentName(`${REL_LABEL[rel]} ${name.trim()}`);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rel]);
-
-  // When student name changes and parent name not manually edited, update suggestion
-  useEffect(() => {
     if (showParent && !nameEditedManuallyRef.current && name.trim()) {
-      setParentName(`${REL_LABEL[rel]} ${name.trim()}`);
+      setParents(prev => {
+        if (prev.length > 0) {
+          // Update the first parent's name suggestion
+          const updated = [...prev];
+          updated[0] = {
+            ...updated[0],
+            name: `${REL_LABEL[updated[0].relationship]} ${name.trim()}`
+          };
+          return updated;
+        }
+        return prev;
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name]);
@@ -98,13 +103,18 @@ export default function StudentForm({
           setEmail(detail.student.email);
           setPhone(detail.student.phone);
           setNote(detail.student.note);
-          // parent (first if any)
+          // parents
           if (detail.parents && detail.parents.length > 0) {
             setShowParent(true);
-            setParentName(detail.parents[0].name);
-            setParentPhone(detail.parents[0].phone);
-            setParentEmail(detail.parents[0].email);
-            setParentNote(detail.parents[0].note);
+            const parentInfos: ParentInfo[] = detail.parents.map(parent => ({
+              id: parent.id,
+              relationship: parent.relationship as Relationship,
+              name: parent.name,
+              phone: parent.phone,
+              email: parent.email,
+              note: parent.note
+            }));
+            setParents(parentInfos);
           } else {
             setShowParent(false);
           }
@@ -130,13 +140,17 @@ export default function StudentForm({
               setEmail(d.email ?? null);
               setPhone(d.phone ?? null);
               setNote(d.note ?? null);
-              if (d.parentInline) {
+              if (d.parents && d.parents.length > 0) {
                 setShowParent(true);
-                setRel(d.parentInline.relationship as Relationship);
-                setParentName(d.parentInline.name ?? null);
-                setParentPhone(d.parentInline.phone ?? null);
-                setParentEmail(d.parentInline.email ?? null);
-                setParentNote(d.parentInline.note ?? null);
+                const parentInfos: ParentInfo[] = d.parents.map((parent) => ({
+                  id: '',
+                  relationship: parent.relationship as Relationship,
+                  name: parent.name ?? null,
+                  phone: parent.phone ?? null,
+                  email: parent.email ?? null,
+                  note: parent.note ?? null
+                }));
+                setParents(parentInfos);
               }
             }
           }
@@ -165,15 +179,14 @@ export default function StudentForm({
           email,
           phone,
           note,
-          parentInline: showParent
-            ? {
-                relationship: rel,
-                name: parentName,
-                phone: parentPhone,
-                email: parentEmail,
-                note: parentNote,
-              }
-            : undefined,
+          // Save the full parents array for new drafts
+          parents: showParent ? parents.map(p => ({
+            relationship: p.relationship,
+            name: p.name,
+            phone: p.phone,
+            email: p.email,
+            note: p.note
+          })) : undefined
         };
         localStorage.setItem(DRAFT_KEY, JSON.stringify(payload));
       } catch {
@@ -199,15 +212,7 @@ export default function StudentForm({
           email,
           phone,
           note,
-          parentInline: showParent
-            ? {
-                relationship: rel,
-                name: parentName,
-                phone: parentPhone,
-                email: parentEmail,
-                note: parentNote,
-              }
-            : undefined,
+          parents: parents
         };
         await studentService.updateStudent(editingId, patch);
         toast({
@@ -221,15 +226,7 @@ export default function StudentForm({
           email,
           phone,
           note,
-          parentInline: showParent
-            ? {
-                relationship: rel,
-                name: parentName,
-                phone: parentPhone,
-                email: parentEmail,
-                note: parentNote,
-              }
-            : undefined,
+          parents: parents,
         };
         await studentService.createStudent(payload);
         // clear draft after successful create
@@ -317,69 +314,46 @@ export default function StudentForm({
           </Button>
 
           {showParent && (
-            <div className="mt-3 grid grid-cols-1 gap-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label htmlFor="parentRelationship">Mối quan hệ</Label>
-                  <select
-                    id="parentRelationship"
-                    className="flex h-9 w-full min-w-0 rounded-md border px-3 py-2 text-sm outline-none transition-colors bg-white/5 border-gray-800"
-                    value={rel}
-                    onChange={(e) => setRel(e.target.value as Relationship)}
-                    onBlur={saveDraftDebounced}
-                  >
-                    {Object.entries(REL_LABEL).map(([k, v]) => (
-                      <option key={k} value={k}>
-                        {v}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="parentName">Tên phụ huynh</Label>
-                  <Input
-                    id="parentName"
-                    value={parentName ?? ""}
-                    onChange={(e) => {
-                      setParentName(e.target.value || null);
-                      nameEditedManuallyRef.current = true;
-                    }}
-                    onBlur={saveDraftDebounced}
-                    placeholder={`${REL_LABEL[rel]} ${name || "..."}`}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label htmlFor="parentEmail">Parent Email</Label>
-                  <Input
-                    id="parentEmail"
-                    value={parentEmail ?? ""}
-                    onChange={(e) => setParentEmail(e.target.value || null)}
-                    onBlur={saveDraftDebounced}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label htmlFor="parentPhone">Parent Phone</Label>
-                  <Input
-                    id="parentPhone"
-                    value={parentPhone ?? ""}
-                    onChange={(e) => setParentPhone(e.target.value || null)}
-                    onBlur={saveDraftDebounced}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <Label htmlFor="parentNote">Parent Note</Label>
-                <Input
-                  id="parentNote"
-                  value={parentNote ?? ""}
-                  onChange={(e) => setParentNote(e.target.value || null)}
-                  onBlur={saveDraftDebounced}
-                />
-              </div>
+            <div className="mt-3 space-y-4">
+              {parents.map((parent, index) => (
+                <ParentForm
+                  key={parent.id}
+                  parent={parent}
+                  index={index}
+                  name={name}
+                  nameEditedManuallyRef={nameEditedManuallyRef}
+                  REL_LABEL={REL_LABEL}
+                  onUpdate={(updatedParent) => {
+                          setParents(prev => prev.map((p, i) => 
+                      i === index ? updatedParent : p
+                          ));
+                        }}
+                  onDelete={parents.length > 1 ? () => {
+                    setParents(prev => prev.filter((_, i) => i !== index));
+                    saveDraftDebounced();
+                  } : undefined}
+                      onBlur={saveDraftDebounced}
+                    />
+              ))}
+              
+              <Button
+                variant="outline"
+                className="w-full text-sm"
+                onClick={() => {
+                  const newParent: ParentInfo = {
+                    id: Date.now().toString() + Math.random(),
+                    relationship: "father",
+                    name: null,
+                    phone: null,
+                    email: null,
+                    note: null
+                  };
+                  setParents(prev => [...prev, newParent]);
+                  saveDraftDebounced();
+                }}
+              >
+                + Thêm phụ huynh khác
+              </Button>
             </div>
           )}
         </div>
