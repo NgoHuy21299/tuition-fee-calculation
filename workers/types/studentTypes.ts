@@ -37,6 +37,7 @@ export type ParentDTO = {
   phone: string | null;
   email: string | null;
   note: string | null;
+  relationship: string | null;
 };
 
 export type ClassWithMembershipDTO = {
@@ -68,6 +69,7 @@ export function mapStudentDetailToDTO(detail: StudentDetail): StudentDetailDTO {
         phone: c.phone,
         email: c.email,
         note: c.note,
+        relationship: c.relationship ?? null,
       }))
     : [];
   const classes: ClassWithMembershipDTO[] = detail.classes

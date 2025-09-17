@@ -62,7 +62,9 @@ export default function ParentForm({
               });
               
               // Auto-generate parent name if not manually edited
-              if (!nameEditedManuallyRef.current && name.trim()) {
+              // Chỉ áp dụng khi tạo mới (name chưa được nhập thủ công và tên học sinh có giá trị)
+              // Không áp dụng khi edit (name đã có giá trị từ database)
+              if (!nameEditedManuallyRef.current && name.trim() && !parent.name) {
                 onUpdate({
                   ...parent,
                   relationship: newRelationship,

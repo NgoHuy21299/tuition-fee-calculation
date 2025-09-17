@@ -28,6 +28,7 @@ export type StudentDetail = {
     phone: string | null;
     email: string | null;
     note: string | null;
+    relationship: string | null;
   }>;
   classes: Array<{
     id: string;
@@ -191,6 +192,7 @@ export class StudentRepository {
       phone: p.phone ?? null,
       email: p.email ?? null,
       note: p.note ?? null,
+      relationship: p.relationship ?? null,
     }));
 
     return { student: base, parents: parentDtos, classes: classes ?? null };

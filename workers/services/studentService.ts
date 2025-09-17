@@ -79,6 +79,7 @@ export class StudentService {
           phone: parent.phone ?? null,
           email: parent.email ?? null,
           note: parent.note ?? null,
+          relationship: parent.relationship,
         };
       });
       
@@ -110,22 +111,6 @@ export class StudentService {
     id: string,
     patch: UpdateStudentInput
   ): Promise<StudentDTO> {
-    // Disallow updates that would create duplicates
-    if ((patch.email ?? patch.phone ?? patch.name) !== undefined) {
-      const dup = await this.repo.existsDuplicate({
-        teacherId,
-        name: patch.name ?? "",
-        phone: patch.phone ?? undefined,
-        email: patch.email ?? undefined,
-      });
-      if (dup)
-        throw new AppError(
-          "DUPLICATE_STUDENT",
-          "Duplicate student (name/phone/email)",
-          409
-        );
-    }
-    
     // Handle parents update (optional)
     if (patch.parents !== undefined) {
       // 1. Lấy ra các parents của student hiện tại
@@ -156,6 +141,7 @@ export class StudentService {
               phone: patchParent.phone ?? null,
               email: patchParent.email ?? null,
               note: patchParent.note ?? null,
+              relationship: patchParent.relationship ?? null,
             });
           }
         }
@@ -178,6 +164,7 @@ export class StudentService {
             phone: parent.phone ?? null,
             email: parent.email ?? null,
             note: parent.note ?? null,
+            relationship: parent.relationship ?? null,
           };
         });
         await this.parentRepo.bulkCreate(parentInputs);

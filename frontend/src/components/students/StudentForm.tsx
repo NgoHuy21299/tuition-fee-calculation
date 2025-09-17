@@ -59,6 +59,7 @@ export default function StudentForm({
   const [showParent, setShowParent] = useState(false);
   const [parents, setParents] = useState<ParentInfo[]>([]);
   const [selectedClasses, setSelectedClasses] = useState<Option[]>([]);
+  const [initialSelectedClasses, setInitialSelectedClasses] = useState<Option[]>([]);
 
   const nameEditedManuallyRef = useRef(false);
   const debounceTimer = useRef<number | null>(null);
@@ -71,12 +72,14 @@ export default function StudentForm({
     setShowParent(false);
     setParents([]);
     setSelectedClasses([]);
+    setInitialSelectedClasses([]);
     nameEditedManuallyRef.current = false;
   }
 
   // Auto-generate parent name on relationship change if parentName not manually edited
+  // Chỉ áp dụng khi tạo mới, không áp dụng khi edit
   useEffect(() => {
-    if (showParent && !nameEditedManuallyRef.current && name.trim()) {
+    if (!isEdit && showParent && !nameEditedManuallyRef.current && name.trim()) {
       setParents((prev) => {
         if (prev.length > 0) {
           // Update the first parent's name suggestion
@@ -91,7 +94,7 @@ export default function StudentForm({
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name]);
+  }, [name, isEdit]);
 
   // Load for edit
   useEffect(() => {
@@ -113,7 +116,7 @@ export default function StudentForm({
             const parentInfos: ParentInfo[] = detail.parents.map((parent) => ({
               id: parent.id,
               relationship: parent.relationship as Relationship,
-              name: parent.name,
+              name: parent.name, // Sử dụng tên phụ huynh từ database khi edit
               phone: parent.phone,
               email: parent.email,
               note: parent.note,
@@ -121,6 +124,16 @@ export default function StudentForm({
             setParents(parentInfos);
           } else {
             setShowParent(false);
+          }
+          
+          // Map classes đã chọn
+          if (detail.classes && detail.classes.length > 0) {
+            const selectedClassOptions: Option[] = detail.classes.map((cls) => ({
+              label: cls.name,
+              value: cls.id,
+            }));
+            setSelectedClasses(selectedClassOptions);
+            setInitialSelectedClasses(selectedClassOptions);
           }
         } catch {
           toast({
@@ -223,6 +236,54 @@ export default function StudentForm({
           parents: parents,
         };
         await studentService.updateStudent(editingId, patch);
+        
+        // Xử lý cập nhật classes khi edit
+        try {
+          // Lấy danh sách classes hiện tại của học sinh từ state
+          const currentClassIds = selectedClasses.map(opt => opt.value);
+          const initialClassIds = initialSelectedClasses.map(opt => opt.value);
+          
+          // Tìm các classes cần thêm mới (có trong selectedClasses nhưng không có trong initialSelectedClasses)
+          const classesToAdd = selectedClasses.filter(
+            opt => !initialClassIds.includes(opt.value)
+          );
+          
+          // Tìm các classes cần xóa (có trong initialSelectedClasses nhưng không có trong selectedClasses)
+          const classesToRemove = initialSelectedClasses.filter(
+            opt => !currentClassIds.includes(opt.value)
+          );
+          
+          // Thêm học sinh vào các classes mới
+          if (classesToAdd.length > 0) {
+            await Promise.all(
+              classesToAdd.map((opt) =>
+                classStudentService.addStudentToClass(opt.value, {
+                  studentId: editingId,
+                })
+              )
+            );
+          }
+          
+          // Xử lý xóa học sinh khỏi các classes
+          // Do API hiện tại chưa hỗ trợ remove student khỏi class, chúng ta sẽ hiển thị thông báo
+          if (classesToRemove.length > 0) {
+            toast({
+              variant: "warning",
+              title: "Chú ý",
+              description:
+                "Hiện tại chưa hỗ trợ xóa học sinh khỏi lớp. Vui lòng thực hiện thao tác này trong phần quản lý lớp.",
+            });
+          }
+          
+        } catch (err) {
+          console.log("Failed to update student classes: ", err);
+          toast({
+            variant: "warning",
+            title: "Chú ý",
+            description:
+              "Đã cập nhật học sinh nhưng cập nhật lớp thất bại. Bạn có thể thử lại sau.",
+          });
+        }
         toast({
           variant: "success",
           title: "Đã lưu",
@@ -290,6 +351,7 @@ export default function StudentForm({
         <div className="space-y-1">
           <Label>Lớp theo học</Label>
           <MultipleSelector
+            value={selectedClasses}
             options={classOptions}
             placeholder="Chọn lớp..."
             emptyIndicator={
