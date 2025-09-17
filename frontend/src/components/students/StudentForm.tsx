@@ -13,13 +13,12 @@ import LoadingSpinner from "../commons/LoadingSpinner";
 import ParentForm from "./ParentForm";
 
 export type StudentFormProps = {
-  open: boolean;
   editingId: string | null;
-  onOpenChange: (open: boolean) => void;
   onSaved?: () => void | Promise<void>;
 };
 
 const DRAFT_KEY = "students.form.draft"; // could be extended with userId if needed
+const SESSION_STATUS_KEY = "studentFormDraftPromptShown";
 
 export type Relationship = "father" | "mother" | "grandfather" | "grandmother";
 
@@ -40,9 +39,7 @@ type ParentInfo = {
 };
 
 export default function StudentForm({
-  open,
   editingId,
-  onOpenChange,
   onSaved,
 }: StudentFormProps) {
   const { toast } = useToast();
@@ -93,7 +90,7 @@ export default function StudentForm({
   useEffect(() => {
     let mounted = true;
     (async () => {
-      if (open && editingId) {
+      if (editingId) {
         try {
           const detail: StudentDetailDTO = await studentService.getStudent(
             editingId
@@ -125,14 +122,14 @@ export default function StudentForm({
             description: "Không tải được dữ liệu học sinh",
           });
         }
-      } else if (open && !editingId) {
+      } else if (!editingId) {
         // Creating: offer to restore draft
         // Use a flag to prevent showing the confirm dialog twice in development mode
-        const hasShownDraftPrompt = sessionStorage.getItem('studentFormDraftPromptShown');
+        const hasShownDraftPrompt = sessionStorage.getItem(SESSION_STATUS_KEY);
         try {
           const raw = localStorage.getItem(DRAFT_KEY);
           if (raw && !hasShownDraftPrompt) {
-            sessionStorage.setItem('studentFormDraftPromptShown', 'true');
+            sessionStorage.setItem(SESSION_STATUS_KEY, "true");
             const ok = window.confirm("Khôi phục bản nháp trước đó?");
             if (ok) {
               const d = JSON.parse(raw) as CreateStudentInput;
@@ -163,13 +160,13 @@ export default function StudentForm({
         // closed
         resetForm();
         // Clear the flag when the form is closed
-        sessionStorage.removeItem('studentFormDraftPromptShown');
+        sessionStorage.removeItem(SESSION_STATUS_KEY);
       }
     })();
     return () => {
       mounted = false;
     };
-  }, [open, editingId, toast]);
+  }, [editingId, toast]);
 
   // Autosave draft on blur with small debounce
   const saveDraftDebounced = () => {
@@ -312,7 +309,7 @@ export default function StudentForm({
             className="text-sm text-blue-400 hover:text-blue-300 p-0 h-auto"
             onClick={() => setShowParent(!showParent)}
           >
-            {showParent ? "Ẩn thông tin phụ huynh" : "+ Thêm phụ huynh"}
+            {showParent ? "Ẩn thông tin phụ huynh" : "Hiện thông tin phụ huynh"}
           </Button>
 
           {showParent && (
@@ -330,10 +327,10 @@ export default function StudentForm({
                       i === index ? updatedParent : p
                           ));
                         }}
-                  onDelete={parents.length > 1 ? () => {
+                  onDelete={() => {
                     setParents(prev => prev.filter((_, i) => i !== index));
                     saveDraftDebounced();
-                  } : undefined}
+                  }}
                       onBlur={saveDraftDebounced}
                     />
               ))}
@@ -354,7 +351,7 @@ export default function StudentForm({
                   saveDraftDebounced();
                 }}
               >
-                + Thêm phụ huynh khác
+                + Thêm phụ huynh
               </Button>
             </div>
           )}
@@ -364,7 +361,15 @@ export default function StudentForm({
       <div className="mt-4 flex justify-end gap-2">
         <Button
           variant="outline"
-          onClick={() => onOpenChange(false)}
+          onClick={() => {
+            try {
+              resetForm();
+              localStorage.removeItem(DRAFT_KEY);
+              sessionStorage.removeItem(SESSION_STATUS_KEY);
+            } catch {
+              // ignore
+            }
+          }}
           disabled={submitting}
         >
           Huỷ

@@ -42,7 +42,7 @@ export default function ParentForm({
             className="text-xs text-red-400 hover:text-red-300 p-1 h-auto"
             onClick={onDelete}
           >
-            - Xóa
+            Xóa
           </Button>
         )}
       </div>
