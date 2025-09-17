@@ -11,10 +11,14 @@ import { Label } from "../ui/label";
 import { Button } from "../ui/button";
 import LoadingSpinner from "../commons/LoadingSpinner";
 import ParentForm from "./ParentForm";
+import MultipleSelector from "../ui/multiple-selector";
+import type { Option } from "../ui/multiple-selector";
+import { classStudentService } from "../../services/classStudentService";
 
 export type StudentFormProps = {
   editingId: string | null;
   onSaved?: () => void | Promise<void>;
+  classOptions?: Option[]; // Provided by parent page when creating new student
 };
 
 const DRAFT_KEY = "students.form.draft"; // could be extended with userId if needed
@@ -41,6 +45,7 @@ type ParentInfo = {
 export default function StudentForm({
   editingId,
   onSaved,
+  classOptions = [],
 }: StudentFormProps) {
   const { toast } = useToast();
   const isEdit = !!editingId;
@@ -53,6 +58,7 @@ export default function StudentForm({
 
   const [showParent, setShowParent] = useState(false);
   const [parents, setParents] = useState<ParentInfo[]>([]);
+  const [selectedClasses, setSelectedClasses] = useState<Option[]>([]);
 
   const nameEditedManuallyRef = useRef(false);
   const debounceTimer = useRef<number | null>(null);
@@ -64,6 +70,7 @@ export default function StudentForm({
     setNote(null);
     setShowParent(false);
     setParents([]);
+    setSelectedClasses([]);
     nameEditedManuallyRef.current = false;
   }
 
@@ -227,7 +234,27 @@ export default function StudentForm({
           note,
           parents: parents,
         };
-        await studentService.createStudent(payload);
+        const created = await studentService.createStudent(payload);
+        // After creating student successfully, add to selected classes
+        if (selectedClasses.length > 0) {
+          try {
+            await Promise.all(
+              selectedClasses.map((opt) =>
+                classStudentService.addStudentToClass(opt.value, {
+                  studentId: created.id,
+                })
+              )
+            );
+          } catch (err) {
+            console.log("Failed to add student to classes: ", err);
+            toast({
+              variant: "warning",
+              title: "Chú ý",
+              description:
+                "Đã tạo học sinh nhưng thêm vào một số lớp thất bại. Bạn có thể thử lại sau.",
+            });
+          }
+        }
         // clear draft after successful create
         try {
           localStorage.removeItem(DRAFT_KEY);
@@ -258,6 +285,21 @@ export default function StudentForm({
   return (
     <>
       <div className="mt-4 grid grid-cols-1 gap-3">
+        {!isEdit && (
+          <div className="space-y-1">
+            <Label>Lớp theo học</Label>
+            <MultipleSelector
+              options={classOptions}
+              placeholder="Chọn lớp..."
+              emptyIndicator={
+                <p className="text-center text-sm leading-10 text-gray-600 dark:text-gray-400">
+                  Không có lớp phù hợp.
+                </p>
+              }
+              onChange={(opts) => setSelectedClasses(opts)}
+            />
+          </div>
+        )}
         <div className="space-y-1">
           <Label htmlFor="studentName">Tên học sinh</Label>
           <Input

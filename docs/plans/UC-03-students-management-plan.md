@@ -311,22 +311,12 @@ Errors (common)
   - [X] `leaveStudentFromClass(classId, classStudentId, leftAt)` - leftAt lấy current theo giờ UTC để lưu vào backend cho chuẩn hóa.
 
 ### 3.2 Pages & Components
-- [ ] Sidebar: thêm mục "Học sinh" → route `/students`
-- [ ] Trang danh sách `/students`
-  - [ ] Bảng: Name, Phone, Classes, Actions
-  - [ ] Bộ lọc: `classId` (tuỳ chọn).
-  - [ ] Actions: Tạo mới, Xem/Sửa, Xoá
-- [ ] Modal/Form `StudentForm`
-  - [ ] Trường: name (bắt buộc), email, phone, note (loại bỏ parentId select; dùng ParentInline duy nhất)
-  - [ ] Hàng Parent riêng với nút "+" sau label:
-        - Khi bấm "+" → hiện hàng nhập ParentInline gồm: Relationship (select: Bố/Mẹ/Ông/Bà), Name (prefill theo Relationship + tên học sinh, có thể sửa), Phone, Email, Note.
-        - Nếu thay đổi Relationship và ô Name chưa bị user sửa tay → tự cập nhật Name theo công thức `${prefix} ${studentName}`.
-        - Nếu user đã sửa Name thủ công → không auto-overwrite khi đổi Relationship, chỉ cho phép edit thủ công.
-  - [ ] Validation, loading state, error display
-  - [ ] Autosave LocalStorage:
-        - Sau mỗi lần out-focus (blur) của một ô nhập (debounce ~300ms), lưu trạng thái form vào LocalStorage, key: `students.form.draft` (có thể kèm userId để tránh xung đột đa tài khoản).
-        - Khi mở lại form, nếu có draft → hỏi khôi phục hoặc tự động điền lại.
-        - Khi tạo thành công (201) → xóa draft khỏi LocalStorage.
+- [X] Sidebar: thêm mục "Học sinh" → route `/students`
+- [X] Trang danh sách `/students`
+  - [X] Bảng: Name, Phone, Classes, Actions
+  - [X] Bộ lọc: `classId` (tuỳ chọn).
+  - [X] Actions: Tạo mới, Xem/Sửa, Xoá
+- [X] Form `StudentForm`
 - [ ] Tích hợp tab Học sinh ở trang lớp `/classes/:classId`
   - [ ] Danh sách thành viên lớp (ClassStudent)
   - [ ] Action: Add student to class (search + chọn), Leave

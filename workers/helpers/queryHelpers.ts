@@ -18,9 +18,9 @@ type Limits = {
 };
 
 const LIMITS = {
-  maxRowsReadForSelectOne: 5,
-  maxRowsReadForSelectAll: 50,
-  maxRowsWritten: 5,
+  maxRowsReadForSelectOne: 10,
+  maxRowsReadForSelectAll: 100,
+  maxRowsWritten: 10,
 }
 
 function isDev(meta?: D1Meta): boolean {
