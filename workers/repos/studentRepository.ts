@@ -111,7 +111,7 @@ export class StudentRepository {
         SELECT DISTINCT s.id, s.name, s.phone AS phone, s.email AS email, s.note, s.createdAt
         FROM Student s
         JOIN ClassStudent cs ON cs.studentId = s.id
-        WHERE s.createdByTeacher = ? AND cs.classId = ?
+        WHERE s.createdByTeacher = ? AND cs.classId = ? AND cs.leftAt IS NULL
         ORDER BY s.id DESC
       `;
       return await selectAll<StudentRow>(this.deps.db, sql, [

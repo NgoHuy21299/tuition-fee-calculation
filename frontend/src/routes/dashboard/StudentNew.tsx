@@ -10,13 +10,20 @@ import type { Option } from "../../components/ui/multiple-selector";
 export default function StudentNew() {
   const navigate = useNavigate();
   const location = useLocation();
-  const passedOptions =
-    ((location.state as { classOptions?: Option[] } | null)?.classOptions ?? []) as Option[];
+  const state = (location.state as { classOptions?: Option[]; preselectSelectedClasses?: Option[]; backTo?: string; backTab?: string } | null) ?? null;
+  const passedOptions = (state?.classOptions ?? []) as Option[];
+  const preselectSelectedClasses = (state?.preselectSelectedClasses ?? []) as Option[];
+  const backTo = state?.backTo;
+  const backTab = state?.backTab;
   const [loadingClasses, setLoadingClasses] = useState(false);
   const [classOptions, setClassOptions] = useState<Option[]>(passedOptions);
 
   const handleSaved = () => {
-    navigate("/dashboard/students");
+    if (backTo) {
+      navigate(backTo, { state: { tab: backTab || "students" } });
+    } else {
+      navigate("/dashboard/students");
+    }
   };
 
   useEffect(() => {
@@ -45,7 +52,7 @@ export default function StudentNew() {
 
   return (
     <div className="space-y-4">
-      <BackNavigation to="/dashboard/students" />
+      <BackNavigation to={backTo || "/dashboard/students"} state={backTab ? { tab: backTab } : undefined} />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold">Tạo học sinh mới</h1>
@@ -63,6 +70,7 @@ export default function StudentNew() {
             editingId={null}
             onSaved={handleSaved}
             classOptions={classOptions}
+            preselectSelectedClasses={preselectSelectedClasses}
           />
         </div>
       </Card>

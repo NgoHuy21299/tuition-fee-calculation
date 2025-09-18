@@ -19,6 +19,7 @@ export type StudentFormProps = {
   editingId: string | null;
   onSaved?: () => void | Promise<void>;
   classOptions?: Option[]; // Provided by parent page when creating new student
+  preselectSelectedClasses?: Option[]; // Optional: preselect classes (e.g., current class from ClassDetail)
 };
 
 const DRAFT_KEY = "students.form.draft"; // could be extended with userId if needed
@@ -46,6 +47,7 @@ export default function StudentForm({
   editingId,
   onSaved,
   classOptions = [],
+  preselectSelectedClasses,
 }: StudentFormProps) {
   const { toast } = useToast();
   const isEdit = !!editingId;
@@ -98,7 +100,7 @@ export default function StudentForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name, isEdit]);
 
-  // Load for edit
+  // Load for edit / create
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -185,6 +187,11 @@ export default function StudentForm({
         } catch {
           // ignore
         }
+        // Preselect classes if provided from parent (e.g., when creating from ClassDetail)
+        if (preselectSelectedClasses && preselectSelectedClasses.length > 0) {
+          setSelectedClasses(preselectSelectedClasses);
+          setInitialSelectedClasses(preselectSelectedClasses);
+        }
       } else if (!open) {
         // closed
         resetForm();
@@ -195,7 +202,7 @@ export default function StudentForm({
     return () => {
       mounted = false;
     };
-  }, [editingId, toast]);
+  }, [editingId, toast, preselectSelectedClasses]);
 
   // Autosave draft on blur with small debounce
   const saveDraftDebounced = () => {

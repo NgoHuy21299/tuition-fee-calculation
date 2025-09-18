@@ -11,13 +11,17 @@ export default function StudentEdit() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
+  const st = (location.state as { backTo?: string; backTab?: string } | null) || null;
+  const backTo = st?.backTo;
+  const backTab = st?.backTab;
   const passedOptions =
     ((location.state as { classOptions?: Option[] } | null)?.classOptions ?? []) as Option[];
   const [loadingClasses, setLoadingClasses] = useState(false);
   const [classOptions, setClassOptions] = useState<Option[]>(passedOptions);
 
   const handleSaved = () => {
-    navigate("/dashboard/students");
+    if (backTo) navigate(backTo, { state: { tab: backTab || "students" } });
+    else navigate("/dashboard/students");
   };
 
   useEffect(() => {
@@ -46,7 +50,7 @@ export default function StudentEdit() {
 
   return (
     <div className="space-y-4">
-      <BackNavigation to="/dashboard/students" />
+      <BackNavigation to={backTo || "/dashboard/students"} state={backTab ? { tab: backTab } : undefined} />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold">Chỉnh sửa học sinh</h1>
