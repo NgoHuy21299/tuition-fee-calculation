@@ -12,3 +12,4 @@
 .dev.vars*
 
 .vscode/
+logs/
