@@ -19,7 +19,7 @@ export default function Students() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<StudentDTO[]>([]);
   const [total, setTotal] = useState(0);
   const [classes, setClasses] = useState<ClassDTO[]>([]);
@@ -35,8 +35,14 @@ export default function Students() {
     return found?.name ?? "Tất cả lớp";
   }, [classId, classes]);
 
+  // Ensure spinner shows at least this duration to avoid flicker
+  const MIN_SPINNER_MS = 300;
+  const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
   useEffect(() => {
     (async () => {
+      setLoading(true);
+      const start = Date.now();
       try {
         const { items, total } = await studentService.listStudents({
           classId: classId || undefined,
@@ -49,6 +55,10 @@ export default function Students() {
           title: "Lỗi",
           description: "Tải danh sách học sinh thất bại",
         });
+      } finally {
+        const elapsed = Date.now() - start;
+        if (elapsed < MIN_SPINNER_MS) await delay(MIN_SPINNER_MS - elapsed);
+        setLoading(false);
       }
     })();
   }, [classId, toast]);
@@ -88,6 +98,7 @@ export default function Students() {
 
   const refresh = async () => {
     setLoading(true);
+    const start = Date.now();
     try {
       const { items, total } = await studentService.listStudents({
         classId: classId || undefined,
@@ -95,9 +106,30 @@ export default function Students() {
       setItems(items);
       setTotal(total);
     } finally {
+      const elapsed = Date.now() - start;
+      if (elapsed < MIN_SPINNER_MS) await delay(MIN_SPINNER_MS - elapsed);
       setLoading(false);
     }
   };
+
+  // Derived filtered items (client-side) similar to Classes.tsx
+  const filtered = useMemo(() => {
+    let list = items.slice();
+    const term = q.trim().toLowerCase();
+    if (term) {
+      list = list.filter((s) => {
+        const mix = [
+          s.name ?? "",
+          s.phone ?? "",
+          s.currentClasses ?? "",
+        ]
+          .join(" ")
+          .toLowerCase();
+        return mix.includes(term);
+      });
+    }
+    return list;
+  }, [items, q]);
 
   const onDelete = async (id: string) => {
     try {
@@ -133,7 +165,7 @@ export default function Students() {
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <Input
-              placeholder="Tìm kiếm... (Tên, SĐT)"
+              placeholder="Tìm kiếm... (Tên, Lớp, SĐT)"
               value={q}
               onChange={(e) => setQ(e.target.value)}
               className="w-64"
@@ -176,16 +208,14 @@ export default function Students() {
                   </tr>
                 </thead>
                 <tbody>
-                  {items
-                    .filter((s) => {
-                      const term = q.trim().toLowerCase();
-                      if (!term) return true;
-                      const mix = [s.name ?? "", s.phone ?? ""]
-                        .join(" ")
-                        .toLowerCase();
-                      return mix.includes(term);
-                    })
-                    .map((s) => (
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-6 text-center text-gray-400">
+                        Không có học sinh nào
+                      </td>
+                    </tr>
+                  ) : (
+                    filtered.map((s) => (
                       <tr key={s.id} className="border-t border-gray-800">
                         <td className="py-2 pr-3">
                           <div className="font-medium">{s.name}</div>
@@ -211,14 +241,15 @@ export default function Students() {
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    ))
+                  )}
                 </tbody>
               </table>
             )}
           </div>
           <div className="flex items-center justify-between pt-2">
             <p className="text-xs text-gray-400">
-              Tổng: {items.length} học sinh. (Đã tải {total} từ server)
+              Tổng: {filtered.length} học sinh. (Đã tải {total} từ server)
             </p>
           </div>
         </div>

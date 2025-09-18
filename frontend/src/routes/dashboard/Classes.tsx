@@ -20,7 +20,7 @@ export default function DashboardClasses() {
   const { toast } = useToast();
   const [items, setItems] = useState<ClassDTO[]>([]);
   const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<
@@ -56,8 +56,13 @@ export default function DashboardClasses() {
     return list;
   }, [items, q, statusFilter]);
 
+  // Ensure spinner shows at least this duration to avoid flicker
+  const MIN_SPINNER_MS = 300;
+  const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
   async function load() {
     setLoading(true);
+    const start = Date.now();
     try {
       const { items, total } = await classService.listClasses({
         isGetAll: viewAll,
@@ -75,6 +80,8 @@ export default function DashboardClasses() {
       }
       toast({ title: "Lỗi", description: message, variant: "error" });
     } finally {
+      const elapsed = Date.now() - start;
+      if (elapsed < MIN_SPINNER_MS) await delay(MIN_SPINNER_MS - elapsed);
       setLoading(false);
     }
   }
