@@ -126,7 +126,7 @@ export default function Students() {
             Quản lý danh sách học sinh và thông tin liên lạc.
           </p>
         </div>
-        <Button onClick={openCreate}>Tạo học sinh</Button>
+        <Button variant="success" onClick={openCreate}>Tạo học sinh</Button>
       </div>
 
       <Card>
@@ -160,7 +160,7 @@ export default function Students() {
 
           <div className="overflow-x-auto">
             {loading ? (
-              <div className="text-center">
+              <div className="flex justify-center overflow-hidden">
                 <LoadingSpinner size={32} padding={6} />
               </div>
             ) : (
@@ -203,7 +203,7 @@ export default function Students() {
                               Sửa
                             </Button>
                             <Button
-                              variant="outline"
+                              variant="danger"
                               onClick={() => setConfirmDeleteId(s.id)}
                             >
                               Xoá

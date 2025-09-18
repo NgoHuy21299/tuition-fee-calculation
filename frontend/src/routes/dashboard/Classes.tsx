@@ -184,39 +184,48 @@ export default function DashboardClasses() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-gray-400">
-                  <th className="py-2 pr-3 font-medium">Tên lớp</th>
-                  <th className="py-2 pr-3 font-medium">Môn</th>
-                  <th className="py-2 pr-3 font-medium">Giá mặc định</th>
-                  <th className="py-2 pr-3 font-medium">Trạng thái</th>
-                  <th className="py-2 pr-3 font-medium">Tạo lúc</th>
-                  <th className="py-2 pr-3 font-medium text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <LoadingSpinner size={18} padding={3} />
-                ) : filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-6 text-center text-gray-400">
-                      Không có lớp nào
-                    </td>
+            {loading ? (
+              <div className="flex justify-center overflow-hidden">
+                <LoadingSpinner size={32} padding={6} />
+              </div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-gray-400">
+                    <th className="py-2 pr-3 font-medium">Tên lớp</th>
+                    <th className="py-2 pr-3 font-medium">Môn</th>
+                    <th className="py-2 pr-3 font-medium">Giá mặc định</th>
+                    <th className="py-2 pr-3 font-medium">Trạng thái</th>
+                    <th className="py-2 pr-3 font-medium">Tạo lúc</th>
+                    <th className="py-2 pr-3 font-medium text-right">
+                      Thao tác
+                    </th>
                   </tr>
-                ) : (
-                  filtered.map((c) => (
-                    <Row
-                      key={c.id}
-                      c={c}
-                      onView={() => navigate(`/dashboard/classes/${c.id}`)}
-                      onDelete={() => setConfirmDeleteId(c.id)}
-                      formatLocal={formatLocal}
-                    />
-                  ))
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="py-6 text-center text-gray-400"
+                      >
+                        Không có lớp nào
+                      </td>
+                    </tr>
+                  ) : (
+                    filtered.map((c) => (
+                      <Row
+                        key={c.id}
+                        c={c}
+                        onView={() => navigate(`/dashboard/classes/${c.id}`)}
+                        onDelete={() => setConfirmDeleteId(c.id)}
+                        formatLocal={formatLocal}
+                      />
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
           <div className="flex items-center justify-between pt-2">
             <p className="text-xs text-gray-400">
