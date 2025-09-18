@@ -59,22 +59,46 @@ export class ClassStudentService {
     if (alreadyMember)
       throw new AppError("ALREADY_MEMBER", "Student already in class", 409);
 
-    await this.repo.add({
-      id: input.id,
+    // If not currently a member, check if a historical membership exists
+    const existing = await this.repo.getByClassAndStudent({
       classId,
       studentId: input.studentId,
-      unitPriceOverride: input.unitPriceOverride ?? null,
     });
 
-    const rows = await this.repo.listByClass({ classId });
-    const created = rows.find((r) => r.id === input.id);
-    if (!created)
-      throw new AppError(
-        "RESOURCE_NOT_FOUND",
-        "Membership not found after add",
-        404
-      );
-    return mapClassStudentRowToDTO(created);
+    if (existing) {
+      // Reactivate: clear leftAt and optionally update unitPriceOverride
+      await this.repo.reactivate({
+        id: existing.id,
+        unitPriceOverride: input.unitPriceOverride ?? null,
+      });
+      const rows = await this.repo.listByClass({ classId });
+      const updated = rows.find((r) => r.id === existing.id);
+      if (!updated)
+        throw new AppError(
+          "RESOURCE_NOT_FOUND",
+          "Membership not found after reactivate",
+          404
+        );
+      return mapClassStudentRowToDTO(updated);
+    } else {
+      // Fresh add
+      await this.repo.add({
+        id: input.id,
+        classId,
+        studentId: input.studentId,
+        unitPriceOverride: input.unitPriceOverride ?? null,
+      });
+
+      const rows = await this.repo.listByClass({ classId });
+      const created = rows.find((r) => r.id === input.id);
+      if (!created)
+        throw new AppError(
+          "RESOURCE_NOT_FOUND",
+          "Membership not found after add",
+          404
+        );
+      return mapClassStudentRowToDTO(created);
+    }
   }
 
   /**

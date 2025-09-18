@@ -62,6 +62,18 @@ export class StudentRepository {
   }
 
   /**
+   * Check if the given student belongs to the teacher (ownership).
+   */
+  async isOwner(id: string, teacherId: string): Promise<boolean> {
+    const row = await selectOne<{ one: number }>(
+      this.deps.db,
+      `SELECT 1 AS one FROM Student WHERE id = ? AND createdByTeacher = ? LIMIT 1`,
+      [id, teacherId]
+    );
+    return row != null;
+  }
+
+  /**
    * List students for a given teacher.
    *
    * Ownership scope: Only students who appear in any ClassStudent row for a class owned by `teacherId`.
@@ -102,7 +114,10 @@ export class StudentRepository {
         WHERE s.createdByTeacher = ? AND cs.classId = ?
         ORDER BY s.id DESC
       `;
-      return await selectAll<StudentRow>(this.deps.db, sql, [params.teacherId, params.classId]);
+      return await selectAll<StudentRow>(this.deps.db, sql, [
+        params.teacherId,
+        params.classId,
+      ]);
     }
   }
 
@@ -154,7 +169,10 @@ export class StudentRepository {
   /**
    * Detailed student fetch: includes basic student row, parent details, and classes this student has (past and present).
    */
-  async getDetailById(id: string, teacherId: string): Promise<StudentDetail | null> {
+  async getDetailById(
+    id: string,
+    teacherId: string
+  ): Promise<StudentDetail | null> {
     // Ensure visibility by teacher ownership (via createdByTeacher)
     const base = await this.getById(id, teacherId);
     if (!base) return null;
@@ -203,7 +221,16 @@ export class StudentRepository {
    *
    * Only applies the update if the student is visible under the teacher's classes (ownership scope).
    */
-  async update(id: string, teacherId: string, patch: Partial<{ name: string; email: string | null; phone: string | null; note: string | null }>): Promise<void> {
+  async update(
+    id: string,
+    teacherId: string,
+    patch: Partial<{
+      name: string;
+      email: string | null;
+      phone: string | null;
+      note: string | null;
+    }>
+  ): Promise<void> {
     const sets: string[] = [];
     const binds: unknown[] = [];
 
@@ -235,44 +262,16 @@ export class StudentRepository {
   }
 
   /**
-   * Delete a student row.
+   * Delete a student row scoped by teacher ownership.
    *
-   * Business rules enforced at repository level:
-   * - Reject if any membership history exists in ClassStudent (ever joined any class).
-   * - Reject if any Attendance exists for the student.
-   * - Reject if the requester (teacherId) has no related class membership linked to the student.
+   * Note: Caller (service layer) must perform any business-rule checks and authorization.
    */
   async delete(id: string, teacherId: string): Promise<void> {
-    // Ensure the requester is the creator/owner
-    const owner = await selectOne<{ one: number }>(
+    await execute(
       this.deps.db,
-      `SELECT 1 AS one FROM Student WHERE id = ? AND createdByTeacher = ? LIMIT 1`,
+      `DELETE FROM Student WHERE id = ? AND createdByTeacher = ?`,
       [id, teacherId]
     );
-    if (!owner) {
-      throw new Error("FORBIDDEN");
-    }
-
-    // Only allow delete if the student has no membership history and no attendance
-    const hasMembershipEver = await selectOne<{ one: number }>(
-      this.deps.db,
-      `SELECT 1 AS one FROM ClassStudent WHERE studentId = ? LIMIT 1`,
-      [id]
-    );
-    if (hasMembershipEver) {
-      throw new Error("STUDENT_HAS_MEMBERSHIP_HISTORY");
-    }
-
-    const hasAttendance = await selectOne<{ one: number }>(
-      this.deps.db,
-      `SELECT 1 AS one FROM Attendance WHERE studentId = ? LIMIT 1`,
-      [id]
-    );
-    if (hasAttendance) {
-      throw new Error("STUDENT_HAS_ATTENDANCE");
-    }
-
-    await execute(this.deps.db, `DELETE FROM Student WHERE id = ?`, [id]);
   }
 
   /**
@@ -280,12 +279,24 @@ export class StudentRepository {
    *
    * Caller should decide exact duplicate policy; this method exposes a simple presence check.
    */
-  async existsDuplicate(params: { teacherId: string; name: string; phone?: string | null; email?: string | null }): Promise<boolean> {
+  async existsDuplicate(params: {
+    teacherId: string;
+    name: string;
+    phone?: string | null;
+    email?: string | null;
+  }): Promise<boolean> {
     const conds: string[] = [];
     const binds: unknown[] = [params.teacherId];
-    conds.push("name = ?"); binds.push(params.name);
-    if (params.phone) { conds.push(`phone = ?`); binds.push(params.phone); }
-    if (params.email) { conds.push(`email = ?`); binds.push(params.email); }
+    conds.push("name = ?");
+    binds.push(params.name);
+    if (params.phone) {
+      conds.push(`phone = ?`);
+      binds.push(params.phone);
+    }
+    if (params.email) {
+      conds.push(`email = ?`);
+      binds.push(params.email);
+    }
     const where = conds.length ? ` AND (${conds.join(" OR ")})` : "";
     const sql = `SELECT 1 AS one FROM Student WHERE createdByTeacher = ?${where} LIMIT 1`;
     const row = await selectOne<{ one: number }>(this.deps.db, sql, binds);

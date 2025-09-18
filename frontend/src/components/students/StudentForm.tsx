@@ -60,6 +60,8 @@ export default function StudentForm({
   const [parents, setParents] = useState<ParentInfo[]>([]);
   const [selectedClasses, setSelectedClasses] = useState<Option[]>([]);
   const [initialSelectedClasses, setInitialSelectedClasses] = useState<Option[]>([]);
+  // Map classId -> classStudentId for active memberships at load time (used to leave when removed)
+  const [initialMembershipByClass, setInitialMembershipByClass] = useState<Record<string, string>>({});
 
   const nameEditedManuallyRef = useRef(false);
   const debounceTimer = useRef<number | null>(null);
@@ -126,14 +128,21 @@ export default function StudentForm({
             setShowParent(false);
           }
           
-          // Map classes đã chọn
+          // Map classes đã chọn (chỉ lấy membership đang active: leftAt == null)
           if (detail.classes && detail.classes.length > 0) {
-            const selectedClassOptions: Option[] = detail.classes.map((cls) => ({
+            const activeMemberships = detail.classes.filter((cls) => cls.leftAt == null);
+            const selectedClassOptions: Option[] = activeMemberships.map((cls) => ({
               label: cls.name,
               value: cls.id,
             }));
             setSelectedClasses(selectedClassOptions);
             setInitialSelectedClasses(selectedClassOptions);
+            // Build map classId -> classStudentId for active ones
+            const m: Record<string, string> = {};
+            for (const cls of activeMemberships) {
+              m[cls.id] = cls.classStudentId;
+            }
+            setInitialMembershipByClass(m);
           }
         } catch {
           toast({
@@ -264,15 +273,18 @@ export default function StudentForm({
             );
           }
           
-          // Xử lý xóa học sinh khỏi các classes
-          // Do API hiện tại chưa hỗ trợ remove student khỏi class, chúng ta sẽ hiển thị thông báo
+          // Xử lý xóa học sinh khỏi các classes (leave membership bằng PUT /api/classes/:id/students/:classStudentId)
           if (classesToRemove.length > 0) {
-            toast({
-              variant: "warning",
-              title: "Chú ý",
-              description:
-                "Hiện tại chưa hỗ trợ xóa học sinh khỏi lớp. Vui lòng thực hiện thao tác này trong phần quản lý lớp.",
-            });
+            await Promise.all(
+              classesToRemove.map(async (opt) => {
+                const classId = opt.value; // class id
+                const classStudentId = initialMembershipByClass[classId];
+                if (classStudentId) {
+                  const nowIso = new Date().toISOString();
+                  await classStudentService.leaveStudentFromClass(classId, classStudentId, nowIso);
+                }
+              })
+            );
           }
           
         } catch (err) {

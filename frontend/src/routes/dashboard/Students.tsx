@@ -140,11 +140,25 @@ export default function Students() {
         description: "Đã xoá học sinh",
       });
       await refresh();
-    } catch {
+    } catch (err: unknown) {
+      let description = "Xoá học sinh thất bại";
+      let variant: "error" | "warning" = "error";
+      if (typeof err === "object" && err !== null) {
+        const anyErr = err as {
+          response?: { data?: { code?: string; error?: string } };
+        };
+        const code = anyErr.response?.data?.code;
+        if (code === "STUDENT_HAS_MEMBERSHIP_HISTORY" || code === "STUDENT_HAS_ATTENDANCE") {
+          variant = "warning";
+          description = anyErr.response?.data?.error || description;
+        } else {
+          description = anyErr.response?.data?.error || description;
+        }
+      }
       toast({
-        variant: "error",
-        title: "Lỗi",
-        description: "Xoá học sinh thất bại",
+        variant,
+        title: variant === "warning" ? "Không thể xoá" : "Lỗi",
+        description,
       });
     }
   };

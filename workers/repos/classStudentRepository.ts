@@ -88,4 +88,33 @@ export class ClassStudentRepository {
     const row = await selectOne<{ one: number }>(this.deps.db, sql, [params.studentId]);
     return row != null;
   }
+
+  /**
+   * Fetch a membership row by (classId, studentId), regardless of leftAt.
+   */
+  async getByClassAndStudent(params: { classId: string; studentId: string }): Promise<ClassStudentRow | null> {
+    const sql = `
+      SELECT id, classId, studentId, unitPriceOverride, joinedAt, leftAt
+      FROM ClassStudent
+      WHERE classId = ? AND studentId = ?
+      LIMIT 1
+    `;
+    const row = await selectOne<ClassStudentRow>(this.deps.db, sql, [params.classId, params.studentId]);
+    return row ?? null;
+  }
+
+  /**
+   * Reactivate a membership by clearing leftAt and optionally updating unitPriceOverride.
+   */
+  async reactivate(params: { id: string; unitPriceOverride?: number | null }): Promise<void> {
+    const sets: string[] = ["leftAt = NULL"]; // clear leftAt to mark active
+    const binds: unknown[] = [];
+    if (params.unitPriceOverride !== undefined) {
+      sets.push("unitPriceOverride = ?");
+      binds.push(params.unitPriceOverride);
+    }
+    const sql = `UPDATE ClassStudent SET ${sets.join(", ")} WHERE id = ?`;
+    binds.push(params.id);
+    await execute(this.deps.db, sql, binds);
+  }
 }

@@ -1,5 +1,7 @@
 import { StudentRepository } from "../repos/studentRepository";
 import { ParentRepository } from "../repos/parentRepository";
+import { ClassStudentRepository } from "../repos/classStudentRepository";
+import { AttendanceRepository } from "../repos/attendanceRepository";
 import { mapStudentRowToDTO, mapStudentDetailToDTO, type StudentDTO, type StudentDetailDTO } from "../types/studentTypes";
 import { AppError } from "../errors";
 import type {
@@ -23,9 +25,13 @@ const REL_PREFIX: Record<
 export class StudentService {
   private readonly repo: StudentRepository;
   private readonly parentRepo: ParentRepository;
+  private readonly classStudentRepo: ClassStudentRepository;
+  private readonly attendanceRepo: AttendanceRepository;
   constructor(private readonly deps: StudentServiceDeps) {
     this.repo = new StudentRepository({ db: deps.db });
     this.parentRepo = new ParentRepository({ db: deps.db });
+    this.classStudentRepo = new ClassStudentRepository({ db: deps.db });
+    this.attendanceRepo = new AttendanceRepository({ db: deps.db });
   }
 
   async listByTeacher(params: {
@@ -194,6 +200,35 @@ export class StudentService {
   }
 
   async delete(teacherId: string, id: string): Promise<void> {
+    // Ownership check (authorization)
+    const isOwner = await this.repo.isOwner(id, teacherId);
+    if (!isOwner) {
+      throw new AppError("FORBIDDEN", "Dont have permission!", 400);
+    }
+
+    // Business rules
+    const hasMembershipEver = await this.classStudentRepo.hasAnyMembership({
+      studentId: id,
+    });
+    if (hasMembershipEver) {
+      throw new AppError(
+        "STUDENT_HAS_MEMBERSHIP_HISTORY",
+        "Student has membership history, cannot remove",
+        409,
+      );
+    }
+
+    const hasAttendance = await this.attendanceRepo.hasAnyAttendance({
+      studentId: id,
+    });
+    if (hasAttendance) {
+      throw new AppError(
+        "STUDENT_HAS_ATTENDANCE",
+        "Student has membership history, cannot remove",
+        409,
+      );
+    }
+
     await this.repo.delete(id, teacherId);
   }
 }
