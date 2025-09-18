@@ -17,6 +17,7 @@ interface ParentFormProps {
   name: string;
   nameEditedManuallyRef: React.MutableRefObject<boolean>;
   REL_LABEL: Record<"father" | "mother" | "grandfather" | "grandmother", string>;
+  autoNameEnabled?: boolean; // true when creating; false when editing
   onUpdate: (updatedParent: ParentInfo) => void;
   onDelete?: () => void;
   onBlur?: () => void;
@@ -28,6 +29,7 @@ export default function ParentForm({
   name,
   nameEditedManuallyRef,
   REL_LABEL,
+  autoNameEnabled = false,
   onUpdate,
   onDelete,
   onBlur,
@@ -56,21 +58,13 @@ export default function ParentForm({
             value={parent.relationship}
             onChange={(e) => {
               const newRelationship = e.target.value as "father" | "mother" | "grandfather" | "grandmother";
-              onUpdate({
+              const shouldAutoName = autoNameEnabled && !nameEditedManuallyRef.current && name.trim();
+              const next: ParentInfo = {
                 ...parent,
-                relationship: newRelationship
-              });
-              
-              // Auto-generate parent name if not manually edited
-              // Chỉ áp dụng khi tạo mới (name chưa được nhập thủ công và tên học sinh có giá trị)
-              // Không áp dụng khi edit (name đã có giá trị từ database)
-              if (!nameEditedManuallyRef.current && name.trim() && !parent.name) {
-                onUpdate({
-                  ...parent,
-                  relationship: newRelationship,
-                  name: `${REL_LABEL[newRelationship]} ${name.trim()}`
-                });
-              }
+                relationship: newRelationship,
+                name: shouldAutoName ? `${REL_LABEL[newRelationship]} ${name.trim()}` : parent.name,
+              };
+              onUpdate(next);
             }}
             onBlur={onBlur}
           >

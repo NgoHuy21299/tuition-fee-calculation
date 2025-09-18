@@ -80,25 +80,7 @@ export default function StudentForm({
     nameEditedManuallyRef.current = false;
   }
 
-  // Auto-generate parent name on relationship change if parentName not manually edited
-  // Chỉ áp dụng khi tạo mới, không áp dụng khi edit
-  useEffect(() => {
-    if (!isEdit && showParent && !nameEditedManuallyRef.current && name.trim()) {
-      setParents((prev) => {
-        if (prev.length > 0) {
-          // Update the first parent's name suggestion
-          const updated = [...prev];
-          updated[0] = {
-            ...updated[0],
-            name: `${REL_LABEL[updated[0].relationship]} ${name.trim()}`,
-          };
-          return updated;
-        }
-        return prev;
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, isEdit]);
+  // Removed: previously auto-generated parent name on student name change.
 
   // Load for edit / create
   useEffect(() => {
@@ -446,6 +428,7 @@ export default function StudentForm({
                   name={name}
                   nameEditedManuallyRef={nameEditedManuallyRef}
                   REL_LABEL={REL_LABEL}
+                  autoNameEnabled={!isEdit}
                   onUpdate={(updatedParent) => {
                     setParents((prev) =>
                       prev.map((p, i) => (i === index ? updatedParent : p))
