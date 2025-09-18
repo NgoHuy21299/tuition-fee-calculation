@@ -2,28 +2,21 @@ import { Hono } from "hono";
 import type { JwtPayload } from "../services/jwtService";
 import { t } from "../i18n/messages";
 import { toAppError } from "../errors";
-import { ClassService } from "../services/classService";
-import {
-  CreateClassSchema,
-  UpdateClassSchema,
-} from "../validation/class/classSchemas";
+import { StudentService } from "../services/studentService";
 import { parseBodyWithSchema } from "../validation/common/request";
+import { CreateStudentSchema, UpdateStudentSchema } from "../validation/student/studentSchemas";
 import { uuidv7 } from "uuidv7";
 
 /**
- * Classes API (Base: /api/classes)
- * Auth: Protected by apiAuthGuard (applied globally in app.ts for /api/*)
+ * Students API (Base: /api/students)
+ * Auth: Protected globally by apiAuthGuard in app.ts for /api/*
+ *
+ * Part 2.1: Route stubs only (return 501). Implementations will be filled in Part 2.2+.
  */
-export function createClassRouter() {
+export function createStudentRouter() {
   const router = new Hono<{ Bindings: Env; Variables: { user: JwtPayload } }>();
 
-  /**
-   * GET /api/classes
-   * Business rules:
-   * - Default: return up to 10 rows, only isActive = true, ordered by createdAt desc (latest first)
-   * - When query string isGetAll = true => return all (no limit, includes both active and inactive)
-   * Returns: { items: ClassDTO[], total: number }
-   */
+  // GET /api/students?classId=
   router.get("/", async (c) => {
     const user = c.get("user");
     if (!user)
@@ -32,31 +25,21 @@ export function createClassRouter() {
         401 as 401
       );
     try {
-      const svc = new ClassService({ db: c.env.DB });
       const url = new URL(c.req.url);
-      const isGetAll =
-        (url.searchParams.get("isGetAll") || "").toLowerCase() === "true";
+      const classId = url.searchParams.get("classId") || undefined;
+      const svc = new StudentService({ db: c.env.DB });
       const { items, total } = await svc.listByTeacher({
         teacherId: String(user.sub),
-        isActive: isGetAll ? undefined : true,
-        sort: "createdAt_desc",
-        limit: isGetAll ? undefined : 10,
+        classId: classId || undefined,
       });
       return c.json({ items, total }, 200 as 200);
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });
-      return c.json(
-        { error: t(e.code, e.message), code: e.code },
-        e.status as any
-      );
+      return c.json({ error: t(e.code, e.message), code: e.code }, e.status as any);
     }
   });
 
-  /**
-   * POST /api/classes
-   * Body: { name: string; subject?: string; description?: string; defaultFeePerSession?: number | null; isActive?: boolean }
-   * Returns: ClassDTO
-   */
+  // POST /api/students  (supports inline parent)
   router.post("/", async (c) => {
     const user = c.get("user");
     if (!user)
@@ -65,34 +48,25 @@ export function createClassRouter() {
         401 as 401
       );
     try {
-      const parsed = await parseBodyWithSchema(c, CreateClassSchema);
+      const parsed = await parseBodyWithSchema(c, CreateStudentSchema);
       if (!parsed.ok) {
         return c.json(
-          {
-            error: t("VALIDATION_ERROR"),
-            code: "VALIDATION_ERROR",
-            details: parsed.errors,
-          },
+          { error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors },
           400 as 400
         );
       }
-      const svc = new ClassService({ db: c.env.DB });
+      const svc = new StudentService({ db: c.env.DB });
       const id = uuidv7();
       const dto = await svc.create(String(user.sub), { id, ...parsed.value });
       return c.json(dto, 201 as 201);
     } catch (err) {
+      console.log(err);
       const e = toAppError(err, { code: "UNKNOWN" });
-      return c.json(
-        { error: t(e.code, e.message), code: e.code },
-        e.status as any
-      );
+      return c.json({ error: t(e.code, e.message), code: e.code }, e.status as any);
     }
   });
 
-  /**
-   * GET /api/classes/:id
-   * Returns: ClassDTO
-   */
+  // GET /api/students/:id (detail)
   router.get("/:id", async (c) => {
     const user = c.get("user");
     if (!user)
@@ -102,23 +76,16 @@ export function createClassRouter() {
       );
     try {
       const id = c.req.param("id");
-      const svc = new ClassService({ db: c.env.DB });
-      const dto = await svc.getById(String(user.sub), id);
+      const svc = new StudentService({ db: c.env.DB });
+      const dto = await svc.getDetailById(String(user.sub), id);
       return c.json(dto, 200 as 200);
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });
-      return c.json(
-        { error: t(e.code, e.message), code: e.code },
-        e.status as any
-      );
+      return c.json({ error: t(e.code, e.message), code: e.code }, e.status as any);
     }
   });
 
-  /**
-   * PUT /api/classes/:id
-   * Body: Partial<{ name; subject; description; defaultFeePerSession; isActive }>
-   * Returns: ClassDTO
-   */
+  // PUT /api/students/:id
   router.put("/:id", async (c) => {
     const user = c.get("user");
     if (!user)
@@ -127,34 +94,24 @@ export function createClassRouter() {
         401 as 401
       );
     try {
-      const id = c.req.param("id");
-      const parsed = await parseBodyWithSchema(c, UpdateClassSchema);
+      const parsed = await parseBodyWithSchema(c, UpdateStudentSchema);
       if (!parsed.ok) {
         return c.json(
-          {
-            error: t("VALIDATION_ERROR"),
-            code: "VALIDATION_ERROR",
-            details: parsed.errors,
-          },
+          { error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors },
           400 as 400
         );
       }
-      const svc = new ClassService({ db: c.env.DB });
+      const id = c.req.param("id");
+      const svc = new StudentService({ db: c.env.DB });
       const dto = await svc.update(String(user.sub), id, parsed.value);
       return c.json(dto, 200 as 200);
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });
-      return c.json(
-        { error: t(e.code, e.message), code: e.code },
-        e.status as any
-      );
+      return c.json({ error: t(e.code, e.message), code: e.code }, e.status as any);
     }
   });
 
-  /**
-   * DELETE /api/classes/:id
-   * Returns: 204 on success; 409 if class has dependencies
-   */
+  // DELETE /api/students/:id
   router.delete("/:id", async (c) => {
     const user = c.get("user");
     if (!user)
@@ -164,15 +121,12 @@ export function createClassRouter() {
       );
     try {
       const id = c.req.param("id");
-      const svc = new ClassService({ db: c.env.DB });
+      const svc = new StudentService({ db: c.env.DB });
       await svc.delete(String(user.sub), id);
       return new Response(null, { status: 204 });
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });
-      return c.json(
-        { error: t(e.code, e.message), code: e.code },
-        e.status as any
-      );
+      return c.json({ error: t(e.code, e.message), code: e.code }, e.status as any);
     }
   });
 

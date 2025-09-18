@@ -1,12 +1,12 @@
 import { Card } from "../../components/ui/card";
 import ClassForm, {
   type ClassFormValues,
-} from "../../components/dashboard/ClassForm";
+} from "../../components/classes/ClassForm";
 import { classService } from "../../services/classService";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useToast } from "../../components/commons/Toast";
-import { Button } from "../../components/ui/button";
+import BackNavigation from "../../components/commons/BackNavigation";
 
 export default function ClassNew() {
   const navigate = useNavigate();
@@ -16,13 +16,13 @@ export default function ClassNew() {
   async function onSubmit(values: ClassFormValues) {
     setSubmitting(true);
     try {
-      const created = await classService.createClass(values);
+      await classService.createClass(values);
       toast({
         title: "Thành công",
         description: "Đã tạo lớp",
         variant: "success",
       });
-      navigate(`/dashboard/classes/${created.id}`);
+      navigate(`/dashboard/classes`);
     } catch (err: unknown) {
       let description = "Tạo lớp thất bại";
       if (typeof err === "object" && err !== null) {
@@ -41,6 +41,7 @@ export default function ClassNew() {
 
   return (
     <div className="space-y-4">
+      <BackNavigation to="/dashboard/classes" />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold">Tạo lớp mới</h1>
@@ -48,12 +49,6 @@ export default function ClassNew() {
             Nhập thông tin lớp học. Bạn có thể chỉnh sửa sau.
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => navigate("/dashboard/classes")}
-        >
-          Quay về danh sách
-        </Button>
       </div>
       <Card>
         <ClassForm

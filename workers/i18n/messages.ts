@@ -17,7 +17,11 @@ export const viMessages: Record<ErrorCode, string> = {
   VALIDATION_ERROR: "Dữ liệu không hợp lệ",
   CLASS_HAS_DEPENDENCIES: "Lớp có phụ thuộc",
   CLASS_HAS_STUDENTS: "Lớp vẫn còn học sinh",
-  CLASS_HAS_SESSIONS: "Lớp vẫn còn buổi học"
+  CLASS_HAS_SESSIONS: "Lớp vẫn còn buổi học",
+  DUPLICATE_STUDENT: "Học sinh đã tồn tại",
+  ALREADY_MEMBER: "Học sinh đã được thêm vào lớp",
+  STUDENT_HAS_ATTENDANCE: "Học sinh đã từng học, không thể xóa",
+  STUDENT_HAS_MEMBERSHIP_HISTORY: "Học sinh đã từng học, không thể xóa"
 };
 
 export function t(code: ErrorCode, fallback?: string): string {

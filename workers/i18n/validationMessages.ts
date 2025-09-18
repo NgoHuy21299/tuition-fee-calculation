@@ -16,6 +16,18 @@ export const viValidationMessages: Record<ValidationCode, string> = {
   PASSWORD_REQUIRED: "Mật khẩu là bắt buộc",
   PASSWORD_TOO_SHORT: "Mật khẩu phải có ít nhất 8 ký tự",
   NAME_INVALID: "Tên không hợp lệ",
+  // NAME_TOO_LONG already defined above for classes; reuse that entry for students
+  // Student-specific
+  PHONE_INVALID: "Số điện thoại không hợp lệ",
+  NOTE_TOO_LONG: "Ghi chú quá dài",
+  RELATIONSHIP_INVALID: "Mối quan hệ không hợp lệ",
+  PARENT_NAME_INVALID: "Tên phụ huynh không hợp lệ hoặc quá dài",
+  PARENT_EMAIL_INVALID: "Email phụ huynh không hợp lệ",
+  PARENT_PHONE_INVALID: "Số điện thoại phụ huynh không hợp lệ",
+  PARENT_NOTE_TOO_LONG: "Ghi chú phụ huynh quá dài",
+  // ClassStudent-specific
+  STUDENT_ID_REQUIRED: "Thiếu mã học sinh",
+  UNIT_PRICE_INVALID: "Đơn giá không hợp lệ",
 };
 
 export function tv(code: ValidationCode, fallback?: string): string {

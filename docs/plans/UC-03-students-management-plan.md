@@ -1,0 +1,358 @@
+# UC-03: Quản lý học sinh và gán vào lớp – Implementation Plan
+
+## 1. Database & Model
+- [X] Xác nhận domain tables đã có trong `0005_domain_schema.sql`: `Parent`, `Student(studentPhone, studentEmail)`, `Class`, `ClassStudent`, `Session`, `Attendance`.
+- [X] (Planned) Tạo migration chuẩn hóa contact fields của `Student` (không chạy ngay):
+  - File đề xuất: `0007_student_contact_rename.sql`
+  - Đổi tên cột: `studentPhone -> phone`, `studentEmail -> email`
+  - Giữ nguyên index `idx_student_parentId(parentId)`
+- [X] Cập nhật `docs/database-docs.md` nếu cần, đảm bảo phần Student phản ánh đúng cột sử dụng bởi API.
+- [X] Không thay đổi cấu trúc `ClassStudent` (giữ `unitPriceOverride`, `joinedAt`, `leftAt`, UNIQUE(classId, studentId)).
+
+Ghi chú:
+- Luồng giá: `Attendance.feeOverride` > `ClassStudent.unitPriceOverride` > `Session.feePerSession`.
+- `leftAt` dùng để giữ lịch sử rời lớp của học sinh.
+
+## 2. Backend (Cloudflare Workers)
+### 2.1 Routes & Middleware
+- [X] Tạo route `workers/routes/studentRoute.ts`
+  - [X] `GET /api/students` (filter: `classId`). Luôn lấy theo teacher id, hiện tại chưa cần pagination (pagination sẽ xử lý ở FE).
+  - [X] `POST /api/students` (create). API cần phải hỗ trợ việc bulk insert (tạo nhiều học sinh cùng lúc) và hỗ trợ tạo `Parent` kèm theo một cách optional (parentInline).
+    - Body (single create) gợi ý:
+      ```json
+      {
+        "name": "Đức Trí",
+        "email": "",
+        "phone": "",
+        "note": "",
+        "parentInline": {
+          "relationship": "father|mother|grandfather|grandmother",
+          "name": "Bố Đức Trí",  
+          "phone": "",
+          "email": "",
+          "note": ""
+        }
+      }
+      ```
+    - Quy tắc: nếu có `parentInline` → backend tạo Parent trước, sau đó tạo Student gắn với Parent vừa tạo. Nếu không có `parentInline` → tạo Student không gắn Parent.
+  - [X] `GET /api/students/:id` (detail)
+  - [X] `PUT /api/students/:id` (update)
+  - [X] `DELETE /api/students/:id` (delete – giai đoạn đầu hard delete). Cần kiểm tra xem student đang có trong lớp nào không hoặc đã tham gia tiết học nào chưa -> nếu đã phát sinh liên kết với hệ thống thì không cho xóa (chỉ cho phép left khỏi class).
+- [X] Tạo route `workers/routes/classStudentRoute.ts`
+  - [X] `POST /api/classes/:id/students` (add student to class, body: `{ studentId, unitPriceOverride? }`)
+  - [X] `DELETE /api/classes/:id/students/:classStudentId` (remove; hoặc `PUT` để set `leftAt`)
+- [X] Đăng ký routes trên `workers/app.ts` và áp dụng `authMiddleware` toàn bộ endpoints (giáo viên phải đăng nhập).
+
+### 2.2 Repository & SQL
+- [X] Tạo `workers/repos/studentRepository.ts`
+  - [X] `listByTeacher({ teacherId, classId? })` - Hiện tại chưa cần pagination hoặc filter nâng cao.
+  - [X] `create({ id, teacherId, name, email?, phone?, note?, parentInline? })`
+  - [X] `getById({ id, teacherId })`
+  - [X] `update({ id, teacherId, patch })`
+  - [X] `delete({ id, teacherId })`
+  - [X] (Hỗ trợ) `existsDuplicate({ teacherId, name, phone?, email? })`
+- [X] Tạo `workers/repos/classStudentRepository.ts`
+  - [X] `add({ id, classId, studentId, unitPriceOverride? })`
+  - [X] `leave({ classStudentId, leftAt })`
+  - [X] `listByClass({ classId, page, pageSize })`
+  - [X] `isMember({ classId, studentId })`
+
+Lưu ý SQL/D1:
+- `Class` đã có `teacherId`; khi query students theo teacher cần join qua các quan hệ sở hữu phù hợp (tuỳ chính sách dữ liệu: học sinh thuộc giáo viên).
+- Ít nhất, filter theo `teacherId` từ Auth để ngăn truy cập chéo.
+
+### 2.3 Validation & Types
+- [X] Tạo `workers/types/studentTypes.ts`
+  - [X] `CreateStudentInput`, `UpdateStudentInput`, `StudentDTO`
+  - [X] `ParentInlineInput { relationship: 'father'|'mother'|'grandfather'|'grandmother', name?, phone?, email?, note? }`
+  - [X] Ràng buộc: `name` bắt buộc; `email` hợp lệ; `phone` định dạng số/chuẩn; `note` độ dài tối đa.
+  - [X] Chuẩn hoá trả về: `StudentDTO { id, name, phone, email, parentName?, parentPhone?, note, createdAt }` (ẩn chi tiết parentId ở DTO; nếu cần thêm chi tiết parent thì tạo `ParentDTO` lồng bên trong).
+- [X] Tạo `workers/types/classStudentTypes.ts`
+  - [X] `AddClassStudentInput { studentId, unitPriceOverride? }`
+  - [X] `ClassStudentDTO { id, classId, studentId, unitPriceOverride, joinedAt, leftAt }`
+- [X] i18n: thêm messages/validation vào `workers/i18n/messages.ts` và `workers/i18n/validationMessages.ts`.
+
+### 2.4 Services (Business Rules)
+- [X] `workers/services/studentService.ts`
+  - [X] `listByTeacher(...)` – list đơn giản theo teacher id, classId?.
+  - [X] `create(...)` – kiểm tra trùng (name + phone hoặc email). Hỗ trợ tạo `Parent` nội tuyến (không sử dụng `parentId` trên API):
+       - Nếu có `input.parentInline` → chuẩn hoá `parentInline.name`:
+         - Nếu không truyền `name` hoặc rỗng → auto-generate theo format: `${prefix} ${studentName}` với prefix map theo `relationship`:
+           - father → "Bố"
+           - mother → "Mẹ"
+           - grandfather → "Ông"
+           - grandmother → "Bà"
+         - Nếu đã truyền `name` → dùng nguyên giá trị (giáo viên có thể tuỳ biến).
+       - Tạo Parent trước → lấy `parentId` nội bộ → tạo Student (API/DTO không trả `parentId`, chỉ trả thông tin hiển thị của Parent nếu cần).
+  - [X] `update(...)` – không cho phép sửa gây trùng.
+  - [X] `delete(...)` – hard delete; cảnh báo nếu đang là thành viên của lớp (option: ngăn xoá nếu còn membership); nếu đã từng tham gia lớp học thì không thể xóa (vì đã có record trong classStudent, classStudent chỉ có thể leave chứ không bị remove).
+- [X] `workers/services/classStudentService.ts`
+  - [X] `add(...)` – enforce UNIQUE(classId, studentId), có thể ghi `unitPriceOverride`.
+  - [X] `leave(...)` – cập nhật `leftAt`.
+  - [X] Business rules: chỉ owner class được thao tác; không thêm học sinh đã rời nếu chính sách không cho phép.
+
+### 2.5 Integrate with API
+- [X] Integrate services and validations to correct endpoint API
+  - [X] Kiểm tra các endpoint trong `workers/routes/studentRoute.ts`, sử dụng `studentServices.ts` và validate sử dụng `studentSchemas.ts`
+  - [X] Kiểm tra các endpoint trong `workers/routes/classStudentRoute.ts`, sử dụng `classStudentServices.ts` và validate sử dụng `classStudentSchemas.ts`
+
+## 3. Frontend (React)
+
+### 3.0 API Info (Backend Reference)
+
+Below is the API spec for Students and Class-Student membership, aligned with current backend implementation. Use these to generate TS types and API clients.
+
+#### Students
+
+1) GET /api/students
+- Method: GET
+- Query params:
+  - classId?: string – optional, filter students that are/used-to-be in a given class
+- Auth: required (teacher)
+- Response 200:
+  ```json
+  {
+    "items": [
+      {
+        "id": "string",
+        "name": "string",
+        "phone": "string|null",
+        "email": "string|null",
+        "note": "string|null",
+        "createdAt": "ISO string"
+      }
+    ],
+    "total": 1
+  }
+  ```
+- Notes:
+  - The list uses ownership scope `Student.createdByTeacher = teacherId`.
+  - Parent info is not included in list for performance reasons; fetch detail via GET /api/students/:id when needed.
+
+2) POST /api/students
+- Method: POST
+- Body (CreateStudentInput):
+  ```json
+  {
+    "name": "string",
+    "email": "string|null",
+    "phone": "string|null",
+    "note": "string|null",
+    "parentInline": {
+      "relationship": "father|mother|grandfather|grandmother",
+      "name": "string|null",   // optional; if empty, backend auto-generates "<prefix> <studentName>"
+      "phone": "string|null",
+      "email": "string|null",
+      "note": "string|null"
+    }
+  }
+  ```
+- Auth: required (teacher)
+- Response 201 (StudentDTO):
+  ```json
+  {
+    "id": "string",
+    "name": "string",
+    "phone": "string|null",
+    "email": "string|null",
+    "note": "string|null",
+    "createdAt": "ISO string"
+  }
+  ```
+- Notes:
+  - Duplicate detection on name/phone/email within the current teacher’s scope. Error `DUPLICATE_STUDENT` (409) when duplicate.
+  - If `parentInline` provided, backend creates Parent first, then Student referencing it (parentId is internal and not returned).
+
+3) GET /api/students/:id
+- Method: GET
+- Params:
+  - id: string
+- Auth: required (teacher)
+- Response 200 (StudentDetailDTO):
+  ```json
+  {
+    "student": {
+      "id": "string",
+      "name": "string",
+      "phone": "string|null",
+      "email": "string|null",
+      "note": "string|null",
+      "createdAt": "ISO string"
+    },
+    "parents": [
+      {
+        "id": "string",
+        "name": "string|null",
+        "phone": "string|null",
+        "email": "string|null",
+        "note": "string|null"
+      }
+    ],
+    "classes": [
+      {
+        "id": "string",
+        "name": "string",
+        "subject": "string|null",
+        "description": "string|null",
+        "defaultFeePerSession": 0,
+        "isActive": true,
+        "createdAt": "ISO string",
+        "classStudentId": "string",
+        "joinedAt": "ISO string",
+        "leftAt": "ISO string|null",
+        "unitPriceOverride": 0
+      }
+    ]
+  }
+  ```
+- Notes:
+  - Ownership enforced via `Student.createdByTeacher`.
+  - `parents` is an array to support potential future multi-parent design (currently one parent in schema; array length 0 or 1).
+
+4) PUT /api/students/:id
+- Method: PUT
+- Params:
+  - id: string
+- Body (UpdateStudentInput):
+  ```json
+  {
+    "name": "string?",
+    "email": "string|null?",
+    "phone": "string|null?",
+    "note": "string|null?",
+    "parentInline": {
+      "relationship": "father|mother|grandfather|grandmother",
+      "name": "string|null",
+      "phone": "string|null",
+      "email": "string|null",
+      "note": "string|null"
+    }
+  }
+  ```
+- Auth: required (teacher)
+- Response 200 (StudentDTO)
+- Notes:
+  - Update is ignored for fields not provided.
+  - Duplicate detection applies if `name`/`phone`/`email` would conflict (409 `DUPLICATE_STUDENT`).
+
+5) DELETE /api/students/:id
+- Method: DELETE
+- Params:
+  - id: string
+- Auth: required (teacher)
+- Response: 204 No Content
+- Notes:
+  - Only the creator (matching `createdByTeacher`) can delete.
+  - Deletion is blocked if there is any membership history in `ClassStudent` or any `Attendance` rows.
+
+Errors (common)
+- 401 `AUTH_UNAUTHORIZED` when missing/invalid auth.
+- 400 `VALIDATION_ERROR` with `details` array for schema failures.
+- 404 `RESOURCE_NOT_FOUND` when resource is missing or not owned by the teacher.
+- 409 `DUPLICATE_STUDENT` for duplicates; 409 `ALREADY_MEMBER` for re-adding an existing membership.
+
+#### Class-Student Membership
+
+1) POST /api/classes/:id/students
+- Method: POST
+- Params:
+  - id: classId (string)
+- Body (AddClassStudentInput):
+  ```json
+  {
+    "studentId": "string",
+    "unitPriceOverride": 0
+  }
+  ```
+- Auth: required (teacher, must be owner of the class)
+- Response 201 (ClassStudentDTO):
+  ```json
+  {
+    "id": "string",
+    "classId": "string",
+    "studentId": "string",
+    "unitPriceOverride": 0,
+    "joinedAt": "ISO string",
+    "leftAt": "ISO string|null"
+  }
+  ```
+- Notes:
+  - Enforces uniqueness per (classId, studentId). Returns 409 `ALREADY_MEMBER` if already active.
+
+2) PUT /api/classes/:id/students/:classStudentId
+- Method: PUT
+- Params:
+  - id: classId (string)
+  - classStudentId: membership id (string)
+- Body (LeaveClassStudentInput):
+  ```json
+  {
+    "leftAt": "ISO string" // optional on FE; BE may set default to now()
+  }
+  ```
+- Auth: required (teacher, must be owner of the class)
+- Response: 204 No Content
+- Notes:
+  - Preferred over DELETE to preserve history.
+
+3) DELETE /api/classes/:id/students/:classStudentId
+- Method: DELETE
+- Status: 501 Not Implemented (policy uses PUT to set `leftAt`).
+
+### 3.1 API Client
+- [X] Tạo `frontend/src/services/studentService.ts`
+  - [X] `listStudents(params)` - Chú ý đối chiếu với backend để đưa params phù hợp.
+  - [X] `createStudent(payload)`
+  - [X] `getStudent(id)`
+  - [X] `updateStudent(id, patch)`
+  - [X] `deleteStudent(id)`
+- [X] Cập nhật/định nghĩa `frontend/src/services/classStudentService.ts`
+  - [X] `addStudentToClass(classId, payload)`
+  - [X] `leaveStudentFromClass(classId, classStudentId, leftAt)` - leftAt lấy current theo giờ UTC để lưu vào backend cho chuẩn hóa.
+
+### 3.2 Pages & Components
+- [X] Sidebar: thêm mục "Học sinh" → route `/students`
+- [X] Trang danh sách `/students`
+  - [X] Bảng: Name, Phone, Classes, Actions
+  - [X] Bộ lọc: `classId` (tuỳ chọn).
+  - [X] Actions: Tạo mới, Xem/Sửa, Xoá
+- [X] Form `StudentForm`
+- [ ] Tích hợp tab Học sinh ở trang lớp `/classes/:classId`
+  - [ ] Danh sách thành viên lớp (ClassStudent)
+  - [ ] Action: Add student to class (search + chọn), Leave
+  - [ ] Tuỳ chọn: set `unitPriceOverride` khi thêm/sửa membership
+
+### 3.3 UX
+- [ ] Confirm dialog khi xoá học sinh (sử dụng `frontend/src/components/commons/ConfirmDialog.tsx`)
+- [ ] Thông báo toast thành công/thất bại các thao tác CRUD
+- [ ] Loading/empty/error states rõ ràng cho bảng và form
+ - [ ] Hiển thị trạng thái đã lưu (autosaved) nho nhỏ ở góc form mỗi khi lưu draft (ví dụ: "Đã lưu bản nháp lúc 10:05").
+
+## 4. Tests
+- [ ] Unit tests (repos/services)
+  - [ ] Student: tạo/sửa/xoá, tìm kiếm, kiểm tra trùng, quyền sở hữu
+  - [ ] ClassStudent: thêm/xoá, unique membership, leftAt
+- [ ] Integration tests (routes)
+  - [ ] Auth required, validation errors, pagination
+- [ ] (Tuỳ chọn) E2E smoke: tạo student → gán vào lớp → gỡ → xoá student
+ - [ ] Frontend tests:
+   - [ ] ParentInline name auto-populate khi chọn Relationship và khi đổi tên học sinh (chỉ khi chưa sửa tay tên phụ huynh).
+   - [ ] Autosave LocalStorage: debounce 300ms sau blur; khôi phục draft; xoá draft sau khi tạo thành công.
+
+## 5. Documentation
+- [ ] Cập nhật `docs/05-use-cases.md` (UC-03) nếu có thay đổi API/luồng
+- [ ] Cập nhật `docs/database-docs.md` khi chốt cột contact của Student và ghi chú migration
+- [ ] Viết README ngắn cho `/students` page (cách sử dụng bộ lọc, gán vào lớp)
+
+## 6. Rollout Checklist
+- [X] Quyết định cuối cùng về contact fields của Student (sử dụng `studentPhone/studentEmail` hiện có hay rename) => rename
+- [ ] Nếu rename: tạo/duyệt migration `0007_student_contact_rename.sql` và áp dụng trên môi trường
+- [ ] Triển khai backend routes + repos + services
+- [ ] Triển khai frontend pages + API client
+- [ ] Manual QA: CRUD học sinh; thêm/gỡ học sinh khỏi lớp; kiểm tra liên kết dữ liệu; xác thực quyền truy cập
+
+## 7. Open Questions / Risks
+- [X] Quan hệ sở hữu Student theo giáo viên: có cần `teacherId` trên `Student`? (Hiện dựa trên quyền truy cập chung; cân nhắc khi multi-tenant thực tế) => Không cần teacherId trên Student, bởi vì một student sẽ được gán vào lớp, giáo viên sẽ được 'phân công' dạy lớp đó => học sinh không thuộc về giáo viên nào.
+- [X] Xoá học sinh nếu còn lịch sử Attendance: nên ngăn xoá hay cho phép? (gợi ý: ngăn xoá nếu có Attendance; hoặc soft delete) => Ngăn không cho xóa
+- [X] Chính sách `leftAt`: khi remove có xoá hẳn row `ClassStudent` hay luôn cập nhật `leftAt` để giữ lịch sử? => Luôn cập nhật leftAt để giữ lại lịch sử. 
+- [X] Tích hợp `Parent`: cần endpoint tạo nhanh Parent hay thao tác qua StudentForm là đủ? => Thao tác qua StudentForm luôn.

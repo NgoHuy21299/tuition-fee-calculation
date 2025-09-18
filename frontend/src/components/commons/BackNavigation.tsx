@@ -6,17 +6,20 @@ export type BackNavigationProps = {
   to: string;
   text?: string;
   className?: string;
+  state?: unknown;
 };
 
 export default function BackNavigation({
   to,
   text = "Quay về danh sách",
   className,
+  state,
 }: BackNavigationProps) {
   return (
     <div className={cn("w-full", className)}>
       <Link
         to={to}
+        state={state}
         className={
           // Subtle, non-intrusive nav control matching dark theme
           "inline-flex items-center gap-2 text-sm text-gray-300 rounded-md px-2 py-1 hover:bg-white/10 hover:text-white transition-colors"

@@ -6,7 +6,7 @@ import type { JwtPayload } from "./jwtService";
 import type { User } from "../types/user";
 import { UserRepository } from "../repos/userRepository";
 import { AppError } from "../errors";
-
+import { uuidv7 } from "uuidv7";
 
 export interface AuthDeps {
   db: D1Database;
@@ -57,7 +57,7 @@ export class AuthService {
     const exists = await this.userRepository.isExistedNormalizedEmail(normalizedEmail);
     if (exists) throw new AppError("AUTH_EMAIL_EXISTS");
 
-    const id = params.id ?? crypto.randomUUID();
+    const id = uuidv7();
     const password_hash = await hashPassword(params.password);
     const name = params.name ?? null;
 

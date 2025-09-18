@@ -13,13 +13,14 @@ import {
   DropdownMenuTrigger,
 } from "../../components/ui/dropdown-menu";
 import { Checkbox } from "../../components/ui/checkbox";
+import LoadingSpinner from "../../components/commons/LoadingSpinner";
 
 export default function DashboardClasses() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [items, setItems] = useState<ClassDTO[]>([]);
   const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState<
@@ -55,8 +56,13 @@ export default function DashboardClasses() {
     return list;
   }, [items, q, statusFilter]);
 
+  // Ensure spinner shows at least this duration to avoid flicker
+  const MIN_SPINNER_MS = 300;
+  const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
   async function load() {
     setLoading(true);
+    const start = Date.now();
     try {
       const { items, total } = await classService.listClasses({
         isGetAll: viewAll,
@@ -74,6 +80,8 @@ export default function DashboardClasses() {
       }
       toast({ title: "Lỗi", description: message, variant: "error" });
     } finally {
+      const elapsed = Date.now() - start;
+      if (elapsed < MIN_SPINNER_MS) await delay(MIN_SPINNER_MS - elapsed);
       setLoading(false);
     }
   }
@@ -183,43 +191,48 @@ export default function DashboardClasses() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-gray-400">
-                  <th className="py-2 pr-3 font-medium">Tên lớp</th>
-                  <th className="py-2 pr-3 font-medium">Môn</th>
-                  <th className="py-2 pr-3 font-medium">Giá mặc định</th>
-                  <th className="py-2 pr-3 font-medium">Trạng thái</th>
-                  <th className="py-2 pr-3 font-medium">Tạo lúc</th>
-                  <th className="py-2 pr-3 font-medium text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={6} className="py-6 text-center text-gray-400">
-                      Đang tải...
-                    </td>
+            {loading ? (
+              <div className="flex justify-center overflow-hidden">
+                <LoadingSpinner size={32} padding={6} />
+              </div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-gray-400">
+                    <th className="py-2 pr-3 font-medium">Tên lớp</th>
+                    <th className="py-2 pr-3 font-medium">Môn</th>
+                    <th className="py-2 pr-3 font-medium">Giá mặc định</th>
+                    <th className="py-2 pr-3 font-medium">Trạng thái</th>
+                    <th className="py-2 pr-3 font-medium">Tạo lúc</th>
+                    <th className="py-2 pr-3 font-medium text-right">
+                      Thao tác
+                    </th>
                   </tr>
-                ) : filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-6 text-center text-gray-400">
-                      Không có lớp nào
-                    </td>
-                  </tr>
-                ) : (
-                  filtered.map((c) => (
-                    <Row
-                      key={c.id}
-                      c={c}
-                      onView={() => navigate(`/dashboard/classes/${c.id}`)}
-                      onDelete={() => setConfirmDeleteId(c.id)}
-                      formatLocal={formatLocal}
-                    />
-                  ))
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="py-6 text-center text-gray-400"
+                      >
+                        Không có lớp nào
+                      </td>
+                    </tr>
+                  ) : (
+                    filtered.map((c) => (
+                      <Row
+                        key={c.id}
+                        c={c}
+                        onView={() => navigate(`/dashboard/classes/${c.id}`)}
+                        onDelete={() => setConfirmDeleteId(c.id)}
+                        formatLocal={formatLocal}
+                      />
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
           <div className="flex items-center justify-between pt-2">
             <p className="text-xs text-gray-400">
