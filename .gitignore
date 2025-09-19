@@ -13,3 +13,4 @@
 
 .vscode/
 logs/
+workers-class-remark/node_modules/
