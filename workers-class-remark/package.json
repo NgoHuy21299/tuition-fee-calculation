@@ -20,12 +20,14 @@
   },
   "scripts": {
     "cf-typegen": "wrangler types",
-    "deploy": "wrangler deploy",
+    "deploy": "npm run db:migrate:remote && wrangler deploy",
     "dev": "pnpm seedLocalDb && wrangler dev",
     "predeploy": "wrangler d1 migrations apply DB --remote",
     "seedLocalDb": "wrangler d1 migrations apply DB --local",
     "schema": "npx chanfana",
-    "test": "wrangler deploy --dry-run && npx vitest run --config tests/vitest.config.mts"
+    "test": "wrangler deploy --dry-run && npx vitest run --config tests/vitest.config.mts",
+    "build": "tsc -b",
+    "typecheck": "wrangler types && tsc -b --noEmit"
   },
   "dependencies": {
     "chanfana": "2.8.1",
