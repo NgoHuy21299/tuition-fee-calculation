@@ -307,6 +307,7 @@ export default function ClassDetail() {
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <Input
+                  id="search-student-in-class-detail"
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="Tìm kiếm... (Tên, SĐT)"

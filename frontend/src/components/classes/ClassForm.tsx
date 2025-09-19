@@ -148,6 +148,7 @@ export default function ClassForm({
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={disabled || submitting}
+            autoComplete="given-name"
           />
           {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
         </div>
@@ -201,7 +202,7 @@ export default function ClassForm({
           )}
         </div>
         <div className="space-y-1">
-          <Label>Trạng thái</Label>
+          <Label htmlFor="is-active">Trạng thái</Label>
           <div className="flex items-center gap-2 text-sm text-gray-300 select-none pt-2.5">
             <Checkbox
               id="is-active"

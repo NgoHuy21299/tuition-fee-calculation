@@ -188,6 +188,7 @@ export default function Students() {
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <Input
+              id="search-students"
               placeholder="Tìm kiếm... (Tên, Lớp, SĐT)"
               value={q}
               onChange={(e) => setQ(e.target.value)}

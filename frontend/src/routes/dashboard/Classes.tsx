@@ -154,6 +154,7 @@ export default function DashboardClasses() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               className="w-64"
+              id="class-search"
             />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -196,7 +197,7 @@ export default function DashboardClasses() {
                 <LoadingSpinner size={32} padding={6} />
               </div>
             ) : (
-              <table className="w-full text-sm">
+              <table className="w-full text-sm" id='class-table'>
                 <thead>
                   <tr className="text-left text-gray-400">
                     <th className="py-2 pr-3 font-medium">Tên lớp</th>
