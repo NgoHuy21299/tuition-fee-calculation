@@ -20,6 +20,7 @@ export type StudentFormProps = {
   onSaved?: () => void | Promise<void>;
   classOptions?: Option[]; // Provided by parent page when creating new student
   preselectSelectedClasses?: Option[]; // Optional: preselect classes (e.g., current class from ClassDetail)
+  onLoadingChange?: (loading: boolean) => void;
 };
 
 const DRAFT_KEY = "students.form.draft"; // could be extended with userId if needed
@@ -48,9 +49,13 @@ export default function StudentForm({
   onSaved,
   classOptions = [],
   preselectSelectedClasses,
+  onLoadingChange,
 }: StudentFormProps) {
   const { toast } = useToast();
   const isEdit = !!editingId;
+
+  // Local loading state to control fetch status; parent may be informed via onLoadingChange
+  const [loading, setLoading] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [name, setName] = useState("");
@@ -87,18 +92,23 @@ export default function StudentForm({
     let mounted = true;
     (async () => {
       if (editingId) {
+        setLoading(true);
+        if (typeof onLoadingChange === "function") onLoadingChange(true);
+        const start = Date.now();
         try {
           const detail: StudentDetailDTO = await studentService.getStudent(
             editingId
           );
-          if (!mounted) return;
+          if (!mounted) { /* component unmounted, skip applying state */ }
+          // populate fields
           setName(detail.student.name);
           setEmail(detail.student.email);
           setPhone(detail.student.phone);
           setNote(detail.student.note);
           // parents
           if (detail.parents && detail.parents.length > 0) {
-            setShowParent(true);
+            // Keep parents hidden initially to avoid layout shift; populate data but do not expand
+            setShowParent(false);
             const parentInfos: ParentInfo[] = detail.parents.map((parent) => ({
               id: parent.id,
               relationship: parent.relationship as Relationship,
@@ -129,11 +139,20 @@ export default function StudentForm({
             setInitialMembershipByClass(m);
           }
         } catch {
-          toast({
-            variant: "error",
-            title: "Lỗi",
-            description: "Không tải được dữ liệu học sinh",
-          });
+            toast({
+              variant: "error",
+              title: "Lỗi",
+              description: "Không tải được dữ liệu học sinh",
+            });
+        } finally {
+          // Ensure spinner is visible at least 300ms to avoid flicker
+          const elapsed = Date.now() - start;
+          const MIN_MS = 300;
+          if (elapsed < MIN_MS) await new Promise((r) => setTimeout(r, MIN_MS - elapsed));
+          if (!mounted) { /* component unmounted, skip applying state */ } else {
+            setLoading(false);
+            if (typeof onLoadingChange === "function") onLoadingChange(false);
+          }
         }
       } else if (!editingId) {
         // Creating: offer to restore draft
@@ -151,7 +170,8 @@ export default function StudentForm({
               setPhone(d.phone ?? null);
               setNote(d.note ?? null);
               if (d.parents && d.parents.length > 0) {
-                setShowParent(true);
+                  // Keep parents hidden initially to avoid layout shift; populate data but do not expand
+                  setShowParent(false);
                 const parentInfos: ParentInfo[] = d.parents.map(
                   (parent, index) => ({
                     id: `${index}`,
@@ -181,10 +201,8 @@ export default function StudentForm({
         sessionStorage.removeItem(SESSION_STATUS_KEY);
       }
     })();
-    return () => {
-      mounted = false;
-    };
-  }, [editingId, toast, preselectSelectedClasses]);
+    return () => { mounted = false; };
+  }, [editingId, toast, preselectSelectedClasses, onLoadingChange]);
 
   // Autosave draft on blur with small debounce
   const saveDraftDebounced = () => {
@@ -348,7 +366,17 @@ export default function StudentForm({
 
   return (
     <>
-      <div className="mt-4 grid grid-cols-1 gap-3">
+      <div className="relative mt-4 grid grid-cols-1 gap-3">
+        {/* Loading overlay: blur + spinner */}
+        <div
+          aria-hidden={!loading}
+          className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${loading ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+        >
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+        </div>
+
+        <div className={`space-y-1 transition-opacity duration-200 ${loading ? "opacity-60" : "opacity-100"}`}>
+        
         <div className="space-y-1">
           <Label>Lớp theo học</Label>
           <MultipleSelector
@@ -418,51 +446,51 @@ export default function StudentForm({
             {showParent ? "Ẩn thông tin phụ huynh" : "Hiện thông tin phụ huynh"}
           </Button>
 
-          {showParent && (
-            <div className="mt-3 space-y-4">
-              {parents.map((parent, index) => (
-                <ParentForm
-                  key={parent.id}
-                  parent={parent}
-                  index={index}
-                  name={name}
-                  nameEditedManuallyRef={nameEditedManuallyRef}
-                  REL_LABEL={REL_LABEL}
-                  autoNameEnabled={!isEdit}
-                  onUpdate={(updatedParent) => {
-                    setParents((prev) =>
-                      prev.map((p, i) => (i === index ? updatedParent : p))
-                    );
-                  }}
-                  onDelete={() => {
-                    setParents((prev) => prev.filter((_, i) => i !== index));
-                    saveDraftDebounced();
-                  }}
-                  onBlur={saveDraftDebounced}
-                />
-              ))}
-
-              <Button
-                variant="outline"
-                className="w-full text-sm"
-                onClick={() => {
-                  const newParent: ParentInfo = {
-                    id: Date.now().toString() + Math.random(),
-                    relationship: "father",
-                    name: null,
-                    phone: null,
-                    email: null,
-                    note: null,
-                  };
-                  setParents((prev) => [...prev, newParent]);
+          {/* Parent section: do not occupy layout when hidden */}
+          <div className={`${showParent ? "block" : "hidden"} mt-3 space-y-4 transition-opacity duration-200`} aria-hidden={!showParent}>
+            {parents.map((parent, index) => (
+              <ParentForm
+                key={parent.id}
+                parent={parent}
+                index={index}
+                name={name}
+                nameEditedManuallyRef={nameEditedManuallyRef}
+                REL_LABEL={REL_LABEL}
+                autoNameEnabled={!isEdit}
+                onUpdate={(updatedParent) => {
+                  setParents((prev) =>
+                    prev.map((p, i) => (i === index ? updatedParent : p))
+                  );
+                }}
+                onDelete={() => {
+                  setParents((prev) => prev.filter((_, i) => i !== index));
                   saveDraftDebounced();
                 }}
-              >
-                + Thêm phụ huynh
-              </Button>
-            </div>
-          )}
+                onBlur={saveDraftDebounced}
+              />
+            ))}
+
+            <Button
+              variant="outline"
+              className="w-full text-sm"
+              onClick={() => {
+                const newParent: ParentInfo = {
+                  id: Date.now().toString() + Math.random(),
+                  relationship: "father",
+                  name: null,
+                  phone: null,
+                  email: null,
+                  note: null,
+                };
+                setParents((prev) => [...prev, newParent]);
+                saveDraftDebounced();
+              }}
+            >
+              + Thêm phụ huynh
+            </Button>
+          </div>
         </div>
+      </div>
       </div>
 
       <div className="mt-4 flex justify-end gap-2">

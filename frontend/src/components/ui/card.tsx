@@ -3,15 +3,22 @@ import { cn } from "../../lib/utils";
 
 export type CardProps = React.HTMLAttributes<HTMLDivElement> & {
   asChild?: boolean;
+  // Variant to adjust visual styles; 'blur-animation' removes default padding and adds a subtle blur/transition
+  variant?: "blur-animation" | undefined;
 };
 
-export function Card({ className, children, ...props }: CardProps) {
+export function Card({ className, children, variant, ...props }: CardProps) {
+  const base = "rounded-lg border border-gray-700 bg-gray-900/70 shadow-lg";
+  const blurAnim = "backdrop-blur transition-all duration-200 ease-in-out";
+  const padding = variant === "blur-animation" ? "" : "p-4";
+
   return (
     <div
       className={cn(
-        "rounded-lg border border-gray-700 bg-gray-900/70 backdrop-blur shadow-lg",
-        // Default padding is small to suit dashboard cards; override per use
-        "p-4",
+        base,
+        variant === "blur-animation" ? `${blurAnim}` : "backdrop-blur",
+        // Default padding is small to suit dashboard cards; removed for blur-animation variant
+        padding,
         className
       )}
       {...props}

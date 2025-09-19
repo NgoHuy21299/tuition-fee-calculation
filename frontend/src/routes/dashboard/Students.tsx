@@ -44,9 +44,7 @@ export default function Students() {
       setLoading(true);
       const start = Date.now();
       try {
-        const { items, total } = await studentService.listStudents({
-          classId: classId || undefined,
-        });
+        const { items, total } = await studentService.listStudents({});
         setItems(items);
         setTotal(total);
       } catch {
@@ -61,7 +59,7 @@ export default function Students() {
         setLoading(false);
       }
     })();
-  }, [classId, toast]);
+  }, [toast]);
 
   useEffect(() => {
     (async () => {
@@ -100,9 +98,7 @@ export default function Students() {
     setLoading(true);
     const start = Date.now();
     try {
-      const { items, total } = await studentService.listStudents({
-        classId: classId || undefined,
-      });
+      const { items, total } = await studentService.listStudents({});
       setItems(items);
       setTotal(total);
     } finally {
@@ -112,9 +108,22 @@ export default function Students() {
     }
   };
 
-  // Derived filtered items (client-side) similar to Classes.tsx
+  // Derived filtered items (client-side) with both search term and class filter
   const filtered = useMemo(() => {
     let list = items.slice();
+    
+    // Apply class filter first
+    if (classId) {
+      list = list.filter((s) => {
+        const studentClasses = s.currentClasses?.split(",").map(c => c.trim()) || [];
+        const studentClassIds = classes
+          .filter(c => studentClasses.includes(c.name))
+          .map(c => c.id);
+        return studentClassIds.includes(classId);
+      });
+    }
+
+    // Then apply search term filter
     const term = q.trim().toLowerCase();
     if (term) {
       list = list.filter((s) => {
@@ -129,7 +138,7 @@ export default function Students() {
       });
     }
     return list;
-  }, [items, q]);
+  }, [items, q, classId, classes]);
 
   const onDelete = async (id: string) => {
     try {

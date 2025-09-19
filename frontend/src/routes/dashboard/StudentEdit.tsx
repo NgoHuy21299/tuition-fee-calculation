@@ -18,6 +18,7 @@ export default function StudentEdit() {
     ((location.state as { classOptions?: Option[] } | null)?.classOptions ?? []) as Option[];
   const [loadingClasses, setLoadingClasses] = useState(false);
   const [classOptions, setClassOptions] = useState<Option[]>(passedOptions);
+  const [formLoading, setFormLoading] = useState(false);
 
   const handleSaved = () => {
     if (backTo) navigate(backTo, { state: { tab: backTab || "students" } });
@@ -58,9 +59,16 @@ export default function StudentEdit() {
         </div>
         <div>{loadingClasses && <LoadingSpinner size={18} padding={3} />}</div>
       </div>
-      <Card>
-        <div className="p-4">
-          <StudentForm editingId={id ?? null} onSaved={handleSaved} classOptions={classOptions} />
+      <Card variant="blur-animation">
+        <div className="p-4 relative">
+          {/* Card-level loading overlay when student form is fetching */}
+          <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${formLoading ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm rounded-lg" />
+            <div className="relative z-10">
+              <LoadingSpinner size={36} padding={6} />
+            </div>
+          </div>
+          <StudentForm editingId={id ?? null} onSaved={handleSaved} classOptions={classOptions} onLoadingChange={setFormLoading} />
         </div>
       </Card>
     </div>
