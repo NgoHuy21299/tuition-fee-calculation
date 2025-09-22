@@ -6,14 +6,14 @@ import Register from "./routes/Register";
 import Dashboard from "./routes/Dashboard";
 import { ToastProvider } from "./components/commons/Toast";
 import DashboardOverview from "./routes/dashboard/Overview";
-import DashboardClasses from "./routes/dashboard/Classes";
+import DashboardClasses from "./routes/dashboard/class/Classes";
 import DashboardTuition from "./routes/dashboard/Tuition";
 import DashboardSettings from "./routes/dashboard/Settings";
-import ClassNew from "./routes/dashboard/ClassNew";
-import ClassDetail from "./routes/dashboard/ClassDetail";
-import Students from "./routes/dashboard/Students";
-import StudentNew from "./routes/dashboard/StudentNew";
-import StudentEdit from "./routes/dashboard/StudentEdit";
+import ClassNew from "./routes/dashboard/class/ClassNew";
+import ClassDetail from "./routes/dashboard/class/ClassDetail";
+import Students from "./routes/dashboard/student/Students";
+import StudentNew from "./routes/dashboard/student/StudentNew";
+import StudentEdit from "./routes/dashboard/student/StudentEdit";
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const token = getToken();

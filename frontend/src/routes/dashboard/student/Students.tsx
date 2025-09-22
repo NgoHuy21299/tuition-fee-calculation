@@ -1,19 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { studentService, type StudentDTO } from "../../services/studentService";
-import { classService, type ClassDTO } from "../../services/classService";
-import ConfirmDialog from "../../components/commons/ConfirmDialog";
-import { useToast } from "../../components/commons/Toast";
-import { Card } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
+import { studentService, type StudentDTO } from "../../../services/studentService";
+import { classService, type ClassDTO } from "../../../services/classService";
+import ConfirmDialog from "../../../components/commons/ConfirmDialog";
+import { useToast } from "../../../components/commons/Toast";
+import { Card } from "../../../components/ui/card";
+import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../../components/ui/dropdown-menu";
-import LoadingSpinner from "../../components/commons/LoadingSpinner";
+} from "../../../components/ui/dropdown-menu";
+import LoadingSpinner from "../../../components/commons/LoadingSpinner";
 
 export default function Students() {
   const { toast } = useToast();

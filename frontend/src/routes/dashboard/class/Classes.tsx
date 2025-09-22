@@ -1,19 +1,19 @@
-import { Card } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
+import { Card } from "../../../components/ui/card";
+import { Button } from "../../../components/ui/button";
+import { Input } from "../../../components/ui/input";
 import { useEffect, useMemo, useState } from "react";
-import { classService, type ClassDTO } from "../../services/classService";
+import { classService, type ClassDTO } from "../../../services/classService";
 import { useNavigate } from "react-router-dom";
-import ConfirmDialog from "../../components/commons/ConfirmDialog";
-import { useToast } from "../../components/commons/Toast";
+import ConfirmDialog from "../../../components/commons/ConfirmDialog";
+import { useToast } from "../../../components/commons/Toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../../components/ui/dropdown-menu";
-import { Checkbox } from "../../components/ui/checkbox";
-import LoadingSpinner from "../../components/commons/LoadingSpinner";
+} from "../../../components/ui/dropdown-menu";
+import { Checkbox } from "../../../components/ui/checkbox";
+import LoadingSpinner from "../../../components/commons/LoadingSpinner";
 
 export default function DashboardClasses() {
   const navigate = useNavigate();

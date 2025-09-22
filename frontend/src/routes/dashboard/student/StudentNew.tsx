@@ -1,11 +1,11 @@
-import BackNavigation from "../../components/commons/BackNavigation";
-import { Card } from "../../components/ui/card";
-import StudentForm from "../../components/students/StudentForm";
+import BackNavigation from "../../../components/commons/BackNavigation";
+import { Card } from "../../../components/ui/card";
+import StudentForm from "../../../components/students/StudentForm";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import LoadingSpinner from "../../components/commons/LoadingSpinner";
-import { classService } from "../../services/classService";
-import type { Option } from "../../components/ui/multiple-selector";
+import LoadingSpinner from "../../../components/commons/LoadingSpinner";
+import { classService } from "../../../services/classService";
+import type { Option } from "../../../components/ui/multiple-selector";
 
 export default function StudentNew() {
   const navigate = useNavigate();

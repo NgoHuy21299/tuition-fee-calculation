@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { Card } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
+import { Card } from "../../../components/ui/card";
+import { Button } from "../../../components/ui/button";
 import ClassForm, {
   type ClassFormValues,
-} from "../../components/classes/ClassForm";
-import ConfirmDialog from "../../components/commons/ConfirmDialog";
-import BackNavigation from "../../components/commons/BackNavigation";
-import { classService, type ClassDTO } from "../../services/classService";
-import { useToast } from "../../components/commons/Toast";
-import LoadingSpinner from "../../components/commons/LoadingSpinner";
-import { studentService, type StudentDTO } from "../../services/studentService";
-import { classStudentService } from "../../services/classStudentService";
-import { Input } from "../../components/ui/input";
+} from "../../../components/classes/ClassForm";
+import ConfirmDialog from "../../../components/commons/ConfirmDialog";
+import BackNavigation from "../../../components/commons/BackNavigation";
+import { classService, type ClassDTO } from "../../../services/classService";
+import { useToast } from "../../../components/commons/Toast";
+import LoadingSpinner from "../../../components/commons/LoadingSpinner";
+import { studentService, type StudentDTO } from "../../../services/studentService";
+import { classStudentService } from "../../../services/classStudentService";
+import { Input } from "../../../components/ui/input";
 
 export default function ClassDetail() {
   const { id } = useParams<{ id: string }>();

@@ -1,12 +1,12 @@
-import { Card } from "../../components/ui/card";
+import { Card } from "../../../components/ui/card";
 import ClassForm, {
   type ClassFormValues,
-} from "../../components/classes/ClassForm";
-import { classService } from "../../services/classService";
+} from "../../../components/classes/ClassForm";
+import { classService } from "../../../services/classService";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { useToast } from "../../components/commons/Toast";
-import BackNavigation from "../../components/commons/BackNavigation";
+import { useToast } from "../../../components/commons/Toast";
+import BackNavigation from "../../../components/commons/BackNavigation";
 
 export default function ClassNew() {
   const navigate = useNavigate();
