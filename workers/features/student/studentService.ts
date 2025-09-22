@@ -1,13 +1,13 @@
-import { StudentRepository } from "../repos/studentRepository";
-import { ParentRepository } from "../repos/parentRepository";
-import { ClassStudentRepository } from "../repos/classStudentRepository";
-import { AttendanceRepository } from "../repos/attendanceRepository";
-import { mapStudentRowToDTO, mapStudentDetailToDTO, type StudentDTO, type StudentDetailDTO } from "../types/studentTypes";
-import { AppError } from "../errors";
+import { StudentRepository } from "./studentRepository";
+import { ParentRepository } from "./parentRepository";
+import { ClassStudentRepository } from "../class-student/classStudentRepository";
+import { AttendanceRepository } from "./attendanceRepository";
+import { mapStudentRowToDTO, mapStudentDetailToDTO, type StudentDTO, type StudentDetailDTO } from "./studentTypes";
+import { AppError } from "../../errors";
 import type {
   CreateStudentInput,
   UpdateStudentInput,
-} from "workers/validation/student/studentSchemas";
+} from "./studentSchemas";
 import { uuidv7 } from "uuidv7";
 
 export type StudentServiceDeps = { db: D1Database };

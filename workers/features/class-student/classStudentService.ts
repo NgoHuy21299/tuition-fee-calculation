@@ -1,12 +1,12 @@
-import { ClassStudentRepository } from "../repos/classStudentRepository";
-import { ClassRepository } from "../repos/classRepository";
-import type { ClassStudentDTO } from "../types/classStudentTypes";
-import { mapClassStudentRowToDTO } from "../types/classStudentTypes";
-import { AppError } from "../errors";
+import { ClassStudentRepository } from "./classStudentRepository";
+import type { ClassStudentDTO } from "./classStudentTypes";
+import { mapClassStudentRowToDTO } from "./classStudentTypes";
+import { AppError } from "../../errors";
 import type {
   AddClassStudentInput,
   LeaveClassStudentInput,
-} from "workers/validation/classStudent/classStudentSchemas";
+} from "./classStudentSchemas";
+import { ClassRepository } from "../class/classRepository";
 
 export type ClassStudentServiceDeps = { db: D1Database };
 

@@ -1,4 +1,4 @@
-import { selectOne } from "../helpers/queryHelpers";
+import { selectOne } from "../../helpers/queryHelpers";
 
 export type AttendanceRepoDeps = { db: D1Database };
 

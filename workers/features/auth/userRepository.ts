@@ -1,5 +1,5 @@
-import type { User } from "../types/user";
-import { selectOne, execute } from "../helpers/queryHelpers";
+import { execute, selectOne } from "../../helpers/queryHelpers";
+import type { User } from "./userType";
 
 export type UserRepoDeps = { db: D1Database };
 

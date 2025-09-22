@@ -81,11 +81,11 @@ function base64urlEncode(bytes: Uint8Array): string {
   return b64;
 }
 
-function base64urlDecode(b64: string): Uint8Array {
+function base64urlDecode(b64: string): ArrayBuffer {
   const pad = b64.length % 4 === 2 ? "==" : b64.length % 4 === 3 ? "=" : "";
   const std = b64.replace(/-/g, "+").replace(/_/g, "/") + pad;
   const bin = atob(std);
   const out = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
-  return out;
+  return out.buffer;
 }

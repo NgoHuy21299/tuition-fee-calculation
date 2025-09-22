@@ -1,15 +1,11 @@
 import { Hono } from "hono";
-import { AuthService } from "../services/authService";
-import { signJWT, type JwtPayload } from "../services/jwtService";
-import { COOKIE_MAX_AGE } from "../constants";
-import { toAppError } from "../errors";
-import { t } from "../i18n/messages";
-import {
-  LoginSchema,
-  RegisterSchema,
-  ChangePasswordSchema,
-} from "../validation/auth/authSchemas";
-import { parseBodyWithSchema } from "../validation/common/request";
+import { COOKIE_MAX_AGE } from "../../constants";
+import { toAppError } from "../../errors";
+import { t } from "../../i18n/messages";
+import { signJWT, type JwtPayload } from "./jwtService";
+import { parseBodyWithSchema } from "../../validation/common/request";
+import { LoginSchema, ChangePasswordSchema, RegisterSchema } from "./authSchemas";
+import { AuthService } from "./authService";
 
 export function createAuthRouter() {
   const router = new Hono<{ Bindings: Env; Variables: { user: JwtPayload } }>();

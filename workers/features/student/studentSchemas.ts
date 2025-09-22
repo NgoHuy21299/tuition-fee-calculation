@@ -12,7 +12,7 @@ import {
   array,
 } from "valibot";
 import type { InferOutput } from "valibot";
-import type { ValidationCode } from "../common/types";
+import type { ValidationCode } from "../../validation/common/types";
 
 // Base messages are codes; mapped to human text via i18n tv()
 function Msg(code: ValidationCode) {

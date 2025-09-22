@@ -1,11 +1,11 @@
 import { Hono } from "hono";
-import type { JwtPayload } from "./services/jwtService";
+import type { JwtPayload } from "./features/auth/jwtService";
 import { apiAuthGuard } from "./middleware/authMiddleware";
-import { createAuthRouter } from "./routes/authRoute";
 import { createHealthRouter } from "./routes/healthRoute";
-import { createClassRouter } from "./routes/classRoute";
-import { createStudentRouter } from "./routes/studentRoute";
-import { createClassStudentRouter } from "./routes/classStudentRoute";
+import { createClassRouter } from "./features/class/classRoute";
+import { createStudentRouter } from "./features/student/studentRoute";
+import { createAuthRouter } from "./features/auth/authRoute";
+import { createClassStudentRouter } from "./features/class-student/classStudentRoute";
 
 const app = new Hono<{ Bindings: Env; Variables: { user: JwtPayload } }>();
 

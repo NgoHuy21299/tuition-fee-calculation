@@ -1,4 +1,4 @@
-import { selectAll, selectOne, execute } from "../helpers/queryHelpers";
+import { selectAll, selectOne, execute } from "../../helpers/queryHelpers";
 import { ParentRepository } from "./parentRepository";
 
 export type StudentRepoDeps = { db: D1Database };

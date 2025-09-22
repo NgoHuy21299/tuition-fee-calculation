@@ -1,4 +1,4 @@
-import { verifyJWT, type JwtPayload } from "../services/jwtService";
+import { verifyJWT, type JwtPayload } from "../features/auth/jwtService";
 import { PUBLIC_API_PATHS } from "../constants";
 import type { Context, Next } from "hono";
 

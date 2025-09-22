@@ -1,11 +1,11 @@
 import { Hono } from "hono";
-import type { JwtPayload } from "../services/jwtService";
-import { t } from "../i18n/messages";
-import { toAppError } from "../errors";
-import { ClassStudentService } from "../services/classStudentService";
-import { parseBodyWithSchema } from "../validation/common/request";
-import { AddClassStudentSchema, LeaveClassStudentSchema } from "../validation/classStudent/classStudentSchemas";
+import { t } from "../../i18n/messages";
+import { toAppError } from "../../errors";
+import { ClassStudentService } from "./classStudentService";
+import { AddClassStudentSchema, LeaveClassStudentSchema } from "./classStudentSchemas";
 import { uuidv7 } from "uuidv7";
+import { parseBodyWithSchema } from "../../validation/common/request";
+import type { JwtPayload } from "../auth/jwtService";
 
 /**
  * Class-Student membership API (Mounted under /api/classes)

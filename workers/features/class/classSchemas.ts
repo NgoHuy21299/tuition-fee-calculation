@@ -14,7 +14,7 @@ import {
   pipe,
 } from "valibot";
 import type { InferOutput } from "valibot";
-import type { ValidationCode } from "../common/types";
+import type { ValidationCode } from "../../validation/common/types";
 
 // Define base messages (we use i18n codes at mapping stage; here we set minimal messages for Valibot)
 const MSG = {

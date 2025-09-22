@@ -3,10 +3,10 @@
 // - Issuing JWT payloads (actual signing handled by jwt.ts)
 
 import type { JwtPayload } from "./jwtService";
-import type { User } from "../types/user";
-import { UserRepository } from "../repos/userRepository";
-import { AppError } from "../errors";
+import type { User } from "./userType";
+import { AppError } from "../../errors";
 import { uuidv7 } from "uuidv7";
+import { UserRepository } from "./userRepository";
 
 export interface AuthDeps {
   db: D1Database;

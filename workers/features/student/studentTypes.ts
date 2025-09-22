@@ -1,5 +1,5 @@
-import type { StudentRow, StudentDetail } from "../repos/studentRepository";
-import { dbFlagToBool } from "./classTypes";
+import type { StudentRow, StudentDetail } from "./studentRepository";
+import { dbFlagToBool } from "../../helpers/mappingHeplers";
 
 // OUTPUT DTO: dữ liệu trả về cho client khi thao tác với Student
 export type StudentDTO = {

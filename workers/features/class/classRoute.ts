@@ -1,13 +1,13 @@
 import { Hono } from "hono";
-import type { JwtPayload } from "../services/jwtService";
-import { t } from "../i18n/messages";
-import { toAppError } from "../errors";
-import { ClassService } from "../services/classService";
+import type { JwtPayload } from "../auth/jwtService";
+import { t } from "../../i18n/messages";
+import { toAppError } from "../../errors";
+import { ClassService } from "./classService";
 import {
   CreateClassSchema,
   UpdateClassSchema,
-} from "../validation/class/classSchemas";
-import { parseBodyWithSchema } from "../validation/common/request";
+} from "./classSchemas";
+import { parseBodyWithSchema } from "../../validation/common/request";
 import { uuidv7 } from "uuidv7";
 
 /**

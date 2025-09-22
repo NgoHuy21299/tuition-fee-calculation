@@ -4,13 +4,13 @@ import {
   CLASS_SORT,
   type ClassRow,
   type ClassSort,
-} from "../repos/classRepository";
+} from "./classRepository";
 import type {
   ClassDTO,
-} from "../types/classTypes";
-import { mapClassRowToDTO } from "../types/classTypes";
-import { AppError } from "../errors";
-import type { CreateClassInput, UpdateClassInput } from "workers/validation/class/classSchemas";
+} from "./classTypes";
+import { mapClassRowToDTO } from "./classTypes";
+import { AppError } from "../../errors";
+import type { CreateClassInput, UpdateClassInput } from "./classSchemas";
 
 export type ClassServiceDeps = { db: D1Database };
 

@@ -1,4 +1,4 @@
-import type { ClassStudentRow } from "../repos/classStudentRepository";
+import type { ClassStudentRow } from "./classStudentRepository";
 
 // OUTPUT DTO: dữ liệu trả về cho client khi thao tác membership Class-Student
 export type ClassStudentDTO = {
