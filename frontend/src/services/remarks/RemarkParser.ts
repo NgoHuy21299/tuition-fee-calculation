@@ -10,7 +10,9 @@ export function parseRemarkStructure(matrix: SheetMatrix): { structure: RemarkSt
   }
 
   const headers = (matrix[0] || []).map((c) => String(c ?? ""));
-  const templates = (matrix[1] || []).map((c) => String(c ?? ""));
+  // templates rows may be multiple contiguous rows after header and before meta/student header row
+  // temporary templates will be overwritten after we detect metaRowIndex below
+  const templates: string[] = (matrix[1] || []).map((c) => String(c ?? ""));
 
   // find "Tên học sinh" row in column A (any row)
   let studentHeaderRowIndex = -1;
@@ -51,7 +53,8 @@ export function parseRemarkStructure(matrix: SheetMatrix): { structure: RemarkSt
 
   const structure: RemarkStructure = {
     headers,
-    templates,
+    templates, // will be replaced below once template rows are discovered
+    templateRowsIndices: [],
     metaRowIndex,
     studentHeaderRowIndex,
     studentRecordsStartRowIndex,
@@ -61,6 +64,21 @@ export function parseRemarkStructure(matrix: SheetMatrix): { structure: RemarkSt
     notGoodHeaderIndex: notGoodHeaderIndex >= 0 ? notGoodHeaderIndex : null,
     goodRange,
   };
-
+  // Discover template rows: any non-empty row between header (row 0) and metaRowIndex (exclusive)
+  const templateRows: number[] = [];
+  for (let r = 1; r < metaRowIndex; r++) {
+    const row = matrix[r] || [];
+    const hasAny = row.some((cell) => String(cell ?? "").trim().length > 0);
+    if (hasAny) templateRows.push(r);
+  }
+  if (templateRows.length === 0) {
+    // fallback to row 1 if present
+    if (matrix.length > 1) templateRows.push(1);
+  }
+  structure.templateRowsIndices = templateRows;
+  // default templates = first template row
+  if (templateRows.length > 0) {
+    structure.templates = (matrix[templateRows[0]] || []).map((c) => String(c ?? ""));
+  }
   return { structure, issues };
 }

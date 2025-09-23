@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Card } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
 import LoadingSpinner from "../../components/commons/LoadingSpinner";
 import UploadBox from "../../components/remarks/UploadBox";
 import PreviewPanel from "../../components/remarks/PreviewPanel";
@@ -53,6 +54,19 @@ export default function ClassRemark() {
     }
   };
 
+  const handleRerun = async () => {
+    // Re-run merge with the same parsed structure but allow random template row selection
+    if (!matrix || !structure) return;
+    setLoading(true);
+    try {
+      await sleep(MIN_LOADING_MS);
+      const merged = mergeRemarks(matrix, structure);
+      setResult(merged);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDownloadTemplate = async () => {
     try {
       const now = new Date();
@@ -98,13 +112,9 @@ export default function ClassRemark() {
           <p className="text-sm text-gray-400">Ghép câu nhận xét từ bảng tính theo yêu cầu.</p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleDownloadTemplate}
-            className="px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-white transition cursor-pointer"
-          >
+          <Button variant="success" onClick={handleDownloadTemplate}>
             Tải về mẫu trang tính
-          </button>
+          </Button>
           <div>{loading && <LoadingSpinner size={18} padding={3} />}</div>
         </div>
       </div>
@@ -127,7 +137,7 @@ export default function ClassRemark() {
             <PreviewPanel matrix={matrix} structure={structure} result={result} issues={issues} />
             <ErrorsPanel issues={issues.concat(result?.rows.flatMap(r => r.issues) || [])} />
             <div className="pt-2">
-              <ActionsBar result={result} />
+              <ActionsBar result={result} onRerun={handleRerun} loading={loading} />
             </div>
           </div>
         </div>

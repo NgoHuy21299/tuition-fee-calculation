@@ -15,7 +15,7 @@ function fillPlaceholders(template: string, ctx: Record<string, string>): string
 export function mergeRemarks(matrix: SheetMatrix, structure: RemarkStructure): MergeResultSummary {
   const rows: MergeResultRow[] = [];
   const headers = structure.headers;
-  const templates = structure.templates;
+  const defaultTemplates = structure.templates;
 
   const idxExamName = 0; // A column for exam name placeholder source per requirement
   const examName = structure.examName ?? String(matrix[1]?.[idxExamName] ?? "").trim();
@@ -27,6 +27,14 @@ export function mergeRemarks(matrix: SheetMatrix, structure: RemarkStructure): M
     if (!studentName) {
       // Stop at the first empty student row as requested; XLSX may contain trailing blank rows
       break;
+    }
+
+    // Determine which templates row to use for this student (one row per student)
+    let chosenTemplates: string[] = defaultTemplates;
+    if (structure.templateRowsIndices && structure.templateRowsIndices.length > 0) {
+      const pickIdx = Math.floor(Math.random() * structure.templateRowsIndices.length);
+      const tmplRowAbs = structure.templateRowsIndices[pickIdx];
+      chosenTemplates = (matrix[tmplRowAbs] || []).map((c) => String(c ?? ""));
     }
 
     // Build remark parts in the order of headers row
@@ -71,14 +79,14 @@ export function mergeRemarks(matrix: SheetMatrix, structure: RemarkStructure): M
       const header = String(headers[c] ?? "").trim();
       if (!header) continue;
       const headerNorm = norm(header);
-      const template = String(templates[c] ?? "");
+      const template = String(chosenTemplates[c] ?? "");
 
       // Determine contiguous window for this section, including subsequent columns that belong to the same section
       // Some sheets only fill the header cell on the first column (others are blank) but still contain templates/meta labels
       let windowEnd = c;
       for (let cc = c + 1; cc < headers.length; cc++) {
         const h = String(headers[cc] ?? "").trim();
-        const tmpl = String(templates[cc] ?? "");
+        const tmpl = String(chosenTemplates[cc] ?? "");
         const metaAt = String(matrix[structure.metaRowIndex]?.[cc] ?? "").trim();
         if (h && norm(h) !== headerNorm) break; // reached next section
         if (!h && !tmpl && !metaAt) break; // truly empty column => end window
@@ -138,7 +146,7 @@ export function mergeRemarks(matrix: SheetMatrix, structure: RemarkStructure): M
           issues.push({ type: "conflict_selection", message: `Nhiều lựa chọn trong phần '${header}'`, rowIndex: r, sectionName: header, studentName });
         }
         if (pickCount >= 1 && pickedIdx !== null) {
-          const content = fillPlaceholders(String(templates[pickedIdx] ?? template ?? ""), {
+          const content = fillPlaceholders(String(chosenTemplates[pickedIdx] ?? template ?? ""), {
             "Tên học sinh": studentName,
             "tên học sinh": studentName,
             "Tên bài thi": examName,

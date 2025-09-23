@@ -6,7 +6,8 @@ export type HeaderIndexMap = Record<string, number>; // normalized header (lower
 
 export interface RemarkStructure {
   headers: string[]; // row 1 values
-  templates: string[]; // row 2 values
+  templates: string[]; // default template row values (first template row)
+  templateRowsIndices: number[]; // absolute row indices in matrix for available template rows (e.g., [1,2])
   metaRowIndex: number; // the row index that contains labels like "Tốt", "Chưa tốt", and the list of dạng bài (e.g., 2 for row3 visually)
   studentHeaderRowIndex: number; // row index where the cell with text "Tên học sinh" is found (e.g., 2 for row3 visually)
   studentRecordsStartRowIndex: number; // first row index after the student header row

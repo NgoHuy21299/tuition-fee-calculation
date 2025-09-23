@@ -29,6 +29,21 @@ export const CLASS_REMARK_TEMPLATE_MATRIX: (string | number)[][] = [
     "Cô tin rằng con sẽ cẩn thận hơn khi làm bài và có bứt phá trong thời gian tới nhé.",
     "",
   ],
+  // Row 2b (optional templates v2 for testing variety)
+  [
+    "Tên bài thi: bài kiểm tra giữa kỳ",
+    "{Tên học sinh} có tinh thần học tập nghiêm túc và chủ động trong các hoạt động trên lớp",
+    "{Tên học sinh} tương tác tích cực trong giờ học, hãy tiếp tục phát huy sự tự tin khi phát biểu nhé.",
+    "{Tên học sinh} hoàn thành đầy đủ và đúng hạn các bài tập về nhà",
+    "Cần nỗ lực thêm để hoàn thành tốt hơn các bài tập về nhà nhằm củng cố kiến thức",
+    "Trong {Tên bài thi}, con thể hiện tốt ở các dạng bài: {Các dạng bài làm tốt}",
+    "",
+    "",
+    "Con nên tập trung rèn luyện thêm ở các dạng bài: {Các dạng bài làm chưa tốt}",
+    "Cô ghi nhận sự cố gắng của con, hãy tiếp tục duy trì phong độ và sự cẩn thận khi làm bài nhé.",
+    "Cô tin rằng với sự tập trung hơn, con sẽ có bước tiến rõ rệt trong thời gian tới.",
+    "",
+  ],
   // Row 3 (meta row: labels and problem types)
   [
     "Tên học sinh",

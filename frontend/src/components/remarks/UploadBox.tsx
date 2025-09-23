@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { Button } from "../ui/button";
 
 export default function UploadBox({ onFileSelected }: { onFileSelected: (file: File) => void }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -19,13 +20,9 @@ export default function UploadBox({ onFileSelected }: { onFileSelected: (file: F
   return (
     <div className="border border-dashed border-gray-700 rounded-lg p-6 text-center bg-gray-900/30">
       <p className="text-gray-300 mb-2">Chọn tệp CSV hoặc Excel (xlsx/xls)</p>
-      <button
-        type="button"
-        onClick={handleClick}
-        className="px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-white transition cursor-pointer"
-      >
+      <Button onClick={handleClick}>
         Chọn tệp
-      </button>
+      </Button>
       <input
         ref={inputRef}
         type="file"
