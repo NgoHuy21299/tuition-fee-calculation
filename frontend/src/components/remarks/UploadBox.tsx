@@ -4,12 +4,16 @@ export default function UploadBox({ onFileSelected }: { onFileSelected: (file: F
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const handleClick = () => {
+    // Clear current value so selecting the same file triggers onChange
+    if (inputRef.current) inputRef.current.value = "";
     inputRef.current?.click();
   };
 
   const handleChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     const file = e.target.files?.[0];
     if (file) onFileSelected(file);
+    // Reset value to allow selecting the same file again in subsequent attempts
+    e.currentTarget.value = "";
   };
 
   return (
@@ -18,7 +22,7 @@ export default function UploadBox({ onFileSelected }: { onFileSelected: (file: F
       <button
         type="button"
         onClick={handleClick}
-        className="px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-white transition"
+        className="px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-white transition cursor-pointer"
       >
         Chọn tệp
       </button>

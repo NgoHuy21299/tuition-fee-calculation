@@ -1,17 +1,18 @@
 import * as XLSX from "xlsx";
 import type { MergeResultSummary } from "../../services/remarks/RemarkTypes";
+import { useToast } from "../commons/Toast";
 
 export default function ActionsBar({
   result,
 }: {
   result: MergeResultSummary | null;
 }) {
+  const { toast } = useToast();
   const handleCopyAll = async () => {
     const text = (result?.rows || []).map((r) => r.remark).join("\n");
     if (!text) return;
     await navigator.clipboard.writeText(text);
-    // You might want to show a toast; the app already has a ToastProvider
-    console.debug("Copied remarks to clipboard");
+    toast({ title: "Đã sao chép nhận xét", variant: "success" });
   };
 
   const handleDownloadCsv = () => {
@@ -24,6 +25,7 @@ export default function ActionsBar({
     a.download = "class-remarks.csv";
     a.click();
     URL.revokeObjectURL(url);
+    toast({ title: "Đã tải xuống CSV", variant: "success" });
   };
 
   const handleDownloadXlsx = () => {
@@ -31,6 +33,7 @@ export default function ActionsBar({
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Remarks");
     XLSX.writeFile(wb, "class-remarks.xlsx");
+    toast({ title: "Đã tải xuống Excel", variant: "success" });
   };
 
   return (
@@ -38,21 +41,21 @@ export default function ActionsBar({
       <button
         type="button"
         onClick={handleCopyAll}
-        className="px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-white transition"
+        className="px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-white transition cursor-pointer"
       >
         Copy tất cả nhận xét
       </button>
       <button
         type="button"
         onClick={handleDownloadCsv}
-        className="px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-white transition"
+        className="px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-white transition cursor-pointer"
       >
         Tải CSV
       </button>
       <button
         type="button"
         onClick={handleDownloadXlsx}
-        className="px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-white transition"
+        className="px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-white transition cursor-pointer"
       >
         Tải Excel
       </button>

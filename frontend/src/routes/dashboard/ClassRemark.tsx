@@ -9,23 +9,32 @@ import { readFileToMatrix } from "../../services/remarks/CsvXlsxReader";
 import { parseRemarkStructure } from "../../services/remarks/RemarkParser";
 import { mergeRemarks } from "../../services/remarks/RemarkMerger";
 import type { MergeResultSummary, RemarkStructure, SheetMatrix, ValidationIssue } from "../../services/remarks/RemarkTypes";
+import { useToast } from "../../components/commons/Toast";
 
 export default function ClassRemark() {
+  const MIN_LOADING_MS = 500; // configurable delay for perceived loading
   const [fileName, setFileName] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [matrix, setMatrix] = useState<SheetMatrix | null>(null);
   const [structure, setStructure] = useState<RemarkStructure | null>(null);
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
   const [result, setResult] = useState<MergeResultSummary | null>(null);
+  const { toast } = useToast();
+
+  const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
   const handleFile = async (file: File) => {
-    setFileName(file.name);
+    // Immediately show loading and clear previous states
     setLoading(true);
     setMatrix(null);
     setStructure(null);
     setIssues([]);
     setResult(null);
+    setFileName("");
     try {
+      // Keep loading visible for at least MIN_LOADING_MS to avoid flicker and ensure user perceives the reset
+      await sleep(MIN_LOADING_MS);
+      setFileName(file.name);
       const mx = await readFileToMatrix(file);
       const parsed = parseRemarkStructure(mx);
       setMatrix(mx);
@@ -44,14 +53,60 @@ export default function ClassRemark() {
     }
   };
 
+  const handleDownloadTemplate = async () => {
+    try {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      const rand = String(Math.floor(Math.random() * 10000)).padStart(4, "0");
+      const filename = `class-remark-${yyyy}-${mm}-${dd}-${rand}.xlsx`;
+
+      const url = "/class-remark-template.xlsx"; // served from frontend/public
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Không tìm thấy file mẫu trong public.");
+      const ct = res.headers.get("content-type") || "";
+      if (!ct.includes("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) {
+        // vẫn cho phép tải nhưng cảnh báo, tránh lưu 404 HTML thành .xlsx
+        console.warn("Unexpected content-type for template:", ct);
+      }
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(blobUrl);
+      toast({ title: "Đã tải mẫu trang tính", variant: "success" });
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Tải mẫu thất bại",
+        description: "Hãy đảm bảo đã đặt file public/class-remark-template.xlsx",
+        variant: "error",
+      });
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold">Class Remark</h1>
+          <h1 className="text-xl font-semibold">Nhận xét lớp</h1>
           <p className="text-sm text-gray-400">Ghép câu nhận xét từ bảng tính theo yêu cầu.</p>
         </div>
-        <div>{loading && <LoadingSpinner size={18} padding={3} />}</div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleDownloadTemplate}
+            className="px-3 py-2 rounded-md bg-gray-100 text-gray-900 hover:bg-white transition cursor-pointer"
+          >
+            Tải về mẫu trang tính
+          </button>
+          <div>{loading && <LoadingSpinner size={18} padding={3} />}</div>
+        </div>
       </div>
 
       <Card variant="blur-animation">

@@ -18,14 +18,14 @@ export default function PreviewPanel({
         <h3 className="text-sm font-semibold text-gray-200">Nhận diện cấu trúc</h3>
         <div className="text-xs text-gray-400">
           <div>Headers: {structure?.headers.length ?? 0}</div>
-          <div>Dòng meta: {structure?.metaRowIndex ?? "-"}</div>
-          <div>Dòng bắt đầu học sinh: {structure?.studentRecordsStartRowIndex ?? "-"}</div>
+          <div>Dòng meta: {typeof structure?.metaRowIndex === 'number' ? structure!.metaRowIndex + 1 : '-'}</div>
+          <div>Dòng bắt đầu học sinh: {typeof structure?.studentRecordsStartRowIndex === 'number' ? structure!.studentRecordsStartRowIndex + 1 : '-'}</div>
           <div>Exam: {structure?.examName ?? "-"}</div>
         </div>
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-gray-200">Preview (5 hàng)</h3>
+        <h3 className="text-sm font-semibold text-gray-200">Xem trước (5 hàng)</h3>
         <div className="text-xs text-gray-400">
           {result?.rows.slice(0, 5).map((r, i) => (
             <div key={i} className="py-1">
