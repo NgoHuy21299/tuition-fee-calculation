@@ -73,9 +73,17 @@ export function mergeRemarks(matrix: SheetMatrix, structure: RemarkStructure): M
       const headerNorm = norm(header);
       const template = String(templates[c] ?? "");
 
-      // Skip the meta row headers like "Tốt/Chưa tốt" labels; they are not headers row 1. Here we only react to real sections.
-      // For normal sections with sub-options on meta row (e.g., Tốt/Chưa tốt), detect mutually exclusive selection
-      // meta row may carry labels like "Tốt", "Chưa tốt"; we will detect contiguous window below
+      // Determine contiguous window for this section, including subsequent columns that belong to the same section
+      // Some sheets only fill the header cell on the first column (others are blank) but still contain templates/meta labels
+      let windowEnd = c;
+      for (let cc = c + 1; cc < headers.length; cc++) {
+        const h = String(headers[cc] ?? "").trim();
+        const tmpl = String(templates[cc] ?? "");
+        const metaAt = String(matrix[structure.metaRowIndex]?.[cc] ?? "").trim();
+        if (h && norm(h) !== headerNorm) break; // reached next section
+        if (!h && !tmpl && !metaAt) break; // truly empty column => end window
+        windowEnd = cc; // part of current section
+      }
 
       // Special-case: problem types sections
       if (headerNorm === norm("Câu dạng bài làm tốt")) {
@@ -95,6 +103,12 @@ export function mergeRemarks(matrix: SheetMatrix, structure: RemarkStructure): M
       if (headerNorm === norm("Câu dạng bài chưa làm tốt")) {
         if (!template) continue;
         const list = selectedNotGood.map((s) => s.toLowerCase()).join(", ");
+        if (!list.trim()) {
+          // no not-good items => skip rendering this sentence
+          // advance c to windowEnd and continue
+          c = windowEnd;
+          continue;
+        }
         const content = fillPlaceholders(template, {
           "Tên học sinh": studentName,
           "tên học sinh": studentName,
@@ -104,20 +118,12 @@ export function mergeRemarks(matrix: SheetMatrix, structure: RemarkStructure): M
           "các dạng bài làm chưa tốt": list,
         });
         if (content.trim()) parts.push(ensurePeriodEnding(content));
+        // advance and continue
+        c = windowEnd;
         continue;
       }
 
-      // General sections: check within a small window to the right for mutually exclusive picks based on meta row (e.g., Tốt/Chưa tốt)
-      // Heuristic: collect contiguous non-empty meta labels starting at c until next empty or new section encountered.
-      let windowEnd = c;
-      for (let cc = c; cc < headers.length; cc++) {
-        const sameSection = norm(String(headers[cc] ?? "")) === headerNorm;
-        if (!sameSection) break;
-        const meta = String(matrix[structure.metaRowIndex]?.[cc] ?? "");
-        if (!meta) break;
-        windowEnd = cc;
-      }
-
+      // General sections with sub-options within [c..windowEnd]
       if (windowEnd > c) {
         // count Xs in [c..windowEnd]
         let pickedIdx: number | null = null;
@@ -140,7 +146,8 @@ export function mergeRemarks(matrix: SheetMatrix, structure: RemarkStructure): M
           });
           if (content.trim()) parts.push(ensurePeriodEnding(content));
         }
-        // advance c to windowEnd in the for-loop by relying on outer increment; here we just continue
+        // advance c to windowEnd to skip processed columns of this section
+        c = windowEnd;
         continue;
       }
 

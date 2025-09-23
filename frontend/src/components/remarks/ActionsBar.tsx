@@ -7,7 +7,7 @@ export default function ActionsBar({
   result: MergeResultSummary | null;
 }) {
   const handleCopyAll = async () => {
-    const text = (result?.rows || []).map((r) => `${r.studentName}\t${r.remark}`).join("\n");
+    const text = (result?.rows || []).map((r) => r.remark).join("\n");
     if (!text) return;
     await navigator.clipboard.writeText(text);
     // You might want to show a toast; the app already has a ToastProvider

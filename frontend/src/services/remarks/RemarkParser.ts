@@ -29,8 +29,10 @@ export function parseRemarkStructure(matrix: SheetMatrix): { structure: RemarkSt
   const metaRowIndex = Math.max(0, studentHeaderRowIndex); // the row containing labels like Tốt/Chưa tốt, dạng bài
   const studentRecordsStartRowIndex = studentHeaderRowIndex + 1;
 
-  // exam name from A2 (matrix[1][0])
-  const examName = String(matrix[1]?.[0] ?? "").trim() || null;
+  // exam name from A2 (matrix[1][0]) - strip leading label 'Tên bài thi:' if present
+  const rawExam = String(matrix[1]?.[0] ?? "");
+  const cleaned = rawExam.replace(/^\s*tên\s*bài\s*thi\s*:\s*/i, "").trim();
+  const examName = (cleaned || rawExam.trim()) || null;
 
   // detect columns for good/bad section headers by matching row-0 headers
   const goodHeaderIndex = headers.findIndex((h) => normalize(h) === normalize("Câu dạng bài làm tốt"));
