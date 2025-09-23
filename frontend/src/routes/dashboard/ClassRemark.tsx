@@ -20,6 +20,7 @@ export default function ClassRemark() {
   const [structure, setStructure] = useState<RemarkStructure | null>(null);
   const [issues, setIssues] = useState<ValidationIssue[]>([]);
   const [result, setResult] = useState<MergeResultSummary | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const { toast } = useToast();
 
   const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
@@ -32,10 +33,12 @@ export default function ClassRemark() {
     setIssues([]);
     setResult(null);
     setFileName("");
+    setUploadedFile(null);
     try {
       // Keep loading visible for at least MIN_LOADING_MS to avoid flicker and ensure user perceives the reset
       await sleep(MIN_LOADING_MS);
       setFileName(file.name);
+      setUploadedFile(file);
       const mx = await readFileToMatrix(file);
       const parsed = parseRemarkStructure(mx);
       setMatrix(mx);
@@ -137,7 +140,7 @@ export default function ClassRemark() {
             <PreviewPanel matrix={matrix} structure={structure} result={result} issues={issues} />
             <ErrorsPanel issues={issues.concat(result?.rows.flatMap(r => r.issues) || [])} />
             <div className="pt-2">
-              <ActionsBar result={result} onRerun={handleRerun} loading={loading} />
+              <ActionsBar result={result} onRerun={handleRerun} loading={loading} uploadedFile={uploadedFile} structure={structure} />
             </div>
           </div>
         </div>

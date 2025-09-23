@@ -19,14 +19,14 @@ export default function UploadBox({ onFileSelected }: { onFileSelected: (file: F
 
   return (
     <div className="border border-dashed border-gray-700 rounded-lg p-6 text-center bg-gray-900/30">
-      <p className="text-gray-300 mb-2">Chọn tệp CSV hoặc Excel (xlsx/xls)</p>
+      <p className="text-gray-300 mb-2">Chọn Excel (xlsx/xls)</p>
       <Button onClick={handleClick}>
         Chọn tệp
       </Button>
       <input
         ref={inputRef}
         type="file"
-        accept=".csv, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        accept="application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         className="hidden"
         onChange={handleChange}
       />
