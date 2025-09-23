@@ -38,6 +38,12 @@ export default function DashboardSidebar() {
           Học phí
         </NavLink>
         <NavLink
+          to="/dashboard/class-remark"
+          className={({ isActive }) => itemClasses(isActive)}
+        >
+          Nhận xét lớp
+        </NavLink>
+        <NavLink
           to="/dashboard/settings"
           className={({ isActive }) => itemClasses(isActive)}
         >
