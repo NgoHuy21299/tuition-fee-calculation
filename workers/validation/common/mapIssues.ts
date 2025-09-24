@@ -6,7 +6,7 @@ import type {
   ValidationErrorDetail,
   ValidationField,
   ValidationCode,
-} from "./types";
+} from "./validationTypes";
 import { tv } from "../../i18n/validationMessages";
 
 function getFieldFromPath(path: unknown): ValidationField {

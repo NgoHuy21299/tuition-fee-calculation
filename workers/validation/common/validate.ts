@@ -1,6 +1,6 @@
 import { safeParse } from "valibot";
 import type { BaseSchema, InferOutput } from "valibot";
-import type { ValidationErrorDetail } from "./types";
+import type { ValidationErrorDetail } from "./validationTypes";
 import { mapValibotIssues } from "./mapIssues";
 
 export type Validated<TSchema extends BaseSchema<any, any, any>> =

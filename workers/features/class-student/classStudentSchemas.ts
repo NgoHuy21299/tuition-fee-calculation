@@ -9,7 +9,7 @@ import {
   pipe,
 } from "valibot";
 import type { InferOutput } from "valibot";
-import type { ValidationCode } from "../../validation/common/types";
+import type { ValidationCode } from "../../validation/common/validationTypes";
 
 function Msg(code: ValidationCode) {
   return code;

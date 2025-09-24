@@ -6,7 +6,7 @@ import {
   email as emailRule,
   pipe,
 } from "valibot";
-import type { ValidationCode } from "../../validation/common/types";
+import type { ValidationCode } from "../../validation/common/validationTypes";
 
 // Keep messages as validation codes; translation is handled later via tv()
 const MSG = {

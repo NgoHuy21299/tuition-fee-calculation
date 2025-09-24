@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import type { JwtPayload } from "../auth/jwtService";
-import { t } from "../../i18n/messages";
+import { t } from "../../i18n/errorMessages";
 import { toAppError } from "../../errors";
 import { ClassService } from "./classService";
 import {

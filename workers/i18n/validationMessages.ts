@@ -1,4 +1,4 @@
-import type { ValidationCode } from "../validation/common/types";
+import type { ValidationCode } from "../validation/common/validationTypes";
 
 export const viValidationMessages: Record<ValidationCode, string> = {
   INVALID_JSON_BODY: "JSON không hợp lệ",

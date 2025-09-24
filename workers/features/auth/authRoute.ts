@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { COOKIE_MAX_AGE } from "../../constants";
 import { toAppError } from "../../errors";
-import { t } from "../../i18n/messages";
+import { t } from "../../i18n/errorMessages";
 import { signJWT, type JwtPayload } from "./jwtService";
 import { parseBodyWithSchema } from "../../validation/common/request";
 import { LoginSchema, ChangePasswordSchema, RegisterSchema } from "./authSchemas";

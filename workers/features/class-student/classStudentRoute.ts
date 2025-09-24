@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { t } from "../../i18n/messages";
+import { t } from "../../i18n/errorMessages";
 import { toAppError } from "../../errors";
 import { ClassStudentService } from "./classStudentService";
 import { AddClassStudentSchema, LeaveClassStudentSchema } from "./classStudentSchemas";
