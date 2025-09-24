@@ -107,6 +107,18 @@ export default function ClassRemark() {
     }
   };
 
+  const handleRemarkUpdate = (index: number, newRemark: string) => {
+    if (!result) return;
+    
+    const updatedRows = [...result.rows];
+    updatedRows[index] = { ...updatedRows[index], remark: newRemark };
+    
+    setResult({
+      ...result,
+      rows: updatedRows,
+    });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -137,11 +149,21 @@ export default function ClassRemark() {
             {fileName && (
               <div className="text-xs text-gray-400">Đã chọn tệp: <span className="text-gray-200">{fileName}</span></div>
             )}
-            <PreviewPanel matrix={matrix} structure={structure} result={result} issues={issues} />
-            <ErrorsPanel issues={issues.concat(result?.rows.flatMap(r => r.issues) || [])} />
-            <div className="pt-2">
-              <ActionsBar result={result} onRerun={handleRerun} loading={loading} uploadedFile={uploadedFile} structure={structure} />
-            </div>
+            {fileName && (
+              <div className="pt-2">
+                <ActionsBar result={result} onRerun={handleRerun} loading={loading} uploadedFile={uploadedFile} structure={structure} />
+              </div>
+            )}
+            <PreviewPanel 
+              matrix={matrix} 
+              structure={structure} 
+              result={result} 
+              issues={issues} 
+              onRemarkUpdate={handleRemarkUpdate}
+            />
+            {issues.length === 0 && (
+              <ErrorsPanel issues={result?.rows.flatMap(r => r.issues) || []} />
+            )}
           </div>
         </div>
       </Card>
