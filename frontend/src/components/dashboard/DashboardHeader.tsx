@@ -28,7 +28,7 @@ export default function DashboardHeader({
           onClick={() => navigate("/dashboard/overview")}
           className="font-semibold cursor-pointer"
         >
-          Dashboard
+          Hỗ trợ cột sống
         </button>
       </div>
       <div className="flex items-center gap-3">

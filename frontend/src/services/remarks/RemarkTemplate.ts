@@ -2,6 +2,7 @@ export const CLASS_REMARK_TEMPLATE_MATRIX: (string | number)[][] = [
   // Row 1 (headers)
   [
     "",
+    "",
     "Câu khen",
     "",
     "Câu BTVN",
@@ -17,6 +18,7 @@ export const CLASS_REMARK_TEMPLATE_MATRIX: (string | number)[][] = [
   // Row 2 (templates)
   [
     "Tên bài thi: bài thi giữa học kỳ 1",
+    "",
     "Con {Tên học sinh} hăng hái phát biểu và tham gia tích cực các hoạt động học tập trên lớp",
     "Con {Tên học sinh} trả lời tốt các câu hỏi của cô trong giờ học, con hãy hăng hái phát biểu hơn nữa nhé.",
     "Con có ý thức học tốt và hoàn thành đầy đủ BTVN cô giao",
@@ -29,9 +31,10 @@ export const CLASS_REMARK_TEMPLATE_MATRIX: (string | number)[][] = [
     "Cô tin rằng con sẽ cẩn thận hơn khi làm bài và có bứt phá trong thời gian tới nhé.",
     "",
   ],
-  // Row 2b (optional templates v2 for testing variety)
+  // Row 3 (optional templates v2 for testing variety)
   [
     "Tên bài thi: bài kiểm tra giữa kỳ",
+    "",
     "{Tên học sinh} có tinh thần học tập nghiêm túc và chủ động trong các hoạt động trên lớp",
     "{Tên học sinh} tương tác tích cực trong giờ học, hãy tiếp tục phát huy sự tự tin khi phát biểu nhé.",
     "{Tên học sinh} hoàn thành đầy đủ và đúng hạn các bài tập về nhà",
@@ -44,9 +47,10 @@ export const CLASS_REMARK_TEMPLATE_MATRIX: (string | number)[][] = [
     "Cô tin rằng với sự tập trung hơn, con sẽ có bước tiến rõ rệt trong thời gian tới.",
     "",
   ],
-  // Row 3 (meta row: labels and problem types)
+  // Row 4 (meta row: labels and problem types)
   [
     "Tên học sinh",
+    "Điểm",
     "Tốt",
     "Chưa tốt",
     "Tốt",
@@ -59,9 +63,10 @@ export const CLASS_REMARK_TEMPLATE_MATRIX: (string | number)[][] = [
     "Chưa tốt",
     "",
   ],
-  // Row 4 (example student rows)
+  // Row 5 (example student rows)
   [
     "Đức Trí",
+    "8",
     "x",
     "",
     "",
@@ -76,6 +81,7 @@ export const CLASS_REMARK_TEMPLATE_MATRIX: (string | number)[][] = [
   ],
   [
     "Văn Toàn",
+    "10",
     "x",
     "",
     "x",

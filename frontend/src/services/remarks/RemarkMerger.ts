@@ -23,6 +23,8 @@ export function mergeRemarks(matrix: SheetMatrix, structure: RemarkStructure): M
   for (let r = structure.studentRecordsStartRowIndex; r < matrix.length; r++) {
     const row = matrix[r] || [];
     const studentName = String(row[structure.nameColumnIndex] ?? "").trim();
+    const studentScore = structure.scoreColumnIndex !== null ? 
+      String(row[structure.scoreColumnIndex] ?? "").trim() || null : null;
     const issues: ValidationIssue[] = [];
     if (!studentName) {
       // Stop at the first empty student row as requested; XLSX may contain trailing blank rows
@@ -172,7 +174,7 @@ export function mergeRemarks(matrix: SheetMatrix, structure: RemarkStructure): M
     }
 
     const remark = parts.join(" ").trim();
-    rows.push({ studentName, remark, issues });
+    rows.push({ studentName, score: studentScore, remark, issues });
   }
 
   const errors = rows.reduce((acc, r) => acc + r.issues.length, 0);

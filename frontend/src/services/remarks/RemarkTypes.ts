@@ -12,6 +12,7 @@ export interface RemarkStructure {
   studentHeaderRowIndex: number; // row index where the cell with text "Tên học sinh" is found (e.g., 2 for row3 visually)
   studentRecordsStartRowIndex: number; // first row index after the student header row
   nameColumnIndex: number; // column index of student name (typically 0)
+  scoreColumnIndex: number | null; // column index of student score/grade ("Điểm")
   examName: string | null; // from A2 per requirement
   goodHeaderIndex: number | null; // col index of header 'Câu dạng bài làm tốt'
   notGoodHeaderIndex: number | null; // col index of header 'Câu dạng bài chưa làm tốt'
@@ -35,6 +36,7 @@ export interface ValidationIssue {
 
 export interface MergeResultRow {
   studentName: string;
+  score: string | null; // điểm của học sinh
   remark: string;
   issues: ValidationIssue[];
 }

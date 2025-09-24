@@ -17,9 +17,19 @@ export function parseRemarkStructure(matrix: SheetMatrix): { structure: RemarkSt
   // find "Tên học sinh" row in column A (any row)
   let studentHeaderRowIndex = -1;
   const nameColumnIndex = 0;
+  let scoreColumnIndex: number | null = null;
+  
   for (let r = 0; r < Math.min(matrix.length, 50); r++) {
     if (normalize(matrix[r]?.[nameColumnIndex]) === normalize("Tên học sinh")) {
       studentHeaderRowIndex = r;
+      // Look for "Điểm" column in the same row
+      const studentHeaderRow = matrix[r] || [];
+      for (let c = 0; c < studentHeaderRow.length; c++) {
+        if (normalize(studentHeaderRow[c]) === normalize("Điểm")) {
+          scoreColumnIndex = c;
+          break;
+        }
+      }
       break;
     }
   }
@@ -59,6 +69,7 @@ export function parseRemarkStructure(matrix: SheetMatrix): { structure: RemarkSt
     studentHeaderRowIndex,
     studentRecordsStartRowIndex,
     nameColumnIndex,
+    scoreColumnIndex,
     examName,
     goodHeaderIndex: goodHeaderIndex >= 0 ? goodHeaderIndex : null,
     notGoodHeaderIndex: notGoodHeaderIndex >= 0 ? notGoodHeaderIndex : null,
