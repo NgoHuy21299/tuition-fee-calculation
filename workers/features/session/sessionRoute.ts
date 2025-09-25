@@ -27,7 +27,8 @@ export function createSessionRouter() {
                 );
             }
 
-            const teacherId = c.get('user')?.id;
+            const user = c.get("user");
+            const teacherId = String(user.sub);
             if (!teacherId) {
                 return c.json({ error: 'Unauthorized' }, 401);
             }
@@ -56,7 +57,8 @@ export function createSessionRouter() {
                 );
             }
 
-            const teacherId = c.get('user')?.id;
+            const user = c.get("user");
+            const teacherId = String(user.sub);
             if (!teacherId) {
                 return c.json({ error: 'Unauthorized' }, 401);
             }
@@ -78,7 +80,8 @@ export function createSessionRouter() {
     router.get('/:id', async (c: Context) => {
         try {
             const sessionId = c.req.param('id');
-            const teacherId = c.get('user')?.id;
+            const user = c.get("user");
+            const teacherId = String(user.sub);
 
             if (!teacherId) {
                 return c.json({ error: 'Unauthorized' }, 401);
@@ -98,28 +101,7 @@ export function createSessionRouter() {
         }
     });
 
-    /**
-     * List sessions for a specific class
-     * GET /api/classes/:classId/sessions
-     */
-    router.get('/classes/:classId/sessions', async (c: Context) => {
-        try {
-            const classId = c.req.param('classId');
-            const teacherId = c.get('user')?.id;
 
-            if (!teacherId) {
-                return c.json({ error: 'Unauthorized' }, 401);
-            }
-
-            const service = new SessionService({ db: c.env.DB });
-            const result = await service.listByClass(classId, teacherId);
-
-            return c.json(result, 200 as 200);
-        } catch (err) {
-            const e = toAppError(err, { code: "UNKNOWN" });
-            return c.json({ error: e.message }, e.status as any);
-        }
-    });
 
     /**
      * List upcoming sessions (for dashboard/reminders)
@@ -127,7 +109,8 @@ export function createSessionRouter() {
      */
     router.get('/upcoming', async (c: Context) => {
         try {
-            const teacherId = c.get('user')?.id;
+            const user = c.get("user");
+            const teacherId = String(user.sub);
 
             if (!teacherId) {
                 return c.json({ error: 'Unauthorized' }, 401);
@@ -156,7 +139,8 @@ export function createSessionRouter() {
     router.patch('/:id/cancel', async (c: Context) => {
         try {
             const sessionId = c.req.param('id');
-            const teacherId = c.get('user')?.id;
+            const user = c.get("user");
+            const teacherId = String(user.sub);
 
             if (!teacherId) {
                 return c.json({ error: 'Unauthorized' }, 401);
@@ -191,7 +175,8 @@ export function createSessionRouter() {
                 );
             }
 
-            const teacherId = c.get('user')?.id;
+            const user = c.get("user");
+            const teacherId = String(user.sub);
             if (!teacherId) {
                 return c.json({ error: 'Unauthorized' }, 401);
             }
@@ -217,7 +202,8 @@ export function createSessionRouter() {
     router.delete('/:id', async (c: Context) => {
         try {
             const sessionId = c.req.param('id');
-            const teacherId = c.get('user')?.id;
+            const user = c.get("user");
+            const teacherId = String(user.sub);
 
             if (!teacherId) {
                 return c.json({ error: 'Unauthorized' }, 401);

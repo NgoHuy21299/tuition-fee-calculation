@@ -176,5 +176,31 @@ export function createClassRouter() {
     }
   });
 
+  /**
+   * GET /api/classes/:classId/sessions
+   * List all sessions for a specific class
+   */
+  router.get("/:classId/sessions", async (c) => {
+    const user = c.get("user");
+    if (!user)
+      return c.json(
+        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
+        401 as 401
+      );
+    try {
+      const classId = c.req.param("classId");
+      const { SessionService } = await import("../session/sessionService");
+      const svc = new SessionService({ db: c.env.DB });
+      const result = await svc.listByClass(classId, String(user.sub));
+      return c.json(result, 200 as 200);
+    } catch (err) {
+      const e = toAppError(err, { code: "UNKNOWN" });
+      return c.json(
+        { error: t(e.code, e.message), code: e.code },
+        e.status as any
+      );
+    }
+  });
+
   return router;
 }
