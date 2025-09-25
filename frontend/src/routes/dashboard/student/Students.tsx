@@ -14,6 +14,14 @@ import {
   DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
 import LoadingSpinner from "../../../components/commons/LoadingSpinner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../../../components/ui/table";
 
 export default function Students() {
   const { toast } = useToast();
@@ -220,55 +228,57 @@ export default function Students() {
                 <LoadingSpinner size={32} padding={6} />
               </div>
             ) : (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-gray-400">
-                    <th className="py-2 pr-3 font-medium">Tên</th>
-                    <th className="py-2 pr-3 font-medium">Lớp đang theo học</th>
-                    <th className="py-2 pr-3 font-medium">Điện thoại</th>
-                    <th className="py-2 pr-3 font-medium text-right">
-                      Thao tác
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="py-6 text-center text-gray-400">
-                        Không có học sinh nào
-                      </td>
-                    </tr>
-                  ) : (
-                    filtered.map((s) => (
-                      <tr key={s.id} className="border-t border-gray-800">
-                        <td className="py-2 pr-3">
-                          <div className="font-medium">{s.name}</div>
-                        </td>
-                        <td className="py-2 pr-3 text-gray-300">
-                          {s.currentClasses || "-"}
-                        </td>
-                        <td className="py-2 pr-3">{s.phone || "-"}</td>
-                        <td className="py-2 pr-0 text-right">
-                          <div className="inline-flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              onClick={() => openEdit(s.id)}
-                            >
-                              Sửa
-                            </Button>
-                            <Button
-                              variant="danger"
-                              onClick={() => setConfirmDeleteId(s.id)}
-                            >
-                              Xoá
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tên</TableHead>
+                      <TableHead>Lớp đang theo học</TableHead>
+                      <TableHead>Điện thoại</TableHead>
+                      <TableHead className="text-right">
+                        Thao tác
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="py-6 text-center text-gray-400">
+                          Không có học sinh nào
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filtered.map((s) => (
+                        <TableRow key={s.id}>
+                          <TableCell>
+                            <div className="font-medium">{s.name}</div>
+                          </TableCell>
+                          <TableCell className="text-gray-300">
+                            {s.currentClasses || "-"}
+                          </TableCell>
+                          <TableCell>{s.phone || "-"}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="inline-flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                onClick={() => openEdit(s.id)}
+                              >
+                                Sửa
+                              </Button>
+                              <Button
+                                variant="danger"
+                                onClick={() => setConfirmDeleteId(s.id)}
+                              >
+                                Xoá
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </div>
           <div className="flex items-center justify-between pt-2">

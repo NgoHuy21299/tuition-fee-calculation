@@ -24,7 +24,10 @@ client.interceptors.response.use(
   (err) => {
     if (err?.response?.status === 401) {
       clearToken();
-      // window.location.assign("/login");
+      // Redirect to login if not already there
+      if (!window.location.pathname.includes('/login')) {
+        window.location.assign("/login");
+      }
     }
     return Promise.reject(err);
   },

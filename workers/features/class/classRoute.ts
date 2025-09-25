@@ -7,15 +7,17 @@ import {
   CreateClassSchema,
   UpdateClassSchema,
 } from "./classSchemas";
-import { parseBodyWithSchema } from "../../validation/common/request";
+import { validateBody, getValidatedData } from "../../middleware/validationMiddleware";
+import { getTeacherId } from "../../middleware/authMiddleware";
 import { uuidv7 } from "uuidv7";
+import type { InferOutput } from 'valibot';
 
 /**
  * Classes API (Base: /api/classes)
  * Auth: Protected by apiAuthGuard (applied globally in app.ts for /api/*)
  */
 export function createClassRouter() {
-  const router = new Hono<{ Bindings: Env; Variables: { user: JwtPayload } }>();
+  const router = new Hono<{ Bindings: Env; Variables: { user: JwtPayload; teacherId: string } }>();
 
   /**
    * GET /api/classes
@@ -25,19 +27,14 @@ export function createClassRouter() {
    * Returns: { items: ClassDTO[], total: number }
    */
   router.get("/", async (c) => {
-    const user = c.get("user");
-    if (!user)
-      return c.json(
-        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
-        401 as 401
-      );
     try {
+      const teacherId = getTeacherId(c);
       const svc = new ClassService({ db: c.env.DB });
       const url = new URL(c.req.url);
       const isGetAll =
         (url.searchParams.get("isGetAll") || "").toLowerCase() === "true";
       const { items, total } = await svc.listByTeacher({
-        teacherId: String(user.sub),
+        teacherId,
         isActive: isGetAll ? undefined : true,
         sort: "createdAt_desc",
         limit: isGetAll ? undefined : 10,
@@ -57,28 +54,13 @@ export function createClassRouter() {
    * Body: { name: string; subject?: string; description?: string; defaultFeePerSession?: number | null; isActive?: boolean }
    * Returns: ClassDTO
    */
-  router.post("/", async (c) => {
-    const user = c.get("user");
-    if (!user)
-      return c.json(
-        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
-        401 as 401
-      );
+  router.post("/", validateBody(CreateClassSchema), async (c) => {
     try {
-      const parsed = await parseBodyWithSchema(c, CreateClassSchema);
-      if (!parsed.ok) {
-        return c.json(
-          {
-            error: t("VALIDATION_ERROR"),
-            code: "VALIDATION_ERROR",
-            details: parsed.errors,
-          },
-          400 as 400
-        );
-      }
+      const teacherId = getTeacherId(c);
+      const body = getValidatedData<InferOutput<typeof CreateClassSchema>>(c);
       const svc = new ClassService({ db: c.env.DB });
       const id = uuidv7();
-      const dto = await svc.create(String(user.sub), { id, ...parsed.value });
+      const dto = await svc.create(teacherId, { id, ...body });
       return c.json(dto, 201 as 201);
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });
@@ -94,16 +76,11 @@ export function createClassRouter() {
    * Returns: ClassDTO
    */
   router.get("/:id", async (c) => {
-    const user = c.get("user");
-    if (!user)
-      return c.json(
-        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
-        401 as 401
-      );
     try {
+      const teacherId = getTeacherId(c);
       const id = c.req.param("id");
       const svc = new ClassService({ db: c.env.DB });
-      const dto = await svc.getById(String(user.sub), id);
+      const dto = await svc.getById(teacherId, id);
       return c.json(dto, 200 as 200);
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });
@@ -119,28 +96,13 @@ export function createClassRouter() {
    * Body: Partial<{ name; subject; description; defaultFeePerSession; isActive }>
    * Returns: ClassDTO
    */
-  router.put("/:id", async (c) => {
-    const user = c.get("user");
-    if (!user)
-      return c.json(
-        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
-        401 as 401
-      );
+  router.put("/:id", validateBody(UpdateClassSchema), async (c) => {
     try {
+      const teacherId = getTeacherId(c);
       const id = c.req.param("id");
-      const parsed = await parseBodyWithSchema(c, UpdateClassSchema);
-      if (!parsed.ok) {
-        return c.json(
-          {
-            error: t("VALIDATION_ERROR"),
-            code: "VALIDATION_ERROR",
-            details: parsed.errors,
-          },
-          400 as 400
-        );
-      }
+      const body = getValidatedData<InferOutput<typeof UpdateClassSchema>>(c);
       const svc = new ClassService({ db: c.env.DB });
-      const dto = await svc.update(String(user.sub), id, parsed.value);
+      const dto = await svc.update(teacherId, id, body);
       return c.json(dto, 200 as 200);
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });
@@ -156,17 +118,33 @@ export function createClassRouter() {
    * Returns: 204 on success; 409 if class has dependencies
    */
   router.delete("/:id", async (c) => {
-    const user = c.get("user");
-    if (!user)
-      return c.json(
-        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
-        401 as 401
-      );
     try {
+      const teacherId = getTeacherId(c);
       const id = c.req.param("id");
       const svc = new ClassService({ db: c.env.DB });
-      await svc.delete(String(user.sub), id);
+      await svc.delete(teacherId, id);
       return new Response(null, { status: 204 });
+    } catch (err) {
+      const e = toAppError(err, { code: "UNKNOWN" });
+      return c.json(
+        { error: t(e.code, e.message), code: e.code },
+        e.status as any
+      );
+    }
+  });
+
+  /**
+   * GET /api/classes/:classId/sessions
+   * List all sessions for a specific class
+   */
+  router.get("/:classId/sessions", async (c) => {
+    try {
+      const teacherId = getTeacherId(c);
+      const classId = c.req.param("classId");
+      const { SessionService } = await import("../session/sessionService");
+      const svc = new SessionService({ db: c.env.DB });
+      const result = await svc.listByClass(classId, teacherId);
+      return c.json(result, 200 as 200);
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });
       return c.json(

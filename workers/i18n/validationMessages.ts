@@ -28,6 +28,27 @@ export const viValidationMessages: Record<ValidationCode, string> = {
   // ClassStudent-specific
   STUDENT_ID_REQUIRED: "Thiếu mã học sinh",
   UNIT_PRICE_INVALID: "Đơn giá không hợp lệ",
+  // Session-specific
+  START_TIME_REQUIRED: "Thời gian bắt đầu là bắt buộc",
+  DURATION_INVALID: "Thời lượng không hợp lệ",
+  DURATION_TOO_SHORT: "Thời lượng phải ít nhất 1 phút",
+  FEE_INVALID: "Học phí không hợp lệ",
+  FEE_NEGATIVE: "Học phí không được âm",
+  NOTES_INVALID: "Ghi chú không hợp lệ",
+  NOTES_TOO_LONG: "Ghi chú quá dài (tối đa 2000 ký tự)",
+  STATUS_INVALID: "Trạng thái không hợp lệ",
+  TYPE_INVALID: "Loại buổi học không hợp lệ",
+  DAYS_OF_WEEK_INVALID: "Ngày trong tuần không hợp lệ",
+  DAYS_OF_WEEK_REQUIRED: "Cần chọn ít nhất một ngày trong tuần",
+  TIME_REQUIRED: "Giờ học là bắt buộc",
+  TIME_FORMAT_INVALID: "Định dạng giờ không hợp lệ (HH:MM)",
+  START_DATE_REQUIRED: "Ngày bắt đầu là bắt buộc",
+  END_DATE_INVALID: "Ngày kết thúc không hợp lệ",
+  DATE_FORMAT_INVALID: "Định dạng ngày không hợp lệ (YYYY-MM-DD)",
+  MAX_OCCURRENCES_INVALID: "Số buổi tối đa không hợp lệ",
+  MAX_OCCURRENCES_TOO_SMALL: "Số buổi tối đa phải ít nhất 1",
+  TIMEZONE_INVALID: "Múi giờ không hợp lệ",
+  EXCLUSION_DATE_INVALID: "Ngày loại trừ không hợp lệ",
 };
 
 export function tv(code: ValidationCode, fallback?: string): string {

@@ -1,6 +1,14 @@
 import { useState } from "react";
 import type { MergeResultSummary, RemarkStructure, SheetMatrix, ValidationIssue } from "../../services/remarks/RemarkTypes";
 import { Button } from "../ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../ui/table";
 
 export default function PreviewPanel({
   matrix,
@@ -69,28 +77,30 @@ export default function PreviewPanel({
       <div>
         <h3 className="text-sm font-semibold text-gray-200">Tóm tắt thông tin</h3>
         <div className="overflow-x-auto mt-2">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-gray-400">
-                <th className="py-2 pr-3 font-medium">Chỉ số</th>
-                <th className="py-2 pr-3 font-medium">Giá trị</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-t border-gray-800">
-                <td className="py-2 pr-3 text-gray-300">Tổng số học sinh</td>
-                <td className="py-2 pr-3">{totalStudents}</td>
-              </tr>
-              <tr className="border-t border-gray-800">
-                <td className="py-2 pr-3 text-gray-300">Tổng số mẫu câu</td>
-                <td className="py-2 pr-3">{totalTemplateRows}</td>
-              </tr>
-              <tr className="border-t border-gray-800">
-                <td className="py-2 pr-3 text-gray-300">Tổng số phần nhận xét</td>
-                <td className="py-2 pr-3">{sections.length} ({sections.join(", ") || "-"})</td>
-              </tr>
-            </tbody>
-          </table>
+          <div className="border rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Chỉ số</TableHead>
+                  <TableHead>Giá trị</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell className="text-gray-300">Tổng số học sinh</TableCell>
+                  <TableCell>{totalStudents}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="text-gray-300">Tổng số mẫu câu</TableCell>
+                  <TableCell>{totalTemplateRows}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell className="text-gray-300">Tổng số phần nhận xét</TableCell>
+                  <TableCell>{sections.length} ({sections.join(", ") || "-"})</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
 
@@ -98,74 +108,76 @@ export default function PreviewPanel({
       <div>
         <h3 className="text-sm font-semibold text-gray-200">Xem trước</h3>
         <div className="overflow-x-auto mt-2">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-gray-400">
-                <th className="py-2 pr-3 font-medium">#</th>
-                <th className="py-2 pr-3 font-medium">Tên học sinh</th>
-                <th className="py-2 pr-3 font-medium">Điểm</th>
-                <th className="py-2 pr-3 font-medium">Nhận xét</th>
-                <th className="py-2 pr-3 font-medium">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(result?.rows || []).map((r, i) => (
-                <tr key={i} className="border-t border-gray-800">
-                  <td className="py-2 pr-3">{i + 1}</td>
-                  <td className="py-2 pr-3 text-gray-300">{r.studentName}</td>
-                  <td className="py-2 pr-3 text-gray-300">{r.score || "-"}</td>
-                  <td className="py-2 pr-3 text-gray-200">
-                    {editingIndex === i ? (
-                      <div className="flex items-center gap-2">
-                        <textarea
-                          value={editingText}
-                          onChange={(e) => setEditingText(e.target.value)}
-                          className="flex-1 min-h-[60px] px-2 py-1 text-sm bg-gray-800 border border-gray-600 rounded resize-none"
-                          rows={3}
-                        />
-                        <div className="flex flex-col gap-1">
-                          <Button
-                            size="sm"
-                            onClick={saveEdit}
-                            className="text-xs px-2 py-1"
-                          >
-                            Lưu
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={cancelEdit}
-                            className="text-xs px-2 py-1"
-                          >
-                            Hủy
-                          </Button>
+          <div className="border rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>#</TableHead>
+                  <TableHead>Tên học sinh</TableHead>
+                  <TableHead>Điểm</TableHead>
+                  <TableHead>Nhận xét</TableHead>
+                  <TableHead>Thao tác</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(result?.rows || []).map((r, i) => (
+                  <TableRow key={i}>
+                    <TableCell>{i + 1}</TableCell>
+                    <TableCell className="text-gray-300">{r.studentName}</TableCell>
+                    <TableCell className="text-gray-300">{r.score || "-"}</TableCell>
+                    <TableCell className="text-gray-200">
+                      {editingIndex === i ? (
+                        <div className="flex items-center gap-2">
+                          <textarea
+                            value={editingText}
+                            onChange={(e) => setEditingText(e.target.value)}
+                            className="flex-1 min-h-[60px] px-2 py-1 text-sm bg-gray-800 border border-gray-600 rounded resize-none"
+                            rows={3}
+                          />
+                          <div className="flex flex-col gap-1">
+                            <Button
+                              size="sm"
+                              onClick={saveEdit}
+                              className="text-xs px-2 py-1"
+                            >
+                              Lưu
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={cancelEdit}
+                              className="text-xs px-2 py-1"
+                            >
+                              Hủy
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      r.remark || "(trống)"
-                    )}
-                  </td>
-                  <td className="py-2 pr-3">
-                    {r.issues.length > 0 ? (
-                      <div className="text-red-400 text-xs mb-1">
-                        {r.issues.map((e) => e.message).join("; ")}
-                      </div>
-                    ) : null}
-                    {editingIndex !== i && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => startEdit(i, r.remark)}
-                        className="text-xs px-2 py-1"
-                      >
-                        Sửa
-                      </Button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      ) : (
+                        r.remark || "(trống)"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {r.issues.length > 0 ? (
+                        <div className="text-red-400 text-xs mb-1">
+                          {r.issues.map((e) => e.message).join("; ")}
+                        </div>
+                      ) : null}
+                      {editingIndex !== i && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => startEdit(i, r.remark)}
+                          className="text-xs px-2 py-1"
+                        >
+                          Sửa
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
     </div>

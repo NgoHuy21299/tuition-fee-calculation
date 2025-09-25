@@ -24,6 +24,12 @@ export type ErrorCode =
   | "ALREADY_MEMBER"
   | "STUDENT_HAS_ATTENDANCE"
   | "STUDENT_HAS_MEMBERSHIP_HISTORY"
+  // Session business rules
+  | "SESSION_NOT_FOUND"
+  | "SESSION_CONFLICT"
+  | "SESSION_HAS_ATTENDANCE"
+  | "SERIES_TOO_LARGE"
+  | "CLASS_NOT_FOUND"
   // Unknown
   | "UNKNOWN";
 

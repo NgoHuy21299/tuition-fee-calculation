@@ -14,6 +14,14 @@ import {
 } from "../../../components/ui/dropdown-menu";
 import { Checkbox } from "../../../components/ui/checkbox";
 import LoadingSpinner from "../../../components/commons/LoadingSpinner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../../../components/ui/table";
 
 export default function DashboardClasses() {
   const navigate = useNavigate();
@@ -197,42 +205,44 @@ export default function DashboardClasses() {
                 <LoadingSpinner size={32} padding={6} />
               </div>
             ) : (
-              <table className="w-full text-sm" id='class-table'>
-                <thead>
-                  <tr className="text-left text-gray-400">
-                    <th className="py-2 pr-3 font-medium">Tên lớp</th>
-                    <th className="py-2 pr-3 font-medium">Môn</th>
-                    <th className="py-2 pr-3 font-medium">Giá mặc định</th>
-                    <th className="py-2 pr-3 font-medium">Trạng thái</th>
-                    <th className="py-2 pr-3 font-medium">Tạo lúc</th>
-                    <th className="py-2 pr-3 font-medium text-right">
-                      Thao tác
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={6}
-                        className="py-6 text-center text-gray-400"
-                      >
-                        Không có lớp nào
-                      </td>
-                    </tr>
-                  ) : (
-                    filtered.map((c) => (
-                      <Row
-                        key={c.id}
-                        c={c}
-                        onView={() => navigate(`/dashboard/classes/${c.id}`)}
-                        onDelete={() => setConfirmDeleteId(c.id)}
-                        formatLocal={formatLocal}
-                      />
-                    ))
-                  )}
-                </tbody>
-              </table>
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tên lớp</TableHead>
+                      <TableHead>Môn</TableHead>
+                      <TableHead>Giá mặc định</TableHead>
+                      <TableHead>Trạng thái</TableHead>
+                      <TableHead>Tạo lúc</TableHead>
+                      <TableHead className="text-right">
+                        Thao tác
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filtered.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={6}
+                          className="py-6 text-center text-gray-400"
+                        >
+                          Không có lớp nào
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filtered.map((c) => (
+                        <Row
+                          key={c.id}
+                          c={c}
+                          onView={() => navigate(`/dashboard/classes/${c.id}`)}
+                          onDelete={() => setConfirmDeleteId(c.id)}
+                          formatLocal={formatLocal}
+                        />
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </div>
           <div className="flex items-center justify-between pt-2">
@@ -267,22 +277,22 @@ function Row({
   formatLocal: (s: string) => string;
 }) {
   return (
-    <tr className="border-t border-gray-800">
-      <td className="py-2 pr-3">
+    <TableRow>
+      <TableCell>
         <div className="font-medium">{c.name}</div>
         {c.description && (
           <div className="text-xs text-gray-400 line-clamp-1">
             {c.description}
           </div>
         )}
-      </td>
-      <td className="py-2 pr-3">{c.subject ?? "-"}</td>
-      <td className="py-2 pr-3">
+      </TableCell>
+      <TableCell>{c.subject ?? "-"}</TableCell>
+      <TableCell>
         {c.defaultFeePerSession === null
           ? "-"
           : c.defaultFeePerSession.toLocaleString("vi-VN")}
-      </td>
-      <td className="py-2 pr-3">
+      </TableCell>
+      <TableCell>
         <span
           className={[
             "inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full",
@@ -293,9 +303,9 @@ function Row({
         >
           {c.isActive ? "Hoạt động" : "Ngừng hoạt động"}
         </span>
-      </td>
-      <td className="py-2 pr-3">{formatLocal(c.createdAt)}</td>
-      <td className="py-2 pr-0 text-right">
+      </TableCell>
+      <TableCell>{formatLocal(c.createdAt)}</TableCell>
+      <TableCell className="text-right">
         <div className="inline-flex items-center gap-2">
           <Button variant="outline" onClick={onView}>
             Xem
@@ -304,7 +314,7 @@ function Row({
             Xoá
           </Button>
         </div>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
