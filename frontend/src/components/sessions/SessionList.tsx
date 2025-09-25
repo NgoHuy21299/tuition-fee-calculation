@@ -19,6 +19,7 @@ import {
 import { MoreHorizontal, Plus, Calendar, Edit, Trash2, Ban } from 'lucide-react';
 import { formatDate, formatTime, formatDuration } from '../../utils/dateHelpers';
 import { formatCurrency } from '../../utils/formatHelpers';
+import LoadingSpinner from '../commons/LoadingSpinner';
 
 interface SessionListProps {
   classId: string;
@@ -48,15 +49,22 @@ export function SessionList({
   const [sessions, setSessions] = useState<SessionDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'scheduled' | 'completed' | 'canceled'>('all');
+  
+  // Minimum spinner to avoid flicker
+  const MIN_SPINNER_MS = 300;
+  const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   const loadSessions = useCallback(async () => {
+    setLoading(true);
+    const start = Date.now();
     try {
-      setLoading(true);
       const data = await SessionService.listSessions(classId);
       setSessions(data);
     } catch (error) {
       console.error('Failed to load sessions:', error);
     } finally {
+      const elapsed = Date.now() - start;
+      if (elapsed < MIN_SPINNER_MS) await delay(MIN_SPINNER_MS - elapsed);
       setLoading(false);
     }
   }, [classId]);
@@ -103,7 +111,11 @@ export function SessionList({
   });
 
   if (loading) {
-    return <div className="text-center py-4">Đang tải danh sách buổi học...</div>;
+    return (
+      <div className="flex justify-center overflow-hidden">
+        <LoadingSpinner size={32} padding={6} />
+      </div>
+    );
   }
 
   return (

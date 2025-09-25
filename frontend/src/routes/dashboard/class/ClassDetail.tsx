@@ -265,7 +265,7 @@ export default function ClassDetail() {
             active={tab === "students"}
             onClick={() => setTab("students")}
           >
-            Học viên
+            Học sinh
           </TabButton>
           <TabButton
             active={tab === "sessions"}
