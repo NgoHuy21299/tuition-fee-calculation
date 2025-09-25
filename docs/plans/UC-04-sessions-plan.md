@@ -7,24 +7,31 @@
 ## 2. Database & Model
 
 2.1 Đề xuất schema / migrations
-- [ ] Migration `00XX_create_sessions.sql` - tạo bảng `Session`:
-  - [ ] id TEXT PRIMARY KEY
-  - [ ] classId TEXT NOT NULL REFERENCES Class(id)
-  - [ ] startAt DATETIME NOT NULL
-  - [ ] durationMinutes INTEGER NOT NULL DEFAULT 90
-  - [ ] status TEXT NOT NULL DEFAULT 'planned' -- ENUM: planned, cancelled, completed
-  - [ ] feePerSession INTEGER NULL -- nếu NULL: prefill từ Class.defaultFeePerSession
-  - [ ] notes TEXT NULL
-  - [ ] createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-  - [ ] updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
-  - [ ] INDEX idx_session_classId_startAt(classId, startAt)
+- Created Session table in migration 0005:
+```
+CREATE TABLE IF NOT EXISTS Session (
+  id            TEXT PRIMARY KEY,
+  classId       TEXT REFERENCES Class(id) ON DELETE SET NULL,
+  teacherId     TEXT NOT NULL REFERENCES "User"(id) ON DELETE CASCADE,
+  startTime     TEXT NOT NULL,
+  durationMin   INTEGER NOT NULL CHECK (durationMin > 0),
+  status        TEXT NOT NULL CHECK (status IN ('scheduled','completed','canceled')),
+  notes         TEXT,
+  feePerSession INTEGER,
+  type          TEXT NOT NULL DEFAULT 'class' CHECK (type IN ('class','ad_hoc')),
+  createdAt     TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_session_classId ON Session(classId);
+CREATE INDEX IF NOT EXISTS idx_session_teacherId ON Session(teacherId);
+CREATE INDEX IF NOT EXISTS idx_session_startTime ON Session(startTime);
+```
 
-- [ ] (Đã chọn phương án A: lightweight grouping) Không tạo bảng full `SessionSeries` ở giai đoạn này. Thay vào đó:
-  - [ ] Thêm cột nullable `seriesId` (TEXT) trên bảng `Session` để nhóm những session được tạo cùng 1 đợt lặp.
-  - [ ] Ví dụ migration (minimal):
-    - [ ] ALTER TABLE Session ADD COLUMN seriesId TEXT NULL;
-    - [ ] CREATE INDEX IF NOT EXISTS idx_session_seriesId ON Session(seriesId);
-  - [ ] Lưu ý: nếu sau này cần metadata (rrule, timezone, exclusions), có thể bổ sung bảng `SessionSeries` và migrate `seriesId` thành FK.
+- [ ] Migration `0010_migration_session_table.sql`:
+  - [ ] (Đã chọn phương án A: lightweight grouping) Không tạo bảng full `SessionSeries` ở giai đoạn này. Thay vào đó:
+    - [ ] Thêm cột nullable `seriesId` (TEXT) trên bảng `Session` để nhóm những session được tạo cùng 1 đợt lặp.
+    - [ ] Ví dụ migration (minimal):
+      - [ ] ALTER TABLE Session ADD COLUMN seriesId TEXT NULL;
+      - [ ] CREATE INDEX IF NOT EXISTS idx_session_seriesId ON Session(seriesId);
 
 2.2 Notes & indexes
 - [ ] Add FK and indexes for queries by class and date ranges. Create index on `startAt` for fast upcoming-session queries.
@@ -33,12 +40,11 @@
 ## 3. Backend (Cloudflare Workers)
 
 3.1 Routes & API endpoints
-- [ ] `GET /api/classes/:classId/sessions?from=&to=&status=&page=&pageSize=` — list sessions for class, filter by date range and status.
+- [ ] `GET /api/classes/:classId/sessions` — list sessions for class. Hiện tại chỉ làm việc lấy ra, theo plan sẽ có một UC bổ sung sử dụng cache để đảm bảo lấy nhiều mà không cần phải query database nhiều lần.
 - [ ] `POST /api/classes/:classId/sessions` — create single session or batch create (frontend may send expanded sessions array or a recurrence object; backend expands if provided). Body supports single-session fields or series/recurrence info.
 - [ ] `GET /api/sessions/:id` — session detail.
 - [ ] `PUT /api/sessions/:id` — update session (supports reschedule, change duration, notes, status, feePerSession).
 - [ ] `DELETE /api/sessions/:id` — delete/cancel a session. If attendance exists → return 409 `SESSION_HAS_ATTENDANCE` unless force parameter provided and business rules allow.
-- [ ] `POST /api/sessions/:id/reschedule` (optional) — convenience endpoint to reschedule and create history / notify attendees.
 - [ ] Apply `authMiddleware` to all endpoints. Only class owner (teacherId from auth) may create/update/delete sessions for their classes.
 
 3.2 Validation & Schemas
@@ -51,28 +57,28 @@
 - [ ] Add error codes to `workers/errors.ts`:
   - [ ] `SESSION_CONFLICT` (409)
   - [ ] `SESSION_HAS_ATTENDANCE` (409)
-  - [ ] `SERIES_TOO_LARGE` (400) — when trying to create excessively large recurring series
 - [ ] Add Vietnamese messages to `workers/i18n/errorMessages.ts`:
   - [ ] SESSION_CONFLICT: "Buổi học trùng lịch với một buổi đã tồn tại"
   - [ ] SESSION_HAS_ATTENDANCE: "Không thể xoá buổi vì đã có điểm danh/attendance"
-  - [ ] SERIES_TOO_LARGE: "Yêu cầu tạo chuỗi buổi quá lớn, vui lòng thu hẹp khoảng thời gian hoặc giảm số lượng"
 
 ## 4. Repository & SQL
 
 4.1 `workers/features/session/sessionRepository.ts`
 - [ ] Methods:
-  - [ ] `listByClass({ classId, from?, to?, status?, page, pageSize })`
-  - [ ] `create(sessionRow)` — insert single session
-  - [ ] `createMany(sessions[])` — bulk insert generated sessions for a series (transactional when possible)
-  - [ ] `getById({ id, teacherId? })`
-  - [ ] `update({ id, patch })`
-  - [ ] `delete({ id })` — delete or mark cancelled
-  - [ ] `hasAttendance({ sessionId })` — check `Attendance` table before destructive ops
-  - [ ] `findConflicts({ classId, startAt, endAt })` — find overlapping sessions for same class (or teacher-wide checks)
-  - [ ] `listUpcoming({ limit, from })` — for reminder cron/notification
+  - [ ] `listByClass({ classId, teacherId })`
+  - [ ] `create(sessionRow, teacherId, classId)` — insert single session
+  - [ ] `createMany( teacherId, classId, sessions[])` — bulk insert generated sessions for a series (transactional when possible)
+  - [ ] `getById({ id, teacherId })`
+  - [ ] `update({ id, patch, teacherId })`
+  - [ ] `delete({ id, teacherId })` — delete or mark cancelled
+  - [ ] `findConflicts({ teacherId, classId, startAt, endAt })` — find overlapping sessions for same class (or teacher-wide checks)
+  - [ ] `listUpcoming({ teacherId, limit, from })` — for reminder cron/notification
+
+- [ ] `hasAttendance({ sessionId })` — check `Attendance` table before destructive ops - Viết trong attendanceRepository.ts
 
 4.2 SQL considerations
 - [ ] Use parameterized queries. Keep query logging similar to existing repos. Bulk insert should be efficient but careful with SQLite limitations (wrap in transaction).
+- [ ] Optimize query: just get fields that we need, prevent join larger than 3 tables, maximum is join 3 tables.
 
 ## 5. Service Layer
 
@@ -101,17 +107,19 @@
 
 6.1 API client
 - [ ] `frontend/src/services/sessionService.ts`:
-  - [ ] `listSessions(classId, params)`
-  - [ ] `createSession(classId, payload)` (single or batch)
+  - [ ] `listSessions(classId)`
+  - [ ] `createSession(classId, payload)` (single or batch - hỗ trợ cả hai loại là tốt nhất)
   - [ ] `getSession(id)`
   - [ ] `updateSession(id, patch)`
   - [ ] `deleteSession(id)`
 
 6.2 Pages & Components
-- [ ] Schedule page: `/classes/:classId/schedule` (or tab within `ClassDetail`)
-  - [ ] Calendar view (month/week) if project already has a calendar component; otherwise list with date/time columns.
-  - [ ] Filters: date range, status (planned, cancelled, completed).
-  - [ ] Actions: Create session (modal), Create recurring series (modal with recurrence UI), Edit, Cancel, Open attendance link.
+- [ ] Session page: tab within `ClassDetail`
+  - [ ] Cho phép lựa chọn hai loại view
+    - [ ] View theo dạng table (liệt kê từng session, trạng thái, action Sửa/Cancel/Xoá, với action sửa thì là một Model)
+    - [ ] Calendar view (month/week) tìm kiếm và sử dụng shadcn ui phù hợp cho phần này. Ở trong calendar khi bấm vào mặc định là action Sửa chẳng hạn (mở modal).
+  - [ ] Filters: status (planned, cancelled, completed).
+  - [ ] Actions: Create session (modal), Create recurring series (modal with recurrence UI).
 
 - [ ] `SessionForm` (used for Create and Edit)
   - [ ] Fields: startAt (datetime picker), durationMinutes (number), feePerSession (number, optional with helper: "Mặc định: giá của lớp"), notes (textarea), recurrence controls (optional)
@@ -119,6 +127,8 @@
 
 - [ ] `SessionList` / `SessionCard` / `SessionDetail`
   - [ ] Session detail shows attendance link, createdBy, status, notes, and actions.
+
+- [ ] Sau khi hoàn thiện tab ở trong class detail rồi mới tạo riêng một page là Session page để xem tất cả các session được tạo.
 
 6.3 UX details
 - [ ] Confirm modal when cancelling/deleting a session.
