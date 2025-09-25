@@ -1,8 +1,8 @@
 # UC-04: Tạo lịch / Buổi học (Sessions) – Implementation Plan
 
 ## 1. Mục tiêu
-- [ ] Mục tiêu: Cho phép giáo viên tạo, sửa, huỷ và quản lý buổi học (sessions) cho từng lớp, gồm cả khả năng tạo theo chu kỳ (recurring) và xử lý trường hợp trùng/không hợp lệ.
-- [ ] Actor: Giáo viên (owner của class).
+- [X] Mục tiêu: Cho phép giáo viên tạo, sửa, huỷ và quản lý buổi học (sessions) cho từng lớp, gồm cả khả năng tạo theo chu kỳ (recurring) và xử lý trường hợp trùng/không hợp lệ.
+- [X] Actor: Giáo viên (owner của class).
 
 ## 2. Database & Model
 
@@ -26,82 +26,70 @@ CREATE INDEX IF NOT EXISTS idx_session_teacherId ON Session(teacherId);
 CREATE INDEX IF NOT EXISTS idx_session_startTime ON Session(startTime);
 ```
 
-- [ ] Migration `0010_migration_session_table.sql`:
-  - [ ] (Đã chọn phương án A: lightweight grouping) Không tạo bảng full `SessionSeries` ở giai đoạn này. Thay vào đó:
-    - [ ] Thêm cột nullable `seriesId` (TEXT) trên bảng `Session` để nhóm những session được tạo cùng 1 đợt lặp.
-    - [ ] Ví dụ migration (minimal):
-      - [ ] ALTER TABLE Session ADD COLUMN seriesId TEXT NULL;
-      - [ ] CREATE INDEX IF NOT EXISTS idx_session_seriesId ON Session(seriesId);
+- [X] Migration `0010_migration_session_table.sql`:
+  - [X] (Đã chọn phương án A: lightweight grouping) Không tạo bảng full `SessionSeries` ở giai đoạn này. Thay vào đó:
+    - [X] Thêm cột nullable `seriesId` (TEXT) trên bảng `Session` để nhóm những session được tạo cùng 1 đợt lặp.
+    - [X] Ví dụ migration (minimal):
+      - [X] ALTER TABLE Session ADD COLUMN seriesId TEXT NULL;
+      - [X] CREATE INDEX IF NOT EXISTS idx_session_seriesId ON Session(seriesId);
 
 2.2 Notes & indexes
-- [ ] Add FK and indexes for queries by class and date ranges. Create index on `startAt` for fast upcoming-session queries.
-- [ ] Prefer storing times in ISO 8601 UTC; convert at API boundaries based on teacher's timezone (front-end handles display/localization).
+- [X] Add FK and indexes for queries by class and date ranges. Create index on `startAt` for fast upcoming-session queries.
+- [X] Prefer storing times in UTC; convert at API boundaries based on teacher's timezone (front-end handles display/localization).
 
 ## 3. Backend (Cloudflare Workers)
 
 3.1 Routes & API endpoints
-- [ ] `GET /api/classes/:classId/sessions` — list sessions for class. Hiện tại chỉ làm việc lấy ra, theo plan sẽ có một UC bổ sung sử dụng cache để đảm bảo lấy nhiều mà không cần phải query database nhiều lần.
+- [X] `GET /api/classes/:classId/sessions` — list sessions for class. Hiện tại chỉ làm việc lấy ra, theo plan sẽ có một UC bổ sung sử dụng cache để đảm bảo lấy nhiều mà không cần phải query database nhiều lần.
 - [ ] `POST /api/classes/:classId/sessions` — create single session or batch create (frontend may send expanded sessions array or a recurrence object; backend expands if provided). Body supports single-session fields or series/recurrence info.
-- [ ] `GET /api/sessions/:id` — session detail.
-- [ ] `PUT /api/sessions/:id` — update session (supports reschedule, change duration, notes, status, feePerSession).
-- [ ] `DELETE /api/sessions/:id` — delete/cancel a session. If attendance exists → return 409 `SESSION_HAS_ATTENDANCE` unless force parameter provided and business rules allow.
-- [ ] Apply `authMiddleware` to all endpoints. Only class owner (teacherId from auth) may create/update/delete sessions for their classes.
+- [X] `GET /api/sessions/:id` — session detail.
+- [X] `PUT /api/sessions/:id` — update session (supports reschedule, change duration, notes, status, feePerSession).
+- [X] `DELETE /api/sessions/:id` — delete/cancel a session. If attendance exists → return 409 `SESSION_HAS_ATTENDANCE` unless force parameter provided and business rules allow.
+- [X] Apply `authMiddleware` to all endpoints. Only class owner (teacherId from auth) may create/update/delete sessions for their classes.
 
 3.2 Validation & Schemas
-- [ ] Create `workers/features/session/sessionSchemas.ts` with Valibot schemas:
-  - [ ] CreateSessionSchema (single): startAt (datetime, required), durationMinutes (integer >= 1), feePerSession (optional integer >= 0 or null), notes (optional string <= 2000), status (optional)
-  - [ ] CreateSessionSeriesSchema (recurring): rrule or recurrence object (daysOfWeek, time, startDate, endDate/maxOccurrences), timezone string, exclusionDates (array of dates)
-  - [ ] UpdateSessionSchema: patchable fields (startAt, durationMinutes, feePerSession, notes, status)
+- [X] Create `workers/features/session/sessionSchemas.ts` with Valibot schemas:
 
 3.3 Error codes / i18n
-- [ ] Add error codes to `workers/errors.ts`:
-  - [ ] `SESSION_CONFLICT` (409)
-  - [ ] `SESSION_HAS_ATTENDANCE` (409)
-- [ ] Add Vietnamese messages to `workers/i18n/errorMessages.ts`:
-  - [ ] SESSION_CONFLICT: "Buổi học trùng lịch với một buổi đã tồn tại"
-  - [ ] SESSION_HAS_ATTENDANCE: "Không thể xoá buổi vì đã có điểm danh/attendance"
+- [X] Add error codes to `workers/errors.ts`:
+- [X] Add Vietnamese messages to `workers/i18n/errorMessages.ts`:
 
 ## 4. Repository & SQL
 
 4.1 `workers/features/session/sessionRepository.ts`
 - [ ] Methods:
-  - [ ] `listByClass({ classId, teacherId })`
-  - [ ] `create(sessionRow, teacherId, classId)` — insert single session
-  - [ ] `createMany( teacherId, classId, sessions[])` — bulk insert generated sessions for a series (transactional when possible)
-  - [ ] `getById({ id, teacherId })`
-  - [ ] `update({ id, patch, teacherId })`
-  - [ ] `delete({ id, teacherId })` — delete or mark cancelled
-  - [ ] `findConflicts({ teacherId, classId, startAt, endAt })` — find overlapping sessions for same class (or teacher-wide checks)
-  - [ ] `listUpcoming({ teacherId, limit, from })` — for reminder cron/notification
+  - [X] `listByClass({ classId, teacherId })`
+  - [X] `create(sessionRow, teacherId, classId)` — insert single session
+  - [X] `createMany( teacherId, classId, sessions[])` — bulk insert generated sessions for a series (transactional when possible)
+  - [X] `getById({ id, teacherId })`
+  - [X] `update({ id, patch, teacherId })`
+  - [X] `delete({ id, teacherId })` — delete or mark cancelled
+  - [X] `findConflicts({ teacherId, classId, startAt, endAt })` — find overlapping sessions for same class (or teacher-wide checks)
+  - [X] `listUpcoming({ teacherId, limit, from })` — for reminder cron/notification
 
-- [ ] `hasAttendance({ sessionId })` — check `Attendance` table before destructive ops - Viết trong attendanceRepository.ts
+- [X] `hasAttendance({ sessionId })` — check `Attendance` table before destructive ops - Viết trong attendanceRepository.ts
 
 4.2 SQL considerations
-- [ ] Use parameterized queries. Keep query logging similar to existing repos. Bulk insert should be efficient but careful with SQLite limitations (wrap in transaction).
-- [ ] Optimize query: just get fields that we need, prevent join larger than 3 tables, maximum is join 3 tables.
+- [X] Use parameterized queries. Keep query logging similar to existing repos. Bulk insert should be efficient but careful with SQLite limitations (wrap in transaction).
+- [X] Optimize query: just get fields that we need, prevent join larger than 3 tables, maximum is join 3 tables.
 
 ## 5. Service Layer
 
 5.1 `workers/features/session/sessionService.ts`
-- [ ] Methods:
-  - [ ] `listByClass(...)` — apply mapping to DTO (status string → enum etc.)
-  - [ ] `create({ classId, input, teacherId })` — business rules:
-    - [ ] Verify class exists and teacherId is owner.
-    - [ ] If feePerSession is null → set from class.defaultFeePerSession.
-    - [ ] Validate conflicts using repository.findConflicts: if conflicts → throw AppError('SESSION_CONFLICT', ..., 409).
-    - [ ] For series: generate session instances using recurrence rules (limit by endDate or max occurrences). If generation > MAX_SERIES_SIZE (e.g., 200) → throw SERIES_TOO_LARGE.
-    - [ ] Insert sessions (graft `seriesId` onto each created session when provided).
-  - [ ] `getById({ id, teacherId })`
-  - [ ] `update({ id, teacherId, patch })` — if rescheduling a session that already has attendance → either block (409) or allow only limited changes.
-  - [ ] `delete({ id, teacherId })` — if hasAttendance → throw SESSION_HAS_ATTENDANCE (409). Otherwise delete or set status='cancelled'.
-  - [ ] `listUpcomingForReminder({ windowMinutes })` — used by Cron job for notification (UC-05).
+- [X] Methods:
+  - [X] `listByClass(...)` — apply mapping to DTO (status string → enum etc.)
+  - [X] `create({ classId, input, teacherId })` — business rules:
+  - [X] `getById({ id, teacherId })`
+  - [X] `update({ id, teacherId, patch })` — if rescheduling a session that already has attendance → either block (409) or allow only limited changes.
+  - [X] `delete({ id, teacherId })` — if hasAttendance → throw SESSION_HAS_ATTENDANCE (409). Otherwise delete or set status='cancelled'.
+  - [X] `listUpcoming({ windowMinutes })` — used by Cron job for notification (UC-05).
 
 5.2 Business rules & edge cases
-- [ ] Ownership: only class owner may manage sessions.
-- [ ] Defaulting: feePerSession defaults to Class.defaultFeePerSession if omitted.
-- [ ] Conflict detection: check overlapping sessions for the same class (and optionally for the teacher across classes to avoid double-booking teacher).
-- [ ] Recurrence safety: cap series size and provide clear error.
-- [ ] Timezone: API accepts UTC ISO strings and timezone for recurrence rules; service normalizes to UTC for storage.
+- [X] Ownership: only class owner may manage sessions.
+- [X] Defaulting: feePerSession defaults to Class.defaultFeePerSession if omitted.
+- [X] Conflict detection: check overlapping sessions for the same class (and optionally for the teacher across classes to avoid double-booking teacher).
+- [X] Recurrence safety: cap series size and provide clear error.
+- [X] Timezone: API accepts UTC ISO strings and timezone for recurrence rules; service normalizes to UTC for storage.
 
 ## 6. Frontend (React)
 

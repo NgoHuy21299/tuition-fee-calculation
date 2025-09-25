@@ -27,7 +27,28 @@ export type ValidationCode =
   | "PARENT_NOTE_TOO_LONG"
   // ClassStudent-specific
   | "STUDENT_ID_REQUIRED"
-  | "UNIT_PRICE_INVALID";
+  | "UNIT_PRICE_INVALID"
+  // Session-specific
+  | "START_TIME_REQUIRED"
+  | "DURATION_INVALID"
+  | "DURATION_TOO_SHORT"
+  | "FEE_INVALID"
+  | "FEE_NEGATIVE"
+  | "NOTES_INVALID"
+  | "NOTES_TOO_LONG"
+  | "STATUS_INVALID"
+  | "TYPE_INVALID"
+  | "DAYS_OF_WEEK_INVALID"
+  | "DAYS_OF_WEEK_REQUIRED"
+  | "TIME_REQUIRED"
+  | "TIME_FORMAT_INVALID"
+  | "START_DATE_REQUIRED"
+  | "END_DATE_INVALID"
+  | "DATE_FORMAT_INVALID"
+  | "MAX_OCCURRENCES_INVALID"
+  | "MAX_OCCURRENCES_TOO_SMALL"
+  | "TIMEZONE_INVALID"
+  | "EXCLUSION_DATE_INVALID";
 
 export type ValidationField =
   | "body"
@@ -52,7 +73,21 @@ export type ValidationField =
   | "parentInline.note"
   // ClassStudent-specific
   | "studentId"
-  | "unitPriceOverride";
+  | "unitPriceOverride"
+  // Session-specific
+  | "startTime"
+  | "durationMin"
+  | "feePerSession"
+  | "notes"
+  | "status"
+  | "type"
+  | "recurrence.daysOfWeek"
+  | "recurrence.time"
+  | "recurrence.startDate"
+  | "recurrence.endDate"
+  | "recurrence.maxOccurrences"
+  | "recurrence.timezone"
+  | "recurrence.exclusionDates";
 
 export type ValidationErrorDetail = {
   field: ValidationField;

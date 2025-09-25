@@ -1,7 +1,7 @@
 import { StudentRepository } from "./studentRepository";
 import { ParentRepository } from "./parentRepository";
 import { ClassStudentRepository } from "../class-student/classStudentRepository";
-import { AttendanceRepository } from "./attendanceRepository";
+import { AttendanceRepository } from "../attendance/attendanceRepository";
 import { mapStudentRowToDTO, mapStudentDetailToDTO, type StudentDTO, type StudentDetailDTO } from "./studentTypes";
 import { AppError } from "../../errors";
 import type {

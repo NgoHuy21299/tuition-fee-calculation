@@ -21,7 +21,13 @@ export const viMessages: Record<ErrorCode, string> = {
   DUPLICATE_STUDENT: "Học sinh đã tồn tại",
   ALREADY_MEMBER: "Học sinh đã được thêm vào lớp",
   STUDENT_HAS_ATTENDANCE: "Học sinh đã từng học, không thể xóa",
-  STUDENT_HAS_MEMBERSHIP_HISTORY: "Học sinh đã từng học, không thể xóa"
+  STUDENT_HAS_MEMBERSHIP_HISTORY: "Học sinh đã từng học, không thể xóa",
+  // Session-specific error messages
+  SESSION_NOT_FOUND: "Không tìm thấy buổi học",
+  SESSION_CONFLICT: "Buổi học trùng lịch với một buổi đã tồn tại",
+  SESSION_HAS_ATTENDANCE: "Không thể xoá buổi vì đã có điểm danh/attendance",
+  SERIES_TOO_LARGE: "Yêu cầu tạo chuỗi buổi quá lớn, vui lòng thu hẹp khoảng thời gian hoặc giảm số lượng",
+  CLASS_NOT_FOUND: "Không tìm thấy lớp học"
 };
 
 export function t(code: ErrorCode, fallback?: string): string {
