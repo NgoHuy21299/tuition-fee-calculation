@@ -3,26 +3,17 @@ import { COOKIE_MAX_AGE } from "../../constants";
 import { toAppError } from "../../errors";
 import { t } from "../../i18n/errorMessages";
 import { signJWT, type JwtPayload } from "./jwtService";
-import { parseBodyWithSchema } from "../../validation/common/request";
+import { validateBody, getValidatedData } from "../../middleware/validationMiddleware";
 import { LoginSchema, ChangePasswordSchema, RegisterSchema } from "./authSchemas";
 import { AuthService } from "./authService";
+import type { InferOutput } from 'valibot';
 
 export function createAuthRouter() {
   const router = new Hono<{ Bindings: Env; Variables: { user: JwtPayload } }>();
 
-  router.post("/login", async (c) => {
-    const parsed = await parseBodyWithSchema(c, LoginSchema);
-    if (!parsed.ok) {
-      return c.json(
-        {
-          error: t("VALIDATION_ERROR"),
-          code: "VALIDATION_ERROR",
-          details: parsed.errors,
-        },
-        400 as 400
-      );
-    }
-    const { email, password } = parsed.value;
+  router.post("/login", validateBody(LoginSchema), async (c) => {
+    const parsed = getValidatedData<InferOutput<typeof LoginSchema>>(c);
+    const { email, password } = parsed;
     const auth = new AuthService({ db: c.env.DB });
     const user = await auth.verifyCredentials(email, password);
     if (!user) {
@@ -58,19 +49,9 @@ export function createAuthRouter() {
   });
 
   // Change password (requires apiAuthGuard set user variable)
-  router.post("/change-password", async (c) => {
-    const parsed = await parseBodyWithSchema(c, ChangePasswordSchema);
-    if (!parsed.ok) {
-      return c.json(
-        {
-          error: t("VALIDATION_ERROR"),
-          code: "VALIDATION_ERROR",
-          details: parsed.errors,
-        },
-        400 as 400
-      );
-    }
-    const { oldPassword, newPassword } = parsed.value;
+  router.post("/change-password", validateBody(ChangePasswordSchema), async (c) => {
+    const parsed = getValidatedData<InferOutput<typeof ChangePasswordSchema>>(c);
+    const { oldPassword, newPassword } = parsed;
     const user = c.get("user");
     const userId = (user?.sub as string) || "";
     if (!userId)
@@ -93,19 +74,9 @@ export function createAuthRouter() {
   });
 
   // Register new user and set cookie
-  router.post("/register", async (c) => {
-    const parsed = await parseBodyWithSchema(c, RegisterSchema);
-    if (!parsed.ok) {
-      return c.json(
-        {
-          error: t("VALIDATION_ERROR"),
-          code: "VALIDATION_ERROR",
-          details: parsed.errors,
-        },
-        400 as 400
-      );
-    }
-    const { email, password, name } = parsed.value;
+  router.post("/register", validateBody(RegisterSchema), async (c) => {
+    const parsed = getValidatedData<InferOutput<typeof RegisterSchema>>(c);
+    const { email, password, name } = parsed;
     const auth = new AuthService({ db: c.env.DB });
     try {
       const created = await auth.createUser({ email, password, name });

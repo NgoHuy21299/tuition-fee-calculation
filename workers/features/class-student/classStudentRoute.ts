@@ -4,8 +4,10 @@ import { toAppError } from "../../errors";
 import { ClassStudentService } from "./classStudentService";
 import { AddClassStudentSchema, LeaveClassStudentSchema } from "./classStudentSchemas";
 import { uuidv7 } from "uuidv7";
-import { parseBodyWithSchema } from "../../validation/common/request";
+import { validateBody, getValidatedData } from "../../middleware/validationMiddleware";
+import { getTeacherId } from "../../middleware/authMiddleware";
 import type { JwtPayload } from "../auth/jwtService";
+import type { InferOutput } from 'valibot';
 
 /**
  * Class-Student membership API (Mounted under /api/classes)
@@ -17,28 +19,17 @@ import type { JwtPayload } from "../auth/jwtService";
  * Part 2.1: Route stubs only (return 501). Implementations will be filled in Part 2.2+.
  */
 export function createClassStudentRouter() {
-  const router = new Hono<{ Bindings: Env; Variables: { user: JwtPayload } }>();
+  const router = new Hono<{ Bindings: Env; Variables: { user: JwtPayload; teacherId: string } }>();
 
   // POST /api/classes/:id/students (add member)
-  router.post("/:id/students", async (c) => {
-    const user = c.get("user");
-    if (!user)
-      return c.json(
-        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
-        401 as 401
-      );
+  router.post("/:id/students", validateBody(AddClassStudentSchema), async (c) => {
     try {
-      const parsed = await parseBodyWithSchema(c, AddClassStudentSchema);
-      if (!parsed.ok) {
-        return c.json(
-          { error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors },
-          400 as 400
-        );
-      }
+      const teacherId = getTeacherId(c);
+      const body = getValidatedData<InferOutput<typeof AddClassStudentSchema>>(c);
       const classId = c.req.param("id");
       const svc = new ClassStudentService({ db: c.env.DB });
       const id = uuidv7();
-      const dto = await svc.add(String(user.sub), classId, { id, ...parsed.value });
+      const dto = await svc.add(teacherId, classId, { id, ...body });
       return c.json(dto, 201 as 201);
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });
@@ -48,35 +39,25 @@ export function createClassStudentRouter() {
 
   // DELETE /api/classes/:id/students/:classStudentId (not supported; prefer PUT to set leftAt)
   router.delete("/:id/students/:classStudentId", async (c) => {
-    const user = c.get("user");
-    if (!user)
-      return c.json(
-        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
-        401 as 401
-      );
-    return c.json({ error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" }, 501 as 501);
+    try {
+      // ensure caller is authenticated
+      getTeacherId(c);
+      return c.json({ error: "NOT_IMPLEMENTED", code: "NOT_IMPLEMENTED" }, 501 as 501);
+    } catch (err) {
+      const e = toAppError(err, { code: "UNKNOWN" });
+      return c.json({ error: t(e.code, e.message), code: e.code }, e.status as any);
+    }
   });
 
   // PUT /api/classes/:id/students/:classStudentId (set leftAt)
-  router.put("/:id/students/:classStudentId", async (c) => {
-    const user = c.get("user");
-    if (!user)
-      return c.json(
-        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
-        401 as 401
-      );
+  router.put("/:id/students/:classStudentId", validateBody(LeaveClassStudentSchema), async (c) => {
     try {
-      const parsed = await parseBodyWithSchema(c, LeaveClassStudentSchema);
-      if (!parsed.ok) {
-        return c.json(
-          { error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors },
-          400 as 400
-        );
-      }
+      const teacherId = getTeacherId(c);
+      const body = getValidatedData<InferOutput<typeof LeaveClassStudentSchema>>(c);
       const classId = c.req.param("id");
       const classStudentId = c.req.param("classStudentId");
       const svc = new ClassStudentService({ db: c.env.DB });
-      await svc.leave(String(user.sub), classId, classStudentId, parsed.value);
+      await svc.leave(teacherId, classId, classStudentId, body);
       return new Response(null, { status: 204 });
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });

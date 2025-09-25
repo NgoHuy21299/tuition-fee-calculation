@@ -1,9 +1,10 @@
 import { verifyJWT, type JwtPayload } from "../features/auth/jwtService";
 import { PUBLIC_API_PATHS } from "../constants";
 import type { Context, Next } from "hono";
+import { AppError } from "../errors";
 
 // Auth guard for /api/* except PUBLIC_API_PATHS
-export async function apiAuthGuard(c: Context<{ Bindings: Env; Variables: { user: JwtPayload } }>, next: Next) {
+export async function apiAuthGuard(c: Context<{ Bindings: Env; Variables: { user: JwtPayload; teacherId: string } }>, next: Next) {
   const url = new URL(c.req.url);
   // Allow public API endpoints
   if (PUBLIC_API_PATHS.includes(url.pathname)) {
@@ -30,6 +31,19 @@ export async function apiAuthGuard(c: Context<{ Bindings: Env; Variables: { user
   }
 
   c.set("user", payload);
+  c.set("teacherId", String(payload.sub));
   await next();
+}
+
+/**
+ * Helper function để lấy teacherId từ context một cách an toàn
+ * Sử dụng trong các route handler sau khi đã apply requireTeacher middleware
+ */
+export function getTeacherId(c: Context<any>): string {
+  const teacherId = c.get("teacherId");
+  if (!teacherId) {
+    throw new AppError("AUTH_UNAUTHORIZED", "Unauthorized", 401);
+  }
+  return teacherId;
 }
 

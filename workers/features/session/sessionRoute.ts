@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import type { Context } from 'hono';
 import { toAppError } from "../../errors";
-import { parseBodyWithSchema } from '../../validation/common/request';
 import { SessionService } from './sessionService';
 import {
     CreateSessionSchema,
@@ -9,32 +8,23 @@ import {
     UpdateSessionSchema
 } from './sessionSchemas';
 import type { JwtPayload } from '../auth/jwtService';
+import { getTeacherId } from '../../middleware/authMiddleware';
+import { validateBody, getValidatedData } from '../../middleware/validationMiddleware';
+import type { InferOutput } from 'valibot';
 
 export function createSessionRouter() {
-    const router = new Hono<{ Bindings: Env; Variables: { user: JwtPayload } }>();
+    const router = new Hono<{ Bindings: Env; Variables: { user: JwtPayload; teacherId: string } }>();
 
     /**
      * Create a single session
      * POST /api/sessions
      */
-    router.post('/', async (c: Context) => {
+    router.post('/', validateBody(CreateSessionSchema), async (c: Context) => {
         try {
-            const parsed = await parseBodyWithSchema(c, CreateSessionSchema);
-            if (!parsed.ok) {
-                return c.json(
-                    { error: 'Validation error', code: "VALIDATION_ERROR", details: parsed.errors },
-                    400 as 400
-                );
-            }
-
-            const user = c.get("user");
-            const teacherId = String(user.sub);
-            if (!teacherId) {
-                return c.json({ error: 'Unauthorized' }, 401);
-            }
-
+            const sessionData = getValidatedData<InferOutput<typeof CreateSessionSchema>>(c);
+            const teacherId = getTeacherId(c);
             const service = new SessionService({ db: c.env.DB });
-            const result = await service.createSession(parsed.value, teacherId);
+            const result = await service.createSession(sessionData, teacherId);
 
             return c.json(result, 201 as 201);
         } catch (err) {
@@ -47,24 +37,12 @@ export function createSessionRouter() {
      * Create a series of recurring sessions
      * POST /api/sessions/series
      */
-    router.post('/series', async (c: Context) => {
+    router.post('/series', validateBody(CreateSessionSeriesSchema), async (c: Context) => {
         try {
-            const parsed = await parseBodyWithSchema(c, CreateSessionSeriesSchema);
-            if (!parsed.ok) {
-                return c.json(
-                    { error: 'Validation error', code: "VALIDATION_ERROR", details: parsed.errors },
-                    400 as 400
-                );
-            }
-
-            const user = c.get("user");
-            const teacherId = String(user.sub);
-            if (!teacherId) {
-                return c.json({ error: 'Unauthorized' }, 401);
-            }
-
+            const seriesData = getValidatedData<InferOutput<typeof CreateSessionSeriesSchema>>(c);
+            const teacherId = getTeacherId(c);
             const service = new SessionService({ db: c.env.DB });
-            const result = await service.createSessionSeries(parsed.value, teacherId);
+            const result = await service.createSessionSeries(seriesData, teacherId);
 
             return c.json(result, 201 as 201);
         } catch (err) {
@@ -80,12 +58,7 @@ export function createSessionRouter() {
     router.get('/:id', async (c: Context) => {
         try {
             const sessionId = c.req.param('id');
-            const user = c.get("user");
-            const teacherId = String(user.sub);
-
-            if (!teacherId) {
-                return c.json({ error: 'Unauthorized' }, 401);
-            }
+            const teacherId = getTeacherId(c);
 
             const service = new SessionService({ db: c.env.DB });
             const result = await service.getById(sessionId, teacherId);
@@ -109,12 +82,7 @@ export function createSessionRouter() {
      */
     router.get('/upcoming', async (c: Context) => {
         try {
-            const user = c.get("user");
-            const teacherId = String(user.sub);
-
-            if (!teacherId) {
-                return c.json({ error: 'Unauthorized' }, 401);
-            }
+            const teacherId = getTeacherId(c);
 
             const limit = c.req.query('limit');
             const from = c.req.query('from');
@@ -139,12 +107,7 @@ export function createSessionRouter() {
     router.patch('/:id/cancel', async (c: Context) => {
         try {
             const sessionId = c.req.param('id');
-            const user = c.get("user");
-            const teacherId = String(user.sub);
-
-            if (!teacherId) {
-                return c.json({ error: 'Unauthorized' }, 401);
-            }
+            const teacherId = getTeacherId(c);
 
             const service = new SessionService({ db: c.env.DB });
             const result = await service.cancelSession(sessionId, teacherId);
@@ -164,25 +127,13 @@ export function createSessionRouter() {
      * Update a session
      * PATCH /api/sessions/:id
      */
-    router.patch('/:id', async (c: Context) => {
+    router.patch('/:id', validateBody(UpdateSessionSchema), async (c: Context) => {
         try {
             const sessionId = c.req.param('id');
-            const parsed = await parseBodyWithSchema(c, UpdateSessionSchema);
-            if (!parsed.ok) {
-                return c.json(
-                    { error: 'Validation error', code: "VALIDATION_ERROR", details: parsed.errors },
-                    400 as 400
-                );
-            }
-
-            const user = c.get("user");
-            const teacherId = String(user.sub);
-            if (!teacherId) {
-                return c.json({ error: 'Unauthorized' }, 401);
-            }
-
+            const updateData = getValidatedData<InferOutput<typeof UpdateSessionSchema>>(c);
+            const teacherId = getTeacherId(c);
             const service = new SessionService({ db: c.env.DB });
-            const result = await service.updateSession(sessionId, parsed.value, teacherId);
+            const result = await service.updateSession(sessionId, updateData, teacherId);
 
             if (!result) {
                 return c.json({ error: 'Session not found' }, 404);
@@ -202,12 +153,7 @@ export function createSessionRouter() {
     router.delete('/:id', async (c: Context) => {
         try {
             const sessionId = c.req.param('id');
-            const user = c.get("user");
-            const teacherId = String(user.sub);
-
-            if (!teacherId) {
-                return c.json({ error: 'Unauthorized' }, 401);
-            }
+            const teacherId = getTeacherId(c);
 
             const service = new SessionService({ db: c.env.DB });
             await service.deleteSession(sessionId, teacherId);

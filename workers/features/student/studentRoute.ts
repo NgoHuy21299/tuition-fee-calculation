@@ -2,10 +2,12 @@ import { Hono } from "hono";
 import { t } from "../../i18n/errorMessages";
 import { toAppError } from "../../errors";
 import { StudentService } from "./studentService";
-import { parseBodyWithSchema } from "../../validation/common/request";
+import { validateBody, getValidatedData } from "../../middleware/validationMiddleware";
 import { CreateStudentSchema, UpdateStudentSchema } from "./studentSchemas";
 import { uuidv7 } from "uuidv7";
 import type { JwtPayload } from "../auth/jwtService";
+import { getTeacherId } from "../../middleware/authMiddleware";
+import type { InferOutput } from 'valibot';
 
 /**
  * Students API (Base: /api/students)
@@ -14,22 +16,17 @@ import type { JwtPayload } from "../auth/jwtService";
  * Part 2.1: Route stubs only (return 501). Implementations will be filled in Part 2.2+.
  */
 export function createStudentRouter() {
-  const router = new Hono<{ Bindings: Env; Variables: { user: JwtPayload } }>();
+  const router = new Hono<{ Bindings: Env; Variables: { user: JwtPayload; teacherId: string } }>();
 
   // GET /api/students?classId=
   router.get("/", async (c) => {
-    const user = c.get("user");
-    if (!user)
-      return c.json(
-        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
-        401 as 401
-      );
     try {
+      const teacherId = getTeacherId(c);
       const url = new URL(c.req.url);
       const classId = url.searchParams.get("classId") || undefined;
       const svc = new StudentService({ db: c.env.DB });
       const { items, total } = await svc.listByTeacher({
-        teacherId: String(user.sub),
+        teacherId,
         classId: classId || undefined,
       });
       return c.json({ items, total }, 200 as 200);
@@ -40,24 +37,13 @@ export function createStudentRouter() {
   });
 
   // POST /api/students  (supports inline parent)
-  router.post("/", async (c) => {
-    const user = c.get("user");
-    if (!user)
-      return c.json(
-        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
-        401 as 401
-      );
+  router.post("/", validateBody(CreateStudentSchema), async (c) => {
     try {
-      const parsed = await parseBodyWithSchema(c, CreateStudentSchema);
-      if (!parsed.ok) {
-        return c.json(
-          { error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors },
-          400 as 400
-        );
-      }
+      const teacherId = getTeacherId(c);
+      const body = getValidatedData<InferOutput<typeof CreateStudentSchema>>(c);
       const svc = new StudentService({ db: c.env.DB });
       const id = uuidv7();
-      const dto = await svc.create(String(user.sub), { id, ...parsed.value });
+      const dto = await svc.create(teacherId, { id, ...body });
       return c.json(dto, 201 as 201);
     } catch (err) {
       console.log(err);
@@ -68,16 +54,11 @@ export function createStudentRouter() {
 
   // GET /api/students/:id (detail)
   router.get("/:id", async (c) => {
-    const user = c.get("user");
-    if (!user)
-      return c.json(
-        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
-        401 as 401
-      );
     try {
+      const teacherId = getTeacherId(c);
       const id = c.req.param("id");
       const svc = new StudentService({ db: c.env.DB });
-      const dto = await svc.getDetailById(String(user.sub), id);
+      const dto = await svc.getDetailById(teacherId, id);
       return c.json(dto, 200 as 200);
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });
@@ -86,24 +67,13 @@ export function createStudentRouter() {
   });
 
   // PUT /api/students/:id
-  router.put("/:id", async (c) => {
-    const user = c.get("user");
-    if (!user)
-      return c.json(
-        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
-        401 as 401
-      );
+  router.put("/:id", validateBody(UpdateStudentSchema), async (c) => {
     try {
-      const parsed = await parseBodyWithSchema(c, UpdateStudentSchema);
-      if (!parsed.ok) {
-        return c.json(
-          { error: t("VALIDATION_ERROR"), code: "VALIDATION_ERROR", details: parsed.errors },
-          400 as 400
-        );
-      }
+      const teacherId = getTeacherId(c);
+      const body = getValidatedData<InferOutput<typeof UpdateStudentSchema>>(c);
       const id = c.req.param("id");
       const svc = new StudentService({ db: c.env.DB });
-      const dto = await svc.update(String(user.sub), id, parsed.value);
+      const dto = await svc.update(teacherId, id, body);
       return c.json(dto, 200 as 200);
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });
@@ -113,16 +83,11 @@ export function createStudentRouter() {
 
   // DELETE /api/students/:id
   router.delete("/:id", async (c) => {
-    const user = c.get("user");
-    if (!user)
-      return c.json(
-        { error: t("AUTH_UNAUTHORIZED"), code: "AUTH_UNAUTHORIZED" },
-        401 as 401
-      );
     try {
+      const teacherId = getTeacherId(c);
       const id = c.req.param("id");
       const svc = new StudentService({ db: c.env.DB });
-      await svc.delete(String(user.sub), id);
+      await svc.delete(teacherId, id);
       return new Response(null, { status: 204 });
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });
