@@ -1,0 +1,340 @@
+import { useState } from 'react';
+import { Button } from '../ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Badge } from '../ui/badge';
+import { 
+  Users, 
+  Save, 
+  RefreshCw, 
+  CheckCircle, 
+  XCircle,
+  Clock,
+  DollarSign
+} from 'lucide-react';
+import { AttendanceRow } from './AttendanceRow';
+import { formatCurrency } from '../../utils/formatHelpers';
+import { formatDate, formatTime, formatDuration } from '../../utils/dateHelpers';
+import type { 
+  AttendanceDto, 
+  BulkAttendanceRequest,
+  BulkAttendanceResult 
+} from '../../services/attendanceService';
+import type { SessionDto } from '../../services/sessionService';
+
+interface AttendanceFormProps {
+  session: SessionDto;
+  attendanceList: AttendanceDto[];
+  onSave: (payload: BulkAttendanceRequest) => Promise<BulkAttendanceResult>;
+  onRefresh: () => void;
+  isLoading?: boolean;
+  isSaving?: boolean;
+}
+
+interface AttendanceChanges {
+  [studentId: string]: {
+    status?: 'present' | 'absent' | 'late';
+    note?: string;
+    feeOverride?: number | null;
+  };
+}
+
+export function AttendanceForm({
+  session,
+  attendanceList,
+  onSave,
+  onRefresh,
+  isLoading = false,
+  isSaving = false
+}: AttendanceFormProps) {
+  const [changes, setChanges] = useState<AttendanceChanges>({});
+  const [isEditing, setIsEditing] = useState(false);
+  const [saveResult, setSaveResult] = useState<BulkAttendanceResult | null>(null);
+
+  // Calculate statistics
+  const stats = {
+    total: attendanceList.length,
+    present: attendanceList.filter(a => getEffectiveStatus(a.studentId, a.status) === 'present').length,
+    absent: attendanceList.filter(a => getEffectiveStatus(a.studentId, a.status) === 'absent').length,
+    late: attendanceList.filter(a => getEffectiveStatus(a.studentId, a.status) === 'late').length,
+  };
+
+  const totalFees = attendanceList.reduce((sum, attendance) => {
+    const fee = getEffectiveFee(attendance.studentId, attendance.calculatedFee);
+    return sum + (fee || 0);
+  }, 0);
+
+  const hasChanges = Object.keys(changes).length > 0;
+
+  function getEffectiveStatus(
+    studentId: string,
+    originalStatus: AttendanceDto['status']
+  ): AttendanceDto['status'] {
+    return (changes[studentId]?.status ?? originalStatus) as AttendanceDto['status'];
+  }
+
+  function getEffectiveFee(studentId: string, originalFee: number | null) {
+    const change = changes[studentId];
+    if (change?.feeOverride !== undefined) {
+      return change.feeOverride;
+    }
+    return originalFee;
+  }
+
+  const handleStatusChange = (studentId: string, status: 'present' | 'absent' | 'late') => {
+    setChanges(prev => ({
+      ...prev,
+      [studentId]: {
+        ...prev[studentId],
+        status
+      }
+    }));
+  };
+
+  const handleNoteChange = (studentId: string, note: string) => {
+    setChanges(prev => ({
+      ...prev,
+      [studentId]: {
+        ...prev[studentId],
+        note
+      }
+    }));
+  };
+
+  const handleFeeOverrideChange = (studentId: string, feeOverride: number | null) => {
+    setChanges(prev => ({
+      ...prev,
+      [studentId]: {
+        ...prev[studentId],
+        feeOverride
+      }
+    }));
+  };
+
+  const handleBulkAction = (action: 'all-present' | 'all-absent') => {
+    const bulkChanges: AttendanceChanges = {};
+    const targetStatus = action === 'all-present' ? 'present' : 'absent';
+    
+    attendanceList.forEach(attendance => {
+      bulkChanges[attendance.studentId] = {
+        ...changes[attendance.studentId],
+        status: targetStatus
+      };
+    });
+    
+    setChanges(bulkChanges);
+  };
+
+  const handleSave = async () => {
+    if (!hasChanges) return;
+
+    const attendanceRecords = Object.entries(changes).map(([studentId, change]) => ({
+      studentId,
+      status: change.status || attendanceList.find(a => a.studentId === studentId)?.status || 'absent',
+      note: change.note,
+      feeOverride: change.feeOverride
+    }));
+
+    try {
+      const result = await onSave({ attendanceRecords });
+      setSaveResult(result);
+      
+      if (result.success) {
+        setChanges({});
+        setIsEditing(false);
+        // Refresh data after successful save
+        setTimeout(() => {
+          onRefresh();
+          setSaveResult(null);
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Failed to save attendance:', error);
+    }
+  };
+
+  const handleCancel = () => {
+    setChanges({});
+    setIsEditing(false);
+    setSaveResult(null);
+  };
+
+  // Create merged attendance list with changes
+  const mergedAttendanceList: AttendanceDto[] = attendanceList.map(attendance => ({
+    ...attendance,
+    status: getEffectiveStatus(attendance.studentId, attendance.status),
+    note: changes[attendance.studentId]?.note ?? attendance.note,
+    feeOverride: changes[attendance.studentId]?.feeOverride ?? attendance.feeOverride,
+  }));
+
+  return (
+    <div className="space-y-6">
+      {/* Session Info Header */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Điểm danh - {formatDate(session.startTime)}
+              </CardTitle>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground mt-2">
+                <div className="flex items-center gap-1">
+                  <Clock className="h-4 w-4" />
+                  {formatTime(session.startTime)} - {formatDuration(session.durationMin)}
+                </div>
+                {session.feePerSession && (
+                  <div className="flex items-center gap-1">
+                    <DollarSign className="h-4 w-4" />
+                    {formatCurrency(session.feePerSession)}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onRefresh}
+                disabled={isLoading}
+              >
+                <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+                Làm mới
+              </Button>
+              
+              {!isEditing ? (
+                <Button
+                  size="sm"
+                  onClick={() => setIsEditing(true)}
+                  disabled={attendanceList.length === 0}
+                >
+                  Chỉnh sửa điểm danh
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleCancel}
+                  >
+                    Hủy
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSave}
+                    disabled={!hasChanges || isSaving}
+                  >
+                    <Save className="h-4 w-4 mr-1" />
+                    {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          {/* Statistics */}
+          <div className="flex gap-4 mb-4">
+            <Badge variant="outline" className="bg-blue-50 text-blue-700">
+              Tổng: {stats.total}
+            </Badge>
+            <Badge variant="outline" className="bg-green-50 text-green-700">
+              Có mặt: {stats.present}
+            </Badge>
+            <Badge variant="outline" className="bg-red-50 text-red-700">
+              Vắng: {stats.absent}
+            </Badge>
+            <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+              Muộn: {stats.late}
+            </Badge>
+            <Badge variant="outline" className="bg-purple-50 text-purple-700">
+              Tổng phí: {formatCurrency(totalFees)}
+            </Badge>
+          </div>
+
+          {/* Bulk Actions */}
+          {isEditing && (
+            <div className="flex gap-2 mb-4">
+              <Button
+                size="sm"
+                variant="success"
+                onClick={() => handleBulkAction('all-present')}
+              >
+                <CheckCircle className="h-4 w-4 mr-1" />
+                Tất cả có mặt
+              </Button>
+              <Button
+                size="sm"
+                variant="danger"
+                onClick={() => handleBulkAction('all-absent')}
+              >
+                <XCircle className="h-4 w-4 mr-1" />
+                Tất cả vắng mặt
+              </Button>
+            </div>
+          )}
+
+          {/* Save Result */}
+          {saveResult && (
+            <div className={`p-3 rounded-md mb-4 ${
+              saveResult.success 
+                ? 'bg-green-50 text-green-800 border border-green-200' 
+                : 'bg-red-50 text-red-800 border border-red-200'
+            }`}>
+              <div className="flex items-center gap-2">
+                {saveResult.success ? (
+                  <CheckCircle className="h-4 w-4" />
+                ) : (
+                  <XCircle className="h-4 w-4" />
+                )}
+                <span className="font-medium">
+                  {saveResult.success 
+                    ? `Lưu thành công ${saveResult.successCount}/${saveResult.totalRecords} bản ghi`
+                    : `Lưu thất bại ${saveResult.failureCount}/${saveResult.totalRecords} bản ghi`
+                  }
+                </span>
+              </div>
+              
+              {!saveResult.success && saveResult.results.some(r => !r.success) && (
+                <div className="mt-2 text-sm">
+                  Lỗi: {saveResult.results.filter(r => !r.success).map(r => r.error).join(', ')}
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Attendance List */}
+      <div className="space-y-2">
+        {isLoading ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-2 text-muted-foreground" />
+              <p className="text-muted-foreground">Đang tải danh sách điểm danh...</p>
+            </CardContent>
+          </Card>
+        ) : attendanceList.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Users className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-muted-foreground">Chưa có học sinh nào trong buổi học này</p>
+            </CardContent>
+          </Card>
+        ) : (
+          mergedAttendanceList.map(attendance => (
+            <AttendanceRow
+              key={attendance.studentId}
+              attendance={attendance}
+              onStatusChange={handleStatusChange}
+              onNoteChange={handleNoteChange}
+              onFeeOverrideChange={handleFeeOverrideChange}
+              isEditing={isEditing}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
