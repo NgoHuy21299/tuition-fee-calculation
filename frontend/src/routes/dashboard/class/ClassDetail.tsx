@@ -13,6 +13,7 @@ import LoadingSpinner from "../../../components/commons/LoadingSpinner";
 import { studentService, type StudentDTO } from "../../../services/studentService";
 import { classStudentService } from "../../../services/classStudentService";
 import { Input } from "../../../components/ui/input";
+import { SessionsTab } from "../../../components/sessions";
 
 export default function ClassDetail() {
   const { id } = useParams<{ id: string }>();
@@ -381,9 +382,14 @@ export default function ClassDetail() {
                 </p>
               </div>
             </div>
+          ) : tab === "sessions" ? (
+            <SessionsTab 
+              classId={id!} 
+              defaultFeePerSession={item?.defaultFeePerSession ?? undefined} 
+            />
           ) : (
             <div className="text-sm text-gray-400">
-              Danh sách buổi học sẽ được bổ sung ở UC-04.
+              Unknown tab
             </div>
           )}
         </div>
