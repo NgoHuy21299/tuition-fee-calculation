@@ -2,6 +2,7 @@ import type { D1Database } from "@cloudflare/workers-types";
 import { SessionRepository, type CreateSessionRow, type SessionRow } from "./sessionRepository";
 import { ClassRepository } from "../class/classRepository";
 import { AttendanceRepository } from "../attendance/attendanceRepository";
+import { ClassStudentRepository } from "../class-student/classStudentRepository";
 import type { 
   SessionDto, 
   CreateSessionInput, 
@@ -24,11 +25,13 @@ export class SessionService {
   private sessionRepo: SessionRepository;
   private classRepo: ClassRepository;
   private attendanceRepo: AttendanceRepository;
+  private classStudentRepo: ClassStudentRepository;
 
   constructor(private deps: { db: D1Database }) {
     this.sessionRepo = new SessionRepository(deps);
     this.classRepo = new ClassRepository(deps);
     this.attendanceRepo = new AttendanceRepository(deps);
+    this.classStudentRepo = new ClassStudentRepository(deps);
   }
 
   /**
@@ -74,6 +77,12 @@ export class SessionService {
     };
 
     const created = await this.sessionRepo.create(sessionRow);
+
+    // If this is a class session, create attendance records for all current students
+    if (input.classId) {
+      await this.createInitialAttendanceRecords(sessionId, input.classId);
+    }
+
     return this.mapToDto(created);
   }
 
@@ -134,6 +143,14 @@ export class SessionService {
     }));
 
     const created = await this.sessionRepo.createMany(sessionRows);
+
+    // If this is a class session series, create attendance records for all sessions
+    if (input.classId) {
+      for (const session of created) {
+        await this.createInitialAttendanceRecords(session.id, input.classId);
+      }
+    }
+
     return created.map(row => this.mapToDto(row));
   }
 
@@ -326,6 +343,40 @@ export class SessionService {
     const start = new Date(startTime);
     const end = new Date(start.getTime() + (durationMin * 60 * 1000));
     return end.toISOString();
+  }
+
+  /**
+   * Create initial attendance records for all current students in a class
+   */
+  private async createInitialAttendanceRecords(sessionId: string, classId: string): Promise<void> {
+    try {
+      // Get all current students in the class (leftAt IS NULL)
+      const classStudents = await this.classStudentRepo.listByClass({ classId });
+      const currentStudents = classStudents.filter(cs => cs.leftAt === null);
+
+      if (currentStudents.length === 0) {
+        return; // No students to create attendance for
+      }
+
+      // Create attendance records for all current students with default status 'absent'
+      const attendanceRecords = currentStudents.map(cs => ({
+        id: crypto.randomUUID(),
+        sessionId,
+        studentId: cs.studentId,
+        status: 'absent' as const, // Default status
+        note: null,
+        markedBy: null, // No one has marked it yet
+        feeOverride: null // Use default fee calculation
+      }));
+
+      // Bulk insert attendance records
+      await this.attendanceRepo.bulkUpsert(attendanceRecords);
+    } catch (error) {
+      // Log error but don't fail session creation
+      console.error(`Failed to create initial attendance records for session ${sessionId}:`, error);
+      // Could throw error if business requires attendance creation to be mandatory
+      // throw new AppError("ATTENDANCE_CREATION_FAILED", "Failed to create attendance records", 500);
+    }
   }
 
   /**

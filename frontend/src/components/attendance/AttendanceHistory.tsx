@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -63,11 +63,7 @@ export function AttendanceHistory({ studentId, className }: AttendanceHistoryPro
   const [filters, setFilters] = useState<AttendanceQueryParams>({});
   const [showFilters, setShowFilters] = useState(false);
 
-  useEffect(() => {
-    loadAttendanceHistory();
-  }, [studentId, filters]);
-
-  const loadAttendanceHistory = async () => {
+  const loadAttendanceHistory = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     
@@ -80,7 +76,11 @@ export function AttendanceHistory({ studentId, className }: AttendanceHistoryPro
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [studentId, filters]);
+
+  useEffect(() => {
+    void loadAttendanceHistory();
+  }, [loadAttendanceHistory]);
 
   const handleFilterChange = (key: keyof AttendanceQueryParams, value: string) => {
     setFilters(prev => ({

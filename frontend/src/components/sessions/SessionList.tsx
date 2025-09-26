@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { SessionService, type SessionDto } from '../../services/sessionService';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { 
+import {
   Table,
   TableBody,
   TableCell,
@@ -16,7 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
-import { MoreHorizontal, Plus, Calendar, Edit, Trash2, Ban } from 'lucide-react';
+import { MoreHorizontal, Plus, Calendar, Edit, Trash2, Ban, UserCheck } from 'lucide-react';
 import { formatDate, formatTime, formatDuration } from '../../utils/dateHelpers';
 import { formatCurrency } from '../../utils/formatHelpers';
 import LoadingSpinner from '../commons/LoadingSpinner';
@@ -46,6 +47,7 @@ export function SessionList({
   onCreateSeries, 
   onEditSession 
 }: SessionListProps) {
+  const navigate = useNavigate();
   const [sessions, setSessions] = useState<SessionDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'scheduled' | 'completed' | 'canceled'>('all');
@@ -234,6 +236,12 @@ export function SessionList({
                         >
                           <Edit className="mr-2 h-4 w-4" />
                           Chỉnh sửa
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => navigate(`/dashboard/attendance/${session.id}`)}
+                        >
+                          <UserCheck className="mr-2 h-4 w-4" />
+                          Điểm danh
                         </DropdownMenuItem>
                         
                         {session.status === 'scheduled' && (

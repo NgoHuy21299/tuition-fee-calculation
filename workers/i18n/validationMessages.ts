@@ -49,6 +49,17 @@ export const viValidationMessages: Record<ValidationCode, string> = {
   MAX_OCCURRENCES_TOO_SMALL: "Số buổi tối đa phải ít nhất 1",
   TIMEZONE_INVALID: "Múi giờ không hợp lệ",
   EXCLUSION_DATE_INVALID: "Ngày loại trừ không hợp lệ",
+  // Attendance-specific
+  ATTENDANCE_STATUS_INVALID: "Trạng thái điểm danh không hợp lệ",
+  SESSION_ID_REQUIRED: "Mã buổi học là bắt buộc", 
+  NOTE_INVALID: "Ghi chú không hợp lệ",
+  FEE_OVERRIDE_INVALID: "Học phí ghi đè không hợp lệ",
+  FEE_OVERRIDE_NEGATIVE: "Học phí ghi đè không được âm",
+  ATTENDANCE_RECORDS_REQUIRED: "Danh sách điểm danh là bắt buộc",
+  CLASS_ID_INVALID: "Mã lớp học không hợp lệ",
+  FROM_DATE_INVALID: "Ngày bắt đầu không hợp lệ",
+  TO_DATE_INVALID: "Ngày kết thúc không hợp lệ",
+  STUDENT_ID_INVALID: "Mã học sinh không hợp lệ"
 };
 
 export function tv(code: ValidationCode, fallback?: string): string {
