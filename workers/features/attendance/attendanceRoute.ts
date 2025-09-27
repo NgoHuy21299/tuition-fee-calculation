@@ -58,10 +58,6 @@ export function createAttendanceRouter() {
         const teacherId = getTeacherId(c);
         const service = new AttendanceService({ db: c.env.DB });
 
-        // Validate sessionId matches the one in the body
-        if (bulkData.sessionId !== sessionId) {
-          return c.json({ error: "Session ID mismatch" }, 400);
-        }
 
         const result = await service.markAttendance({
           sessionId,
