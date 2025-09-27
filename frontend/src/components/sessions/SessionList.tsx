@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { SessionService, type SessionDto } from '../../services/sessionService';
-import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { SessionService, type SessionDto } from "../../services/sessionService";
+import { Button } from "../ui/button";
+import { Badge } from "../ui/badge";
 import {
   Table,
   TableBody,
@@ -10,16 +10,28 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../ui/table';
+} from "../ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
-import { MoreHorizontal, Plus, Calendar, Edit, Trash2, Ban, UserCheck } from 'lucide-react';
-import { formatDate, formatTime, formatDuration } from '../../utils/dateHelpers';
-import LoadingSpinner from '../commons/LoadingSpinner';
+} from "../ui/dropdown-menu";
+import {
+  MoreHorizontal,
+  Plus,
+  Calendar,
+  Edit,
+  Trash2,
+  Ban,
+  UserCheck,
+} from "lucide-react";
+import {
+  formatDate,
+  formatTime,
+  formatDuration,
+} from "../../utils/dateHelpers";
+import LoadingSpinner from "../commons/LoadingSpinner";
 
 interface SessionListProps {
   classId: string;
@@ -28,29 +40,31 @@ interface SessionListProps {
   onEditSession?: (session: SessionDto) => void;
 }
 
-const statusColors: Record<SessionDto['status'], string> = {
-  scheduled: 'bg-blue-100 text-blue-800',
-  completed: 'bg-green-100 text-green-800',
-  canceled: 'bg-gray-100 text-gray-800',
+const statusColors: Record<SessionDto["status"], string> = {
+  scheduled: "bg-blue-100 text-blue-800",
+  completed: "bg-green-100 text-green-800",
+  canceled: "bg-gray-100 text-gray-800",
 };
 
-const statusLabels: Record<SessionDto['status'], string> = {
-  scheduled: 'Đã lên lịch',
-  completed: 'Hoàn thành',
-  canceled: 'Đã hủy',
+const statusLabels: Record<SessionDto["status"], string> = {
+  scheduled: "Đã lên lịch",
+  completed: "Hoàn thành",
+  canceled: "Đã hủy",
 };
 
-export function SessionList({ 
-  classId, 
-  onCreateSession, 
-  onCreateSeries, 
-  onEditSession 
+export function SessionList({
+  classId,
+  onCreateSession,
+  onCreateSeries,
+  onEditSession,
 }: SessionListProps) {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<SessionDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'scheduled' | 'completed' | 'canceled'>('all');
-  
+  const [filter, setFilter] = useState<
+    "all" | "completed" | "canceled" | "this_week" | "upcoming"
+  >("this_week");
+
   // Minimum spinner to avoid flicker
   const MIN_SPINNER_MS = 300;
   const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -62,7 +76,7 @@ export function SessionList({
       const data = await SessionService.listSessions(classId);
       setSessions(data);
     } catch (error) {
-      console.error('Failed to load sessions:', error);
+      console.error("Failed to load sessions:", error);
     } finally {
       const elapsed = Date.now() - start;
       if (elapsed < MIN_SPINNER_MS) await delay(MIN_SPINNER_MS - elapsed);
@@ -75,7 +89,7 @@ export function SessionList({
   }, [loadSessions]);
 
   const handleCancelSession = async (sessionId: string) => {
-    if (!confirm('Bạn có chắc chắn muốn hủy buổi học này?')) {
+    if (!confirm("Bạn có chắc chắn muốn hủy buổi học này?")) {
       return;
     }
 
@@ -83,15 +97,18 @@ export function SessionList({
       await SessionService.cancelSession(sessionId);
       await loadSessions(); // Refresh list
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'Không thể hủy buổi học';
-      alert('Lỗi: ' + errorMessage);
+      const errorMessage =
+        error instanceof Error ? error.message : "Không thể hủy buổi học";
+      alert("Lỗi: " + errorMessage);
     }
   };
 
   const handleDeleteSession = async (sessionId: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa buổi học này? Hành động này không thể hoàn tác.')) {
+    if (
+      !confirm(
+        "Bạn có chắc chắn muốn xóa buổi học này? Hành động này không thể hoàn tác."
+      )
+    ) {
       return;
     }
 
@@ -99,16 +116,53 @@ export function SessionList({
       await SessionService.deleteSession(sessionId);
       await loadSessions(); // Refresh list
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'Không thể xóa buổi học';
-      alert('Lỗi: ' + errorMessage);
+      const errorMessage =
+        error instanceof Error ? error.message : "Không thể xóa buổi học";
+      alert("Lỗi: " + errorMessage);
     }
   };
 
-  const filteredSessions = sessions.filter(session => {
-    if (filter === 'all') return true;
+  // Helpers for time filtering
+  const now = new Date();
+  const getWeekRange = (ref: Date) => {
+    const start = new Date(ref);
+    // Week starts on Monday
+    const day = start.getDay(); // 0=Sun,1=Mon,...
+    const diffToMonday = (day === 0 ? -6 : 1) - day; // move to Monday
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() + diffToMonday);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
+  };
+
+  const isThisWeek = (iso: string) => {
+    const d = new Date(iso);
+    const { start, end } = getWeekRange(now);
+    return d >= start && d <= end;
+  };
+
+  const isUpcoming = (iso: string) => new Date(iso) > now;
+
+  const filteredSessions = sessions.filter((session) => {
+    // 'all' shows everything except canceled
+    if (filter === "all") return session.status !== "canceled";
+    if (filter === "this_week")
+      return isThisWeek(session.startTime) && session.status !== "canceled";
+    if (filter === "upcoming")
+      return isUpcoming(session.startTime) && session.status !== "canceled";
     return session.status === filter;
+  });
+
+  // Sort: by startTime desc, tie-breaker by createdAt desc
+  const sortedSessions = [...filteredSessions].sort((a, b) => {
+    const at = new Date(a.startTime).getTime();
+    const bt = new Date(b.startTime).getTime();
+    if (bt !== at) return bt - at;
+    const ac = new Date(a.createdAt).getTime();
+    const bc = new Date(b.createdAt).getTime();
+    return bc - ac;
   });
 
   if (loading) {
@@ -125,32 +179,52 @@ export function SessionList({
       <div className="flex justify-between items-center">
         <div className="flex gap-2">
           <Button
-            variant={filter === 'all' ? 'default' : 'outline'}
+            variant={filter === "this_week" ? "default" : "outline"}
             size="sm"
-            onClick={() => setFilter('all')}
+            onClick={() => setFilter("this_week")}
           >
-            Tất cả ({sessions.length})
+            Tuần này (
+            {
+              sessions.filter(
+                (s) => s.status !== "canceled" && isThisWeek(s.startTime)
+              ).length
+            }
+            )
           </Button>
           <Button
-            variant={filter === 'scheduled' ? 'default' : 'outline'}
+            variant={filter === "upcoming" ? "default" : "outline"}
             size="sm"
-            onClick={() => setFilter('scheduled')}
+            onClick={() => setFilter("upcoming")}
           >
-            Đã lên lịch ({sessions.filter(s => s.status === 'scheduled').length})
+            Sắp tới (
+            {
+              sessions.filter(
+                (s) => s.status !== "canceled" && isUpcoming(s.startTime)
+              ).length
+            }
+            )
           </Button>
           <Button
-            variant={filter === 'completed' ? 'default' : 'outline'}
+            variant={filter === "all" ? "default" : "outline"}
             size="sm"
-            onClick={() => setFilter('completed')}
+            onClick={() => setFilter("all")}
           >
-            Hoàn thành ({sessions.filter(s => s.status === 'completed').length})
+            Tất cả ({sessions.filter((s) => s.status !== "canceled").length})
           </Button>
           <Button
-            variant={filter === 'canceled' ? 'default' : 'outline'}
+            variant={filter === "completed" ? "default" : "outline"}
             size="sm"
-            onClick={() => setFilter('canceled')}
+            onClick={() => setFilter("completed")}
           >
-            Đã hủy ({sessions.filter(s => s.status === 'canceled').length})
+            Hoàn thành (
+            {sessions.filter((s) => s.status === "completed").length})
+          </Button>
+          <Button
+            variant={filter === "canceled" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter("canceled")}
+          >
+            Đã hủy ({sessions.filter((s) => s.status === "canceled").length})
           </Button>
         </div>
 
@@ -167,12 +241,16 @@ export function SessionList({
       </div>
 
       {/* Table */}
-      {filteredSessions.length === 0 ? (
+      {sortedSessions.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          {filter === 'all' 
-            ? 'Chưa có buổi học nào. Tạo buổi học đầu tiên?' 
-            : `Không có buổi học nào ở trạng thái "${statusLabels[filter as keyof typeof statusLabels]}"`
-          }
+          {filter === "all" &&
+            "Chưa có buổi học nào (trừ đã hủy). Tạo buổi học đầu tiên?"}
+          {filter === "completed" &&
+            `Không có buổi học nào ở trạng thái "${statusLabels.completed}"`}
+          {filter === "canceled" &&
+            `Không có buổi học nào ở trạng thái "${statusLabels.canceled}"`}
+          {filter === "this_week" && "Tuần này chưa có buổi học nào."}
+          {filter === "upcoming" && "Chưa có buổi học sắp tới."}
         </div>
       ) : (
         <div className="border rounded-lg">
@@ -187,60 +265,76 @@ export function SessionList({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredSessions.map((session) => (
+              {sortedSessions.map((session) => (
                 <TableRow key={session.id}>
                   <TableCell>
                     <div className="space-y-1">
                       <div className="font-medium">
-                        {`${formatTime(session.startTime)} - ${formatDate(session.startTime)}`}
+                        {`${formatTime(session.startTime)} - ${formatDate(
+                          session.startTime
+                        )}`}
                       </div>
                     </div>
                   </TableCell>
+                  <TableCell>{formatDuration(session.durationMin)}</TableCell>
                   <TableCell>
-                    {formatDuration(session.durationMin)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge 
-                      variant="outline" 
+                    <Badge
+                      variant="outline"
                       className={statusColors[session.status]}
                     >
                       {statusLabels[session.status]}
                     </Badge>
                   </TableCell>
                   <TableCell className="max-w-xs">
-                    <div className="truncate" title={session.notes || ''}>
-                      {session.notes || <span className="text-gray-400">—</span>}
+                    <div className="truncate" title={session.notes || ""}>
+                      {session.notes || (
+                        <span className="text-gray-400">—</span>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Button size="sm" onClick={() => navigate(`/dashboard/attendance/${session.id}`, { state: { backTo: `/dashboard/classes/${classId}`, backTab: 'sessions' } })}>
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          navigate(`/dashboard/attendance/${session.id}`, {
+                            state: {
+                              backTo: `/dashboard/classes/${classId}`,
+                              backTab: "sessions",
+                            },
+                          })
+                        }
+                      >
                         <UserCheck className="h-4 w-4 mr-2" />
                         Điểm danh
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                          >
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => onEditSession?.(session)}
                           >
                             <Edit className="mr-2 h-4 w-4" />
                             Chỉnh sửa
                           </DropdownMenuItem>
-                          {session.status === 'scheduled' && (
-                            <DropdownMenuItem 
+                          {session.status === "scheduled" && (
+                            <DropdownMenuItem
                               onClick={() => handleCancelSession(session.id)}
                             >
                               <Ban className="mr-2 h-4 w-4" />
                               Hủy buổi học
                             </DropdownMenuItem>
                           )}
-                          {session.status === 'canceled' && (
-                            <DropdownMenuItem 
+                          {session.status === "canceled" && (
+                            <DropdownMenuItem
                               onClick={() => handleDeleteSession(session.id)}
                               className="text-destructive"
                             >
