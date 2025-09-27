@@ -8,11 +8,9 @@ import {
   RefreshCw, 
   CheckCircle, 
   XCircle,
-  Clock,
-  DollarSign
+  Clock
 } from 'lucide-react';
 import { AttendanceRow } from './AttendanceRow';
-import { formatCurrency } from '../../utils/formatHelpers';
 import { formatDate, formatTime, formatDuration } from '../../utils/dateHelpers';
 import type { 
   AttendanceDto, 
@@ -34,7 +32,7 @@ interface AttendanceChanges {
   [studentId: string]: {
     status?: 'present' | 'absent' | 'late';
     note?: string;
-    feeOverride?: number | null;
+    // feeOverride removed
   };
 }
 
@@ -58,10 +56,7 @@ export function AttendanceForm({
     late: attendanceList.filter(a => getEffectiveStatus(a.studentId, a.status) === 'late').length,
   };
 
-  const totalFees = attendanceList.reduce((sum, attendance) => {
-    const fee = getEffectiveFee(attendance.studentId, attendance.calculatedFee);
-    return sum + (fee || 0);
-  }, 0);
+  // Removed total fees calculation
 
   const hasChanges = Object.keys(changes).length > 0;
 
@@ -72,13 +67,7 @@ export function AttendanceForm({
     return (changes[studentId]?.status ?? originalStatus) as AttendanceDto['status'];
   }
 
-  function getEffectiveFee(studentId: string, originalFee: number | null) {
-    const change = changes[studentId];
-    if (change?.feeOverride !== undefined) {
-      return change.feeOverride;
-    }
-    return originalFee;
-  }
+  // Removed effective fee helper
 
   const handleStatusChange = (studentId: string, status: 'present' | 'absent' | 'late') => {
     setChanges(prev => ({
@@ -100,15 +89,7 @@ export function AttendanceForm({
     }));
   };
 
-  const handleFeeOverrideChange = (studentId: string, feeOverride: number | null) => {
-    setChanges(prev => ({
-      ...prev,
-      [studentId]: {
-        ...prev[studentId],
-        feeOverride
-      }
-    }));
-  };
+  // Removed fee override handler
 
   const handleBulkAction = (action: 'all-present' | 'all-absent') => {
     const bulkChanges: AttendanceChanges = {};
@@ -130,8 +111,7 @@ export function AttendanceForm({
     const attendanceRecords = Object.entries(changes).map(([studentId, change]) => ({
       studentId,
       status: change.status || attendanceList.find(a => a.studentId === studentId)?.status || 'absent',
-      note: change.note,
-      feeOverride: change.feeOverride
+      note: change.note
     }));
 
     try {
@@ -163,7 +143,7 @@ export function AttendanceForm({
     ...attendance,
     status: getEffectiveStatus(attendance.studentId, attendance.status),
     note: changes[attendance.studentId]?.note ?? attendance.note,
-    feeOverride: changes[attendance.studentId]?.feeOverride ?? attendance.feeOverride,
+    // feeOverride removed from merged list
   }));
 
   return (
@@ -182,12 +162,6 @@ export function AttendanceForm({
                   <Clock className="h-4 w-4" />
                   {formatTime(session.startTime)} - {formatDuration(session.durationMin)}
                 </div>
-                {session.feePerSession && (
-                  <div className="flex items-center gap-1">
-                    <DollarSign className="h-4 w-4" />
-                    {formatCurrency(session.feePerSession)}
-                  </div>
-                )}
               </div>
             </div>
             
@@ -247,9 +221,6 @@ export function AttendanceForm({
             </Badge>
             <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
               Muộn: {stats.late}
-            </Badge>
-            <Badge variant="outline" className="bg-purple-50 text-purple-700">
-              Tổng phí: {formatCurrency(totalFees)}
             </Badge>
           </div>
 
@@ -329,7 +300,6 @@ export function AttendanceForm({
               attendance={attendance}
               onStatusChange={handleStatusChange}
               onNoteChange={handleNoteChange}
-              onFeeOverrideChange={handleFeeOverrideChange}
               isEditing={isEditing}
             />
           ))

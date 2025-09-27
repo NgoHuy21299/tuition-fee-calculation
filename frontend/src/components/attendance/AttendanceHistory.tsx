@@ -18,11 +18,10 @@ import {
   Filter,
   Check,
   X,
-  AlertCircle,
-  DollarSign
+  AlertCircle
 } from 'lucide-react';
 import { formatDate, formatTime, formatDuration } from '../../utils/dateHelpers';
-import { formatCurrency } from '../../utils/formatHelpers';
+// Removed currency formatting usage
 import { AttendanceService } from '../../services/attendanceService';
 import type { 
   AttendanceWithSessionDto, 
@@ -127,7 +126,7 @@ export function AttendanceHistory({ studentId, className }: AttendanceHistoryPro
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -164,19 +163,7 @@ export function AttendanceHistory({ studentId, className }: AttendanceHistoryPro
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-orange-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Tổng phí</p>
-                <p className="text-2xl font-bold text-orange-600">
-                  {formatCurrency(stats.totalFees)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Removed total fees card */}
       </div>
 
       {/* Filters */}
@@ -244,7 +231,7 @@ export function AttendanceHistory({ studentId, className }: AttendanceHistoryPro
                   <TableHead>Lớp học</TableHead>
                   <TableHead>Trạng thái</TableHead>
                   <TableHead>Ghi chú</TableHead>
-                  <TableHead className="text-right">Học phí</TableHead>
+                  
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -290,15 +277,7 @@ export function AttendanceHistory({ studentId, className }: AttendanceHistoryPro
                           <span className="text-muted-foreground">-</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-right">
-                        {record.calculatedFee !== null ? (
-                          <span className="font-medium">
-                            {formatCurrency(record.calculatedFee)}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
+                      
                     </TableRow>
                   );
                 })}

@@ -140,6 +140,7 @@ export interface AttendanceDto {
   status: "present" | "absent" | "late";
   note: string | null;
   markedBy: string | null;
+  markedByName?: string | null;
   markedAt: string;
   feeOverride: number | null;
   calculatedFee: number | null;

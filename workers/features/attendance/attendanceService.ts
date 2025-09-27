@@ -10,6 +10,7 @@ import { SessionRepository } from "../session/sessionRepository";
 import type { SessionRow } from "../session/sessionRepository";
 import { StudentRepository } from "../student/studentRepository";
 import { ClassRepository } from "../class/classRepository";
+import { UserRepository } from "../auth/userRepository";
 import type {
   AttendanceDto,
   AttendanceWithSessionDto,
@@ -38,12 +39,14 @@ export class AttendanceService {
   private sessionRepo: SessionRepository;
   private studentRepo: StudentRepository;
   private classRepo: ClassRepository;
+  private userRepo: UserRepository;
 
   constructor(private deps: { db: D1Database }) {
     this.attendanceRepo = new AttendanceRepository(deps);
     this.sessionRepo = new SessionRepository(deps);
     this.studentRepo = new StudentRepository(deps);
     this.classRepo = new ClassRepository(deps);
+    this.userRepo = new UserRepository(deps);
   }
 
   /**
@@ -79,6 +82,22 @@ export class AttendanceService {
         ...record,
         calculatedFee,
       });
+    }
+
+    // Resolve markedBy names in batch
+    const markedByIds = Array.from(
+      new Set(
+        attendanceDtos
+          .map((a) => a.markedBy)
+          .filter((v): v is string => v != null)
+      )
+    );
+    if (markedByIds.length > 0) {
+      const users = await this.userRepo.getByIds(markedByIds);
+      const idToName = new Map(users.map((u) => [u.id, u.name ?? null]));
+      for (const dto of attendanceDtos) {
+        dto.markedByName = dto.markedBy ? (idToName.get(dto.markedBy) ?? null) : null;
+      }
     }
 
     return attendanceDtos;
@@ -375,6 +394,22 @@ export class AttendanceService {
         studentPhone: student.phone,
         calculatedFee,
       });
+    }
+
+    // Resolve markedByName
+    const markedByIds = Array.from(
+      new Set(
+        attendanceDtos
+          .map((a) => a.markedBy)
+          .filter((v): v is string => v != null)
+      )
+    );
+    if (markedByIds.length > 0) {
+      const users = await this.userRepo.getByIds(markedByIds);
+      const idToName = new Map(users.map((u) => [u.id, u.name ?? null]));
+      for (const dto of attendanceDtos) {
+        dto.markedByName = dto.markedBy ? (idToName.get(dto.markedBy) ?? null) : null;
+      }
     }
 
     // Calculate statistics

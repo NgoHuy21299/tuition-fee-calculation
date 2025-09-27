@@ -19,7 +19,6 @@ import {
 } from '../ui/dropdown-menu';
 import { MoreHorizontal, Plus, Calendar, Edit, Trash2, Ban, UserCheck } from 'lucide-react';
 import { formatDate, formatTime, formatDuration } from '../../utils/dateHelpers';
-import { formatCurrency } from '../../utils/formatHelpers';
 import LoadingSpinner from '../commons/LoadingSpinner';
 
 interface SessionListProps {
@@ -180,12 +179,11 @@ export function SessionList({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Ngày & Giờ</TableHead>
+                <TableHead>Thời gian</TableHead>
                 <TableHead>Thời lượng</TableHead>
-                <TableHead>Học phí</TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead>Ghi chú</TableHead>
-                <TableHead className="w-20">Thao tác</TableHead>
+                <TableHead className="w-44"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -194,21 +192,12 @@ export function SessionList({
                   <TableCell>
                     <div className="space-y-1">
                       <div className="font-medium">
-                        {formatDate(session.startTime)}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {formatTime(session.startTime)}
+                        {`${formatTime(session.startTime)} - ${formatDate(session.startTime)}`}
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
                     {formatDuration(session.durationMin)}
-                  </TableCell>
-                  <TableCell>
-                    {session.feePerSession 
-                      ? formatCurrency(session.feePerSession) 
-                      : <span className="text-gray-400">Theo lớp</span>
-                    }
                   </TableCell>
                   <TableCell>
                     <Badge 
@@ -224,46 +213,44 @@ export function SessionList({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem 
-                          onClick={() => onEditSession?.(session)}
-                        >
-                          <Edit className="mr-2 h-4 w-4" />
-                          Chỉnh sửa
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => navigate(`/dashboard/attendance/${session.id}`)}
-                        >
-                          <UserCheck className="mr-2 h-4 w-4" />
-                          Điểm danh
-                        </DropdownMenuItem>
-                        
-                        {session.status === 'scheduled' && (
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" onClick={() => navigate(`/dashboard/attendance/${session.id}`, { state: { backTo: `/dashboard/classes/${classId}`, backTab: 'sessions' } })}>
+                        <UserCheck className="h-4 w-4 mr-2" />
+                        Điểm danh
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
                           <DropdownMenuItem 
-                            onClick={() => handleCancelSession(session.id)}
+                            onClick={() => onEditSession?.(session)}
                           >
-                            <Ban className="mr-2 h-4 w-4" />
-                            Hủy buổi học
+                            <Edit className="mr-2 h-4 w-4" />
+                            Chỉnh sửa
                           </DropdownMenuItem>
-                        )}
-                        
-                        {session.status === 'canceled' && (
-                          <DropdownMenuItem 
-                            onClick={() => handleDeleteSession(session.id)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Xóa vĩnh viễn
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          {session.status === 'scheduled' && (
+                            <DropdownMenuItem 
+                              onClick={() => handleCancelSession(session.id)}
+                            >
+                              <Ban className="mr-2 h-4 w-4" />
+                              Hủy buổi học
+                            </DropdownMenuItem>
+                          )}
+                          {session.status === 'canceled' && (
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteSession(session.id)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Xóa vĩnh viễn
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

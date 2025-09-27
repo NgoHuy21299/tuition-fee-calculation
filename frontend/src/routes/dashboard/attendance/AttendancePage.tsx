@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '../../../components/ui/button';
 import { Card, CardContent } from '../../../components/ui/card';
 import { AttendanceForm } from '../../../components/attendance/AttendanceForm';
-import { ArrowLeft, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { AttendanceService } from '../../../services/attendanceService';
 import { SessionService } from '../../../services/sessionService';
 import type { 
@@ -12,10 +12,12 @@ import type {
   BulkAttendanceResult 
 } from '../../../services/attendanceService';
 import type { SessionDto } from '../../../services/sessionService';
+import BackNavigation from '../../../components/commons/BackNavigation';
 
 export default function AttendancePage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const [session, setSession] = useState<SessionDto | null>(null);
   const [attendanceList, setAttendanceList] = useState<AttendanceDto[]>([]);
@@ -66,10 +68,15 @@ export default function AttendancePage() {
     }
   };
 
+  const backState = (location.state as { backTo?: string; backTab?: string } | null) || null;
   const handleBack = () => {
-    // Navigate back to class detail or session list
+    // Navigate back to previous context if provided
+    if (backState?.backTo) {
+      navigate(backState.backTo, { state: { tab: backState.backTab ?? 'sessions' } });
+      return;
+    }
     if (session?.classId) {
-      navigate(`/dashboard/classes/${session.classId}`);
+      navigate(`/dashboard/classes/${session.classId}`, { state: { tab: 'sessions' } });
     } else {
       navigate('/dashboard/classes');
     }
@@ -95,10 +102,12 @@ export default function AttendancePage() {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="outline" onClick={handleBack}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Quay lại
-          </Button>
+          <BackNavigation
+            to={backState?.backTo ?? (session?.classId ? `/dashboard/classes/${session.classId}` : '/dashboard/classes')}
+            state={{ tab: backState?.backTab ?? 'sessions' }}
+            text="Quay lại"
+            className="w-auto"
+          />
         </div>
         
         <Card>
@@ -106,12 +115,8 @@ export default function AttendancePage() {
             <AlertCircle className="h-8 w-8 mx-auto mb-2 text-red-500" />
             <p className="text-red-600 mb-4">{error}</p>
             <div className="flex gap-2 justify-center">
-              <Button onClick={loadData}>
-                Thử lại
-              </Button>
-              <Button variant="outline" onClick={handleBack}>
-                Quay lại
-              </Button>
+              <Button onClick={loadData}>Thử lại</Button>
+              <Button variant="outline" onClick={handleBack}>Quay lại</Button>
             </div>
           </CardContent>
         </Card>
@@ -123,16 +128,17 @@ export default function AttendancePage() {
     <div className="container mx-auto p-6">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <Button variant="outline" onClick={handleBack}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Quay lại
-        </Button>
-        
+        <BackNavigation
+          to={backState?.backTo ?? (session?.classId ? `/dashboard/classes/${session.classId}` : '/dashboard/classes')}
+          state={{ tab: backState?.backTab ?? 'sessions' }}
+          text="Quay lại"
+          className="w-auto"
+        />
         <div>
           <h1 className="text-2xl font-bold">Điểm danh</h1>
           {session && (
             <p className="text-muted-foreground">
-              {session.type === 'class' ? 'Buổi học lớp' : 'Buổi học riêng'} • {session.id}
+              {session.type === 'class' ? `Buổi học lớp ${session.className ?? ''}` : 'Buổi học riêng'}
             </p>
           )}
         </div>

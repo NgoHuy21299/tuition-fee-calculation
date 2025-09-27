@@ -173,7 +173,13 @@ export class SessionService {
    */
   async getById(sessionId: string, teacherId: string): Promise<SessionDto | null> {
     const session = await this.sessionRepo.getById({ id: sessionId, teacherId });
-    return session ? this.mapToDto(session) : null;
+    if (!session) return null;
+    const dto = this.mapToDto(session);
+    if (session.classId) {
+      const cls = await this.classRepo.getById(session.classId, teacherId);
+      return { ...dto, className: cls?.name ?? null };
+    }
+    return dto;
   }
 
   /**

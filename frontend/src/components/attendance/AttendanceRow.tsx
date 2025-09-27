@@ -6,7 +6,6 @@ import { Card, CardContent } from '../ui/card';
 import { 
   User, 
   Clock, 
-  DollarSign, 
   ChevronDown, 
   ChevronUp,
   Check,
@@ -15,7 +14,6 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { ButtonProps } from '../ui/button';
-import { formatCurrency } from '../../utils/formatHelpers';
 import { formatTime } from '../../utils/dateHelpers';
 import type { AttendanceDto } from '../../services/attendanceService';
 
@@ -25,7 +23,6 @@ interface AttendanceRowProps {
   attendance: AttendanceDto;
   onStatusChange: (studentId: string, status: Status) => void;
   onNoteChange: (studentId: string, note: string) => void;
-  onFeeOverrideChange: (studentId: string, feeOverride: number | null) => void;
   isEditing?: boolean;
 }
 
@@ -59,14 +56,11 @@ export function AttendanceRow({
   attendance,
   onStatusChange,
   onNoteChange,
-  onFeeOverrideChange,
   isEditing = false
 }: AttendanceRowProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [localNote, setLocalNote] = useState(attendance.note || '');
-  const [localFeeOverride, setLocalFeeOverride] = useState(
-    attendance.feeOverride?.toString() || ''
-  );
+  
 
   const config = statusConfig[attendance.status];
   const StatusIcon = config.icon;
@@ -75,11 +69,7 @@ export function AttendanceRow({
     onNoteChange(attendance.studentId, localNote);
   };
 
-  const handleFeeOverrideBlur = () => {
-    const value = localFeeOverride.trim();
-    const numericValue = value ? parseInt(value.replace(/[^\d]/g, ''), 10) : null;
-    onFeeOverrideChange(attendance.studentId, numericValue);
-  };
+  
 
   const handleStatusClick = (status: Status) => {
     if (isEditing) {
@@ -134,14 +124,7 @@ export function AttendanceRow({
               </Badge>
             )}
 
-            {/* Fee display */}
-            <div className="flex items-center gap-1 text-sm text-muted-foreground min-w-[100px] justify-end">
-              <DollarSign className="h-4 w-4" />
-              {attendance.calculatedFee !== null 
-                ? formatCurrency(attendance.calculatedFee)
-                : 'Chưa tính'
-              }
-            </div>
+            {/* Removed fee display */}
 
             {/* Expand button */}
             <Button
@@ -179,40 +162,14 @@ export function AttendanceRow({
               )}
             </div>
 
-            {/* Fee override */}
-            <div>
-              <label className="text-sm font-medium mb-1 block">
-                Ghi đè học phí
-                {attendance.feeOverride && (
-                  <span className="text-xs text-muted-foreground ml-1">
-                    (Ghi đè mức mặc định)
-                  </span>
-                )}
-              </label>
-              {isEditing ? (
-                <Input
-                  value={localFeeOverride}
-                  onChange={(e) => setLocalFeeOverride(e.target.value)}
-                  onBlur={handleFeeOverrideBlur}
-                  placeholder="Nhập số tiền..."
-                  className="w-full"
-                />
-              ) : (
-                <div className="text-sm text-muted-foreground">
-                  {attendance.feeOverride 
-                    ? formatCurrency(attendance.feeOverride)
-                    : 'Sử dụng mức mặc định'
-                  }
-                </div>
-              )}
-            </div>
+            {/* Removed fee override UI */}
 
             {/* Last modified info */}
             {attendance.markedAt && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
                 Cập nhật lần cuối: {formatTime(attendance.markedAt)}
-                {attendance.markedBy && ` bởi ${attendance.markedBy}`}
+                {attendance.markedByName && ` bởi ${attendance.markedByName}`}
               </div>
             )}
           </div>
