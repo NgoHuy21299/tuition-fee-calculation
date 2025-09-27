@@ -58,7 +58,6 @@ export function createAttendanceRouter() {
         const teacherId = getTeacherId(c);
         const service = new AttendanceService({ db: c.env.DB });
 
-
         const result = await service.markAttendance({
           sessionId,
           attendanceRecords: bulkData.attendanceRecords,
