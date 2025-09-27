@@ -71,10 +71,6 @@ export const UpdateAttendanceSchema = object({
 
 // Bulk attendance operation schema
 export const BulkAttendanceSchema = object({
-  sessionId: pipe(
-    string(Msg("SESSION_ID_REQUIRED")),
-    minLength(1, Msg("SESSION_ID_REQUIRED"))
-  ),
   attendanceRecords: array(
     object({
       studentId: pipe(
