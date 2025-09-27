@@ -34,6 +34,7 @@
     "dev:api": "wrangler dev --port=5173 --inspector-port=9229",
     "dev:fe": "npm run dev --prefix frontend",
     "build": "tsc -b",
+    "build:fe": "npm run build --prefix frontend",
     "deploy": "npm run db:migrate:remote && wrangler deploy",
     "typecheck": "wrangler types && tsc -b --noEmit",
     "db:migrate:local": "wrangler d1 migrations apply tuition-fee-calculation --local",

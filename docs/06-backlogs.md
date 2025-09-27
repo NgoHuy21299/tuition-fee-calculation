@@ -1,1 +1,2 @@
 1. Cần phải thêm trường isArchived cho bảng Student => dùng để lưu trữ học sinh lại vì nhiều học sinh khi ngừng học rồi thì không thể xóa được do liên quan đến business tính toán học phí
+2. Cần tạo riêng page quản lý các sessions dạy học.

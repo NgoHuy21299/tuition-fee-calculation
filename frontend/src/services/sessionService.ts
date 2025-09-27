@@ -13,12 +13,12 @@ export interface SessionDto {
   type: 'class' | 'ad_hoc';
   seriesId: string | null;
   createdAt: string;
+  className?: string | null;
 }
 
 export interface CreateSessionRequest {
   classId?: string | null;
   startTime: string;
-  durationMin: number;
   feePerSession?: number | null;
   notes?: string | null;
   status?: 'scheduled' | 'completed' | 'canceled';

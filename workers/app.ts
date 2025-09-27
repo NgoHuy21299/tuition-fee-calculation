@@ -7,6 +7,7 @@ import { createStudentRouter } from "./features/student/studentRoute";
 import { createAuthRouter } from "./features/auth/authRoute";
 import { createClassStudentRouter } from "./features/class-student/classStudentRoute";
 import { createSessionRouter } from "./features/session/sessionRoute";
+import { createAttendanceRouter } from "./features/attendance/attendanceRoute";
 
 const app = new Hono<{ Bindings: Env; Variables: { user: JwtPayload } }>();
 
@@ -61,6 +62,9 @@ app.route("/api/classes", createClassStudentRouter());
 
 // --- Session routes ---
 app.route("/api/sessions", createSessionRouter());
+
+// --- Attendance routes ---
+app.route("/api", createAttendanceRouter());
 
 // --- Silence Chrome DevTools probe route ---
 app.get("/.well-known/appspecific/com.chrome.devtools.json", (c) => {

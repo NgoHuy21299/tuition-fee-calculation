@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '../ui/card';
-import { Clock, Users } from 'lucide-react';
+import { Clock, Users, UserCheck } from 'lucide-react';
 import { formatDate, formatTime, formatDuration } from '../../utils/dateHelpers';
 import { formatCurrency } from '../../utils/formatHelpers';
 import type { SessionDto } from '../../services/sessionService';
@@ -17,6 +17,7 @@ interface SessionCardProps {
   onEdit?: () => void;
   onCancel?: () => void;
   onDelete?: () => void;
+  onAttendance?: () => void;
 }
 
 const statusColors: Record<SessionDto['status'], string> = {
@@ -35,7 +36,8 @@ export function SessionCard({
   session, 
   onEdit, 
   onCancel, 
-  onDelete 
+  onDelete,
+  onAttendance
 }: SessionCardProps) {
   return (
     <Card className="h-full">
@@ -86,6 +88,13 @@ export function SessionCard({
           <Button size="sm" variant="outline" onClick={onEdit}>
             Chỉnh sửa
           </Button>
+          
+          {onAttendance && (
+            <Button size="sm" variant="outline" onClick={onAttendance}>
+              <UserCheck className="h-4 w-4 mr-1" />
+              Điểm danh
+            </Button>
+          )}
           
           {session.status === 'scheduled' && onCancel && (
             <Button size="sm" variant="outline" onClick={onCancel}>

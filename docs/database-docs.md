@@ -101,6 +101,7 @@ Indexes:
 - notes TEXT
 - feePerSession INTEGER NULL  (default price for the session)
 - type TEXT NOT NULL DEFAULT 'class' CHECK (type IN ('class','ad_hoc'))
+- seriesId seriesId TEXT NULL; (thêm vào từ UC-04)
 - createdAt TEXT NOT NULL DEFAULT now
 
 Indexes:

@@ -159,7 +159,6 @@ export const UpdateSessionSchema = object({
   status: optional(StatusSchema)
 });
 
-// Types inferred from schemas
 export type CreateSessionInput = InferOutput<typeof CreateSessionSchema>;
 export type CreateSessionSeriesInput = InferOutput<typeof CreateSessionSeriesSchema>;
 export type UpdateSessionInput = InferOutput<typeof UpdateSessionSchema>;
@@ -177,4 +176,6 @@ export interface SessionDto {
   type: 'class' | 'ad_hoc';
   seriesId: string | null;
   createdAt: string;
+  // Optional denormalized info for convenience
+  className?: string | null;
 }

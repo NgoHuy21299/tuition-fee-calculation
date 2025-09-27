@@ -343,7 +343,13 @@ CREATE TABLE features (
 
 ### 3. Local Development
 
-**Frontend**:
+**Error Checking Scripts**:
+```bash
+npm run build        # Check backend for build errors
+npm run build:fe     # Check frontend for build errors
+```
+
+**Development Servers**:
 ```bash
 cd frontend
 npm run dev          # Start React dev server (port 5173)
