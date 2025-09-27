@@ -89,7 +89,7 @@ export function AttendanceRow({
 
   return (
     <Card className="mb-2">
-      <CardContent className="p-4">
+      <CardContent className="">
         {/* Main row */}
         <div className="flex items-center justify-between">
           {/* Student info */}
