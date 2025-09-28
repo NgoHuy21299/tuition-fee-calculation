@@ -62,8 +62,8 @@ export function SessionList({
   const [sessions, setSessions] = useState<SessionDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<
-    "all" | "completed" | "canceled" | "this_week" | "upcoming"
-  >("this_week");
+    "all" | "completed" | "canceled" | "this_week" | "upcoming" | "this_month"
+  >("this_month");
 
   // Minimum spinner to avoid flicker
   const MIN_SPINNER_MS = 300;
@@ -143,11 +143,26 @@ export function SessionList({
     return d >= start && d <= end;
   };
 
+  // Helpers for month filtering
+  const getMonthRange = (ref: Date) => {
+    const start = new Date(ref.getFullYear(), ref.getMonth(), 1);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(ref.getFullYear(), ref.getMonth() + 1, 0);
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
+  };
+  const isThisMonth = (iso: string) => {
+    const d = new Date(iso);
+    const { start, end } = getMonthRange(now);
+    return d >= start && d <= end;
+  };
+
   const isUpcoming = (iso: string) => new Date(iso) > now;
 
   const filteredSessions = sessions.filter((session) => {
     // 'all' shows everything except canceled
     if (filter === "all") return session.status !== "canceled";
+    if (filter === "this_month") return isThisMonth(session.startTime) && session.status !== "canceled";
     if (filter === "this_week")
       return isThisWeek(session.startTime) && session.status !== "canceled";
     if (filter === "upcoming")
@@ -188,6 +203,15 @@ export function SessionList({
       <div className="flex justify-between items-center">
         <div className="flex gap-2">
           <Button
+            variant={filter === "this_month" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter("this_month")}
+          >
+            Tháng này (
+            {sessions.filter((s) => s.status !== "canceled" && isThisMonth(s.startTime)).length}
+            )
+          </Button>
+          <Button
             variant={filter === "this_week" ? "default" : "outline"}
             size="sm"
             onClick={() => setFilter("this_week")}
@@ -214,13 +238,6 @@ export function SessionList({
             )
           </Button>
           <Button
-            variant={filter === "all" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFilter("all")}
-          >
-            Tất cả ({sessions.filter((s) => s.status !== "canceled").length})
-          </Button>
-          <Button
             variant={filter === "completed" ? "default" : "outline"}
             size="sm"
             onClick={() => setFilter("completed")}
@@ -234,6 +251,13 @@ export function SessionList({
             onClick={() => setFilter("canceled")}
           >
             Đã hủy ({sessions.filter((s) => s.status === "canceled").length})
+          </Button>
+          <Button
+            variant={filter === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter("all")}
+          >
+            Tất cả ({sessions.filter((s) => s.status !== "canceled").length})
           </Button>
         </div>
 
@@ -260,6 +284,7 @@ export function SessionList({
             `Không có buổi học nào ở trạng thái "${statusLabels.canceled}"`}
           {filter === "this_week" && "Tuần này chưa có buổi học nào."}
           {filter === "upcoming" && "Chưa có buổi học sắp tới."}
+          {filter === "this_month" && "Tháng này chưa có buổi học nào."}
         </div>
       ) : (
         <div className="border rounded-lg">
