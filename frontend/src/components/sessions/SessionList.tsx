@@ -329,19 +329,42 @@ export function SessionList({
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem
-                            onClick={() => onEditSession?.(session)}
+                            onClick={
+                              session.status === "completed"
+                                ? undefined
+                                : () => onEditSession?.(session)
+                            }
+                            disabled={session.status === "completed"}
+                            className="data-[disabled]:cursor-not-allowed"
+                            title={
+                              session.status === "completed"
+                                ? "Không thể chỉnh sửa buổi học đã hoàn thành"
+                                : undefined
+                            }
                           >
                             <Edit className="mr-2 h-4 w-4" />
                             Chỉnh sửa
                           </DropdownMenuItem>
-                          {session.status === "scheduled" && (
-                            <DropdownMenuItem
-                              onClick={() => handleCancelSession(session.id)}
-                            >
-                              <Ban className="mr-2 h-4 w-4" />
-                              Hủy buổi học
-                            </DropdownMenuItem>
-                          )}
+                          {/* Always show Cancel, but disable when not scheduled */}
+                          <DropdownMenuItem
+                            onClick={
+                              session.status !== "scheduled"
+                                ? undefined
+                                : () => handleCancelSession(session.id)
+                            }
+                            disabled={session.status !== "scheduled"}
+                            className="data-[disabled]:cursor-not-allowed"
+                            title={
+                              session.status === "completed"
+                                ? "Không thể hủy buổi học đã hoàn thành"
+                                : session.status === "canceled"
+                                ? "Buổi học đã được hủy"
+                                : undefined
+                            }
+                          >
+                            <Ban className="mr-2 h-4 w-4" />
+                            Hủy buổi học
+                          </DropdownMenuItem>
                           {session.status === "canceled" && (
                             <DropdownMenuItem
                               onClick={() => handleDeleteSession(session.id)}

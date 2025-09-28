@@ -384,11 +384,11 @@ export class SessionService {
       throw new AppError("SESSION_NOT_FOUND", "Session not found", 404);
     }
 
-    // Business rule: Cannot cancel if session already has attendance
-    const hasAttendance = await this.attendanceRepo.hasAttendanceForSession(
-      sessionId
-    );
-    if (hasAttendance) {
+    // Business rule: Cannot cancel if session has any non-absent attendance
+    // Allow cancel when all attendance records (if any) are 'absent'
+    const hasNonAbsent =
+      await this.attendanceRepo.hasNonAbsentAttendanceForSession(sessionId);
+    if (hasNonAbsent) {
       throw new AppError(
         "SESSION_HAS_ATTENDANCE",
         "Cannot cancel session with attendance records",

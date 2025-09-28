@@ -85,7 +85,14 @@ export function SessionCard({
 
         {/* Actions */}
         <div className="flex gap-2 pt-2">
-          <Button size="sm" variant="outline" onClick={onEdit}>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={onEdit}
+            disabled={session.status === 'completed'}
+            className="disabled:cursor-not-allowed"
+            title={session.status === 'completed' ? 'Không thể chỉnh sửa buổi học đã hoàn thành' : undefined}
+          >
             Chỉnh sửa
           </Button>
           

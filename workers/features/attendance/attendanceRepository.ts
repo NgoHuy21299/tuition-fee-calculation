@@ -82,6 +82,17 @@ export class AttendanceRepository {
   }
 
   /**
+   * Check if a session has any non-absent attendance records
+   * This is used to determine whether a session is considered to have attendance
+   * for cancellation rules (only block cancel if there exists any status other than 'absent').
+   */
+  async hasNonAbsentAttendanceForSession(sessionId: string): Promise<boolean> {
+    const sql = `SELECT 1 AS one FROM Attendance WHERE sessionId = ? AND status != 'absent' LIMIT 1`;
+    const row = await selectOne<{ one: number }>(this.deps.db, sql, [sessionId]);
+    return row != null;
+  }
+
+  /**
    * Check if multiple sessions have attendance records
    * Used for batch operations on sessions
    */
