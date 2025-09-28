@@ -5,7 +5,8 @@ import { SessionService } from './sessionService';
 import {
     CreateSessionSchema,
     CreateSessionSeriesSchema,
-    UpdateSessionSchema
+    UpdateSessionSchema,
+    UnlockSessionSchema
 } from './sessionSchemas';
 import type { JwtPayload } from '../auth/jwtService';
 import { getTeacherId } from '../../middleware/authMiddleware';
@@ -26,6 +27,30 @@ export function createSessionRouter() {
             const service = new SessionService({ db: c.env.DB });
             const result = await service.createSession(sessionData, teacherId);
             return c.json(result, 201 as 201);
+        } catch (err) {
+            const e = toAppError(err, { code: "UNKNOWN" });
+            return c.json({ error: e.message }, e.status as any);
+        }
+    });
+
+    /**
+     * Unlock a completed session back to scheduled
+     * PATCH /api/sessions/:id/unlock
+     */
+    router.patch('/:id/unlock', validateBody(UnlockSessionSchema), async (c: Context) => {
+        try {
+            const sessionId = c.req.param('id');
+            const teacherId = getTeacherId(c);
+            const { reason } = getValidatedData<{ reason: string }>(c);
+
+            const service = new SessionService({ db: c.env.DB });
+            const result = await service.unlockSession(sessionId, reason, teacherId);
+
+            if (!result) {
+                return c.json({ error: 'Session not found' }, 404);
+            }
+
+            return c.json(result, 200 as 200);
         } catch (err) {
             const e = toAppError(err, { code: "UNKNOWN" });
             return c.json({ error: e.message }, e.status as any);

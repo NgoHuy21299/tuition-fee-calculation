@@ -17,6 +17,8 @@ const buttonVariants = cva(
         danger: "border border-red-800 text-red-300 hover:bg-red-500/10",
         // Subtle success (green) variant matching dark theme
         success: "border border-green-800 text-green-300 hover:bg-green-500/10",
+        // Subtle warning (amber) variant matching dark theme
+        warning: "border border-yellow-700 text-yellow-300 hover:bg-yellow-500/10",
       },
       size: {
         default: "h-9 px-4 py-2",

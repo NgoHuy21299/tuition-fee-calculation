@@ -8,7 +8,8 @@ import {
   RefreshCw, 
   CheckCircle, 
   XCircle,
-  Clock
+  Clock,
+  Unlock
 } from 'lucide-react';
 import { AttendanceRow } from './AttendanceRow';
 import { formatDate, formatTime, formatDuration } from '../../utils/dateHelpers';
@@ -27,6 +28,7 @@ interface AttendanceFormProps {
   isLoading?: boolean;
   isSaving?: boolean;
   onComplete?: () => Promise<void>;
+  onUnlock?: (reason: string) => Promise<void>;
 }
 
 interface AttendanceChanges {
@@ -45,11 +47,13 @@ export function AttendanceForm({
   isLoading = false,
   isSaving = false,
   onComplete,
+  onUnlock,
 }: AttendanceFormProps) {
   const [changes, setChanges] = useState<AttendanceChanges>({});
   const [isEditing, setIsEditing] = useState(false);
   const [saveResult, setSaveResult] = useState<BulkAttendanceResult | null>(null);
   const [isCompleting, setIsCompleting] = useState(false);
+  const [isUnlocking, setIsUnlocking] = useState(false);
 
   // Calculate statistics
   const stats = {
@@ -57,6 +61,20 @@ export function AttendanceForm({
     present: attendanceList.filter(a => getEffectiveStatus(a.studentId, a.status) === 'present').length,
     absent: attendanceList.filter(a => getEffectiveStatus(a.studentId, a.status) === 'absent').length,
     late: attendanceList.filter(a => getEffectiveStatus(a.studentId, a.status) === 'late').length,
+  };
+
+  const handleUnlock = async () => {
+    if (!onUnlock) return;
+    const reason = window.prompt('Nhập lý do mở khoá điểm danh:');
+    if (!reason || reason.trim().length < 3) return;
+    setIsUnlocking(true);
+    try {
+      await onUnlock(reason.trim());
+    } catch (err) {
+      console.error('Unlock session failed', err);
+    } finally {
+      setIsUnlocking(false);
+    }
   };
 
   // Removed total fees calculation
@@ -208,8 +226,22 @@ export function AttendanceForm({
                   {isCompleting ? 'Đang hoàn thành...' : 'Hoàn thành buổi học'}
                 </Button>
               )}
+
+              {/* Unlock session button for completed sessions */}
+              {session.status === 'completed' && (
+                <Button
+                  size="sm"
+                  variant="warning"
+                  onClick={handleUnlock}
+                  disabled={isUnlocking}
+                  title="Mở khoá để tiếp tục chỉnh sửa điểm danh"
+                >
+                  <Unlock className={`h-4 w-4 mr-1 ${isUnlocking ? 'animate-spin' : ''}`} />
+                  {isUnlocking ? 'Đang mở khoá...' : 'Mở khoá điểm danh'}
+                </Button>
+              )}
               
-              {!isEditing ? (
+              {session.status === 'scheduled' && (!isEditing ? (
                 <Button
                   size="sm"
                   onClick={() => setIsEditing(true)}
@@ -235,7 +267,7 @@ export function AttendanceForm({
                     {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
                   </Button>
                 </div>
-              )}
+              ))}
             </div>
           </div>
         </CardHeader>
@@ -258,7 +290,7 @@ export function AttendanceForm({
           </div>
 
           {/* Bulk Actions */}
-          {isEditing && (
+          {isEditing && session.status === 'scheduled' && (
             <div className="flex gap-2 mb-4">
               <Button
                 size="sm"

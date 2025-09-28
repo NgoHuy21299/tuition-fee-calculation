@@ -107,6 +107,14 @@ export class SessionService {
   }
 
   /**
+   * Unlock a completed session back to scheduled with a reason
+   */
+  static async unlockSession(id: string, reason: string): Promise<SessionDto> {
+    const response = await apiClient.patch(`${this.baseUrl}/${id}/unlock`, { reason });
+    return response.data;
+  }
+
+  /**
    * Delete a session
    */
   static async deleteSession(id: string): Promise<void> {

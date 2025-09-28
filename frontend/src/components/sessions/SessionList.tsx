@@ -155,8 +155,17 @@ export function SessionList({
     return session.status === filter;
   });
 
-  // Sort: by startTime desc, tie-breaker by createdAt desc
+  // Sort with status grouping: scheduled (Đã lên lịch) first, then completed, then canceled.
+  // Within the same status, keep previous logic: startTime desc, then createdAt desc.
+  const statusOrder: Record<SessionDto["status"], number> = {
+    scheduled: 0,
+    completed: 1,
+    canceled: 2,
+  };
+
   const sortedSessions = [...filteredSessions].sort((a, b) => {
+    const so = statusOrder[a.status] - statusOrder[b.status];
+    if (so !== 0) return so;
     const at = new Date(a.startTime).getTime();
     const bt = new Date(b.startTime).getTime();
     if (bt !== at) return bt - at;

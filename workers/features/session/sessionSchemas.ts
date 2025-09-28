@@ -159,9 +159,19 @@ export const UpdateSessionSchema = object({
   status: optional(StatusSchema)
 });
 
+// Unlock session schema (require a reason)
+export const UnlockSessionSchema = object({
+  reason: pipe(
+    string(),
+    minLength(3),
+    maxLength(2000)
+  )
+});
+
 export type CreateSessionInput = InferOutput<typeof CreateSessionSchema>;
 export type CreateSessionSeriesInput = InferOutput<typeof CreateSessionSeriesSchema>;
 export type UpdateSessionInput = InferOutput<typeof UpdateSessionSchema>;
+export type UnlockSessionInput = InferOutput<typeof UnlockSessionSchema>;
 
 // Session DTO
 export interface SessionDto {

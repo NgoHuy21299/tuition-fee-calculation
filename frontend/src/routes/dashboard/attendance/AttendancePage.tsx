@@ -171,6 +171,17 @@ export default function AttendancePage() {
               setError('Không thể đánh dấu hoàn thành buổi học. Vui lòng thử lại.');
             }
           }}
+          onUnlock={async (reason: string) => {
+            if (!sessionId) return;
+            try {
+              await SessionService.unlockSession(sessionId, reason);
+              // Refresh current data to reflect status change back to scheduled
+              await loadData();
+            } catch (err) {
+              console.error('Failed to unlock session:', err);
+              setError('Không thể mở khoá điểm danh. Vui lòng thử lại.');
+            }
+          }}
         />
       )}
     </div>
