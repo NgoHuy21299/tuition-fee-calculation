@@ -7,7 +7,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-black text-white hover:bg-neutral-800 border border-gray-800",
+        default: "bg-black text-white hover:bg-neutral-800 border border-gray-700",
         // Dark-friendly outline: darker border, readable text, subtle hover overlay
         outline: "border border-gray-700 text-gray-200 hover:bg-white/10",
         // Dark-friendly ghost
@@ -17,6 +17,8 @@ const buttonVariants = cva(
         danger: "border border-red-800 text-red-300 hover:bg-red-500/10",
         // Subtle success (green) variant matching dark theme
         success: "border border-green-800 text-green-300 hover:bg-green-500/10",
+        // Subtle warning (amber) variant matching dark theme
+        warning: "border border-yellow-700 text-yellow-300 hover:bg-yellow-500/10",
       },
       size: {
         default: "h-9 px-4 py-2",

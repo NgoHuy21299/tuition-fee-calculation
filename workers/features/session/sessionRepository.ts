@@ -34,16 +34,30 @@ export class SessionRepository {
   /**
    * List sessions by class for a teacher
    */
-  async listByClass({ classId, teacherId }: { classId: string; teacherId: string }): Promise<SessionRow[]> {
-    const query = `
-      SELECT 
-        id, classId, teacherId, startTime, durationMin, 
+  async listByClass(options: { classId: string; teacherId: string; startTimeBegin?: string; startTimeEnd?: string; statusExclude?: string[] }): Promise<SessionRow[]> {
+    const { classId, teacherId, startTimeBegin, startTimeEnd, statusExclude } = options;
+    let query = `
+      SELECT
+        id, classId, teacherId, startTime, durationMin,
         status, notes, feePerSession, type, seriesId, createdAt
-      FROM Session 
-      WHERE classId = ? AND teacherId = ?
-    `;
-
-    return await selectAll<SessionRow>(this.deps.db, query, [classId, teacherId]);
+      FROM Session
+      WHERE classId = ? AND teacherId = ?`;
+    const params: any[] = [classId, teacherId];
+    // Exclude given statuses if any
+    if (statusExclude && statusExclude.length > 0) {
+      const placeholders = statusExclude.map(() => '?').join(', ');
+      query += ` AND status NOT IN (${placeholders})`;
+      params.push(...statusExclude);
+    }
+    if (startTimeBegin) {
+      query += ` AND startTime >= ?`;
+      params.push(startTimeBegin);
+    }
+    if (startTimeEnd) {
+      query += ` AND startTime <= ?`;
+      params.push(startTimeEnd);
+    }
+    return await selectAll<SessionRow>(this.deps.db, query, params);
   }
 
   /**

@@ -1,21 +1,26 @@
 import type { D1Database } from "@cloudflare/workers-types";
-import { SessionRepository, type CreateSessionRow, type SessionRow } from "./sessionRepository";
+import {
+  SessionRepository,
+  type CreateSessionRow,
+  type SessionRow,
+} from "./sessionRepository";
 import { ClassRepository } from "../class/classRepository";
 import { AttendanceRepository } from "../attendance/attendanceRepository";
-import type { 
-  SessionDto, 
-  CreateSessionInput, 
-  CreateSessionSeriesInput, 
-  UpdateSessionInput 
+import { ClassStudentRepository } from "../class-student/classStudentRepository";
+import type {
+  SessionDto,
+  CreateSessionInput,
+  CreateSessionSeriesInput,
+  UpdateSessionInput,
 } from "./sessionSchemas";
 import { AppError } from "../../errors";
 
 /**
  * Session business logic layer
- * 
+ *
  * Handles:
  * - Single session CRUD
- * - Session series creation (recurring sessions)  
+ * - Session series creation (recurring sessions)
  * - Business rule validation
  * - Teacher ownership scoping
  * - Conflict detection
@@ -24,20 +29,28 @@ export class SessionService {
   private sessionRepo: SessionRepository;
   private classRepo: ClassRepository;
   private attendanceRepo: AttendanceRepository;
+  private classStudentRepo: ClassStudentRepository;
 
   constructor(private deps: { db: D1Database }) {
     this.sessionRepo = new SessionRepository(deps);
     this.classRepo = new ClassRepository(deps);
     this.attendanceRepo = new AttendanceRepository(deps);
+    this.classStudentRepo = new ClassStudentRepository(deps);
   }
 
   /**
    * Create a single session
    */
-  async createSession(input: CreateSessionInput, teacherId: string): Promise<SessionDto> {
+  async createSession(
+    input: CreateSessionInput,
+    teacherId: string
+  ): Promise<SessionDto> {
     // Validate class ownership if provided
     if (input.classId) {
-      const classExists = await this.classRepo.getById(input.classId, teacherId);
+      const classExists = await this.classRepo.getById(
+        input.classId,
+        teacherId
+      );
       if (!classExists) {
         throw new AppError("CLASS_NOT_FOUND", "Class not found", 404);
       }
@@ -49,11 +62,15 @@ export class SessionService {
       teacherId,
       startTime: input.startTime,
       endTime,
-      classId: input.classId ?? undefined
+      classId: input.classId ?? undefined,
     });
 
     if (conflicts.length > 0) {
-      throw new AppError("SESSION_CONFLICT", "Time conflict with existing session", 409);
+      throw new AppError(
+        "SESSION_CONFLICT",
+        "Time conflict with existing session",
+        409
+      );
     }
 
     // Generate session ID
@@ -66,24 +83,36 @@ export class SessionService {
       teacherId,
       startTime: input.startTime,
       durationMin: input.durationMin,
-      status: 'scheduled',
+      status: "scheduled",
       notes: input.notes ?? null,
       feePerSession: input.feePerSession ?? null,
-      type: input.classId ? 'class' : 'ad_hoc',
-      seriesId: null
+      type: input.classId ? "class" : "ad_hoc",
+      seriesId: null,
     };
 
     const created = await this.sessionRepo.create(sessionRow);
+
+    // If this is a class session, create attendance records for all current students
+    if (input.classId) {
+      await this.createInitialAttendanceRecords(sessionId, input.classId);
+    }
+
     return this.mapToDto(created);
   }
 
   /**
    * Create a series of recurring sessions
    */
-  async createSessionSeries(input: CreateSessionSeriesInput, teacherId: string): Promise<SessionDto[]> {
+  async createSessionSeries(
+    input: CreateSessionSeriesInput,
+    teacherId: string
+  ): Promise<SessionDto[]> {
     // Validate class ownership if provided
     if (input.classId) {
-      const classExists = await this.classRepo.getById(input.classId, teacherId);
+      const classExists = await this.classRepo.getById(
+        input.classId,
+        teacherId
+      );
       if (!classExists) {
         throw new AppError("CLASS_NOT_FOUND", "Class not found", 404);
       }
@@ -94,11 +123,19 @@ export class SessionService {
 
     // Validate series size
     if (sessionDates.length > 50) {
-      throw new AppError("SERIES_TOO_LARGE", "Cannot create more than 50 sessions at once", 400);
+      throw new AppError(
+        "SERIES_TOO_LARGE",
+        "Cannot create more than 50 sessions at once",
+        400
+      );
     }
 
     if (sessionDates.length === 0) {
-      throw new AppError("VALIDATION_ERROR", "At least one session required", 400);
+      throw new AppError(
+        "VALIDATION_ERROR",
+        "At least one session required",
+        400
+      );
     }
 
     // Check all sessions for conflicts
@@ -108,11 +145,15 @@ export class SessionService {
         teacherId,
         startTime: sessionDate,
         endTime,
-        classId: input.classId ?? undefined
+        classId: input.classId ?? undefined,
       });
 
       if (conflicts.length > 0) {
-        throw new AppError("SESSION_CONFLICT", `Time conflict on ${sessionDate}`, 409);
+        throw new AppError(
+          "SESSION_CONFLICT",
+          `Time conflict on ${sessionDate}`,
+          409
+        );
       }
     }
 
@@ -120,55 +161,93 @@ export class SessionService {
     const seriesId = crypto.randomUUID();
 
     // Create session rows
-    const sessionRows: CreateSessionRow[] = sessionDates.map(startTime => ({
+    const sessionRows: CreateSessionRow[] = sessionDates.map((startTime) => ({
       id: crypto.randomUUID(),
       classId: input.classId ?? null,
       teacherId,
       startTime,
       durationMin: input.durationMin,
-      status: 'scheduled',
+      status: "scheduled",
       notes: input.notes ?? null,
       feePerSession: input.feePerSession ?? null,
-      type: input.classId ? 'class' : 'ad_hoc',
-      seriesId
+      type: input.classId ? "class" : "ad_hoc",
+      seriesId,
     }));
 
     const created = await this.sessionRepo.createMany(sessionRows);
-    return created.map(row => this.mapToDto(row));
+
+    // If this is a class session series, create attendance records for all sessions
+    if (input.classId) {
+      for (const session of created) {
+        await this.createInitialAttendanceRecords(session.id, input.classId);
+      }
+    }
+
+    return created.map((row) => this.mapToDto(row));
   }
 
   /**
    * List sessions by class
    */
-  async listByClass(classId: string, teacherId: string): Promise<SessionDto[]> {
+  async listByClass(
+    classId: string,
+    teacherId: string,
+    startTimeBegin?: string,
+    startTimeEnd?: string
+  ): Promise<SessionDto[]> {
     // Verify class ownership
     const classExists = await this.classRepo.getById(classId, teacherId);
     if (!classExists) {
       throw new AppError("CLASS_NOT_FOUND", "Class not found", 404);
     }
+    let statusExclude: string[] = [];
+    if (!!startTimeBegin && !!startTimeEnd) {
+      statusExclude.push(`canceled`);
+    }
 
-    const sessions = await this.sessionRepo.listByClass({ classId, teacherId });
-    return sessions.map(row => this.mapToDto(row));
+    const sessions = await this.sessionRepo.listByClass({
+      classId,
+      teacherId,
+      startTimeBegin,
+      startTimeEnd,
+      statusExclude
+    });
+    return sessions.map((row) => this.mapToDto(row));
   }
 
   /**
    * Get session by ID
    */
-  async getById(sessionId: string, teacherId: string): Promise<SessionDto | null> {
-    const session = await this.sessionRepo.getById({ id: sessionId, teacherId });
-    return session ? this.mapToDto(session) : null;
+  async getById(
+    sessionId: string,
+    teacherId: string
+  ): Promise<SessionDto | null> {
+    const session = await this.sessionRepo.getById({
+      id: sessionId,
+      teacherId,
+    });
+    if (!session) return null;
+    const dto = this.mapToDto(session);
+    if (session.classId) {
+      const cls = await this.classRepo.getById(session.classId, teacherId);
+      return { ...dto, className: cls?.name ?? null };
+    }
+    return dto;
   }
 
   /**
    * Update session
    */
   async updateSession(
-    sessionId: string, 
-    input: UpdateSessionInput, 
+    sessionId: string,
+    input: UpdateSessionInput,
     teacherId: string
   ): Promise<SessionDto | null> {
     // Check if session exists and is owned by teacher
-    const existing = await this.sessionRepo.getById({ id: sessionId, teacherId });
+    const existing = await this.sessionRepo.getById({
+      id: sessionId,
+      teacherId,
+    });
     if (!existing) {
       throw new AppError("SESSION_NOT_FOUND", "Session not found", 404);
     }
@@ -184,49 +263,168 @@ export class SessionService {
         startTime: newStartTime,
         endTime,
         classId: existing.classId ?? undefined,
-        excludeId: sessionId
+        excludeId: sessionId,
       });
 
       if (conflicts.length > 0) {
-        throw new AppError("SESSION_CONFLICT", "Time conflict with existing session", 409);
+        throw new AppError(
+          "SESSION_CONFLICT",
+          "Time conflict with existing session",
+          409
+        );
       }
     }
 
     const updated = await this.sessionRepo.update({
       id: sessionId,
       patch: input,
-      teacherId
+      teacherId,
     });
 
     return updated ? this.mapToDto(updated) : null;
   }
 
   /**
-   * Cancel session
+   * Mark session as completed
    */
-  async cancelSession(sessionId: string, teacherId: string): Promise<SessionDto | null> {
+  async completeSession(
+    sessionId: string,
+    teacherId: string
+  ): Promise<SessionDto | null> {
     // Check if session exists and is owned by teacher
-    const existing = await this.sessionRepo.getById({ id: sessionId, teacherId });
+    const existing = await this.sessionRepo.getById({
+      id: sessionId,
+      teacherId,
+    });
     if (!existing) {
       throw new AppError("SESSION_NOT_FOUND", "Session not found", 404);
     }
 
-    // Business rule: Cannot cancel if session already has attendance
-    const hasAttendance = await this.attendanceRepo.hasAttendanceForSession(sessionId);
-    if (hasAttendance) {
-      throw new AppError("SESSION_HAS_ATTENDANCE", "Cannot cancel session with attendance records", 400);
+    // Business rule: Can only complete scheduled sessions
+    if (existing.status === "canceled") {
+      throw new AppError(
+        "VALIDATION_ERROR",
+        "Cannot complete a canceled session",
+        400
+      );
+    }
+    if (existing.status === "completed") {
+      // Idempotent behaviour: return the existing session without changes
+      return this.mapToDto(existing);
+    }
+
+    const timestamp = this.formatVietnamTimestamp(new Date());
+    const noteLine = `Đã hoàn thành và lúc ${timestamp}`;
+    const newNotes = existing.notes
+      ? `${noteLine}\n${existing.notes}}`
+      : noteLine;
+
+    const updated = await this.sessionRepo.update({
+      id: sessionId,
+      patch: { status: "completed", notes: newNotes },
+      teacherId,
+    });
+
+    return updated ? this.mapToDto(updated) : null;
+  }
+
+  /**
+   * Unlock a completed session back to scheduled with a reason
+   */
+  async unlockSession(
+    sessionId: string,
+    reason: string,
+    teacherId: string
+  ): Promise<SessionDto | null> {
+    const existing = await this.sessionRepo.getById({
+      id: sessionId,
+      teacherId,
+    });
+    if (!existing) {
+      throw new AppError("SESSION_NOT_FOUND", "Session not found", 404);
+    }
+    if (existing.status === "canceled") {
+      throw new AppError(
+        "VALIDATION_ERROR",
+        "Cannot unlock a canceled session",
+        400
+      );
+    }
+    if (existing.status === "scheduled") {
+      // already unlocked
+      return this.mapToDto(existing);
+    }
+
+    const timestamp = this.formatVietnamTimestamp(new Date());
+    const noteLine = `Mở khoá điểm danh vào ${timestamp}: ${reason}`;
+    const newNotes = existing.notes
+      ? `${noteLine}\n${existing.notes}}`
+      : noteLine;
+
+    const updated = await this.sessionRepo.update({
+      id: sessionId,
+      patch: { status: "scheduled", notes: newNotes },
+      teacherId,
+    });
+
+    return updated ? this.mapToDto(updated) : null;
+  }
+
+  /** Format timestamp as HH:mm:ss dd/MM/yyyy in Vietnamese locale */
+  private formatVietnamTimestamp(d: Date): string {
+    // Build custom format to ensure exact pattern
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    const day = pad(d.getDate());
+    const month = pad(d.getMonth() + 1);
+    const year = d.getFullYear();
+    const hours = pad(d.getHours());
+    const minutes = pad(d.getMinutes());
+    const seconds = pad(d.getSeconds());
+    return `${hours}:${minutes}:${seconds} ${day}/${month}/${year}`;
+  }
+
+  /**
+   * Cancel session
+   */
+  async cancelSession(
+    sessionId: string,
+    teacherId: string
+  ): Promise<SessionDto | null> {
+    // Check if session exists and is owned by teacher
+    const existing = await this.sessionRepo.getById({
+      id: sessionId,
+      teacherId,
+    });
+    if (!existing) {
+      throw new AppError("SESSION_NOT_FOUND", "Session not found", 404);
+    }
+
+    // Business rule: Cannot cancel if session has any non-absent attendance
+    // Allow cancel when all attendance records (if any) are 'absent'
+    const hasNonAbsent =
+      await this.attendanceRepo.hasNonAbsentAttendanceForSession(sessionId);
+    if (hasNonAbsent) {
+      throw new AppError(
+        "SESSION_HAS_ATTENDANCE",
+        "Cannot cancel session with attendance records",
+        400
+      );
     }
 
     // Business rule: Can only cancel scheduled sessions
-    if (existing.status !== 'scheduled') {
-      throw new AppError("VALIDATION_ERROR", "Can only cancel scheduled sessions", 400);
+    if (existing.status !== "scheduled") {
+      throw new AppError(
+        "VALIDATION_ERROR",
+        "Can only cancel scheduled sessions",
+        400
+      );
     }
 
     // Update status to canceled
     const updated = await this.sessionRepo.update({
       id: sessionId,
-      patch: { status: 'canceled' },
-      teacherId
+      patch: { status: "canceled" },
+      teacherId,
     });
 
     return updated ? this.mapToDto(updated) : null;
@@ -237,20 +435,32 @@ export class SessionService {
    */
   async deleteSession(sessionId: string, teacherId: string): Promise<void> {
     // Check if session exists and is owned by teacher
-    const existing = await this.sessionRepo.getById({ id: sessionId, teacherId });
+    const existing = await this.sessionRepo.getById({
+      id: sessionId,
+      teacherId,
+    });
     if (!existing) {
       throw new AppError("SESSION_NOT_FOUND", "Session not found", 404);
     }
 
     // Business rule: Can only delete cancelled sessions
-    if (existing.status !== 'canceled') {
-      throw new AppError("SESSION_HAS_ATTENDANCE", "Can only delete canceled sessions", 400);
+    if (existing.status !== "canceled") {
+      throw new AppError(
+        "SESSION_HAS_ATTENDANCE",
+        "Can only delete canceled sessions",
+        400
+      );
     }
 
-    // Additional check: Cannot delete if has attendance records
-    const hasAttendance = await this.attendanceRepo.hasAttendanceForSession(sessionId);
-    if (hasAttendance) {
-      throw new AppError("SESSION_HAS_ATTENDANCE", "Cannot delete session with attendance records", 400);
+    // Additional check: Cannot delete if there are any non-absent attendance records
+    const hasNonAbsent =
+      await this.attendanceRepo.hasNonAbsentAttendanceForSession(sessionId);
+    if (hasNonAbsent) {
+      throw new AppError(
+        "SESSION_HAS_ATTENDANCE",
+        "Cannot delete session with attendance records",
+        400
+      );
     }
 
     await this.sessionRepo.delete({ id: sessionId, teacherId });
@@ -260,7 +470,7 @@ export class SessionService {
    * List upcoming sessions (for reminders/dashboard)
    */
   async listUpcoming(
-    teacherId: string, 
+    teacherId: string,
     options: { limit?: number; from?: string } = {}
   ): Promise<SessionDto[]> {
     const from = options.from ?? new Date().toISOString();
@@ -269,16 +479,18 @@ export class SessionService {
     const sessions = await this.sessionRepo.listUpcoming({
       teacherId,
       from,
-      limit
+      limit,
     });
 
-    return sessions.map(row => this.mapToDto(row));
+    return sessions.map((row) => this.mapToDto(row));
   }
 
   /**
    * Generate session dates from recurrence pattern
    */
-  private generateSessionDates(recurrence: CreateSessionSeriesInput['recurrence']): string[] {
+  private generateSessionDates(
+    recurrence: CreateSessionSeriesInput["recurrence"]
+  ): string[] {
     const dates: string[] = [];
     const startDate = new Date(recurrence.startDate);
     const endDate = recurrence.endDate ? new Date(recurrence.endDate) : null;
@@ -289,7 +501,11 @@ export class SessionService {
     let occurrenceCount = 0;
 
     // Iterate for up to 365 days or until we hit maxOccurrences
-    for (let dayOffset = 0; dayOffset < 365 && occurrenceCount < maxOccurrences; dayOffset++) {
+    for (
+      let dayOffset = 0;
+      dayOffset < 365 && occurrenceCount < maxOccurrences;
+      dayOffset++
+    ) {
       const checkDate = new Date(startDate);
       checkDate.setDate(startDate.getDate() + dayOffset);
 
@@ -305,7 +521,7 @@ export class SessionService {
       }
 
       // Check if this date is excluded
-      const dateString = checkDate.toISOString().split('T')[0];
+      const dateString = checkDate.toISOString().split("T")[0];
       if (exclusionDates.has(dateString)) {
         continue;
       }
@@ -324,8 +540,50 @@ export class SessionService {
    */
   private calculateEndTime(startTime: string, durationMin: number): string {
     const start = new Date(startTime);
-    const end = new Date(start.getTime() + (durationMin * 60 * 1000));
+    const end = new Date(start.getTime() + durationMin * 60 * 1000);
     return end.toISOString();
+  }
+
+  /**
+   * Create initial attendance records for all current students in a class
+   */
+  private async createInitialAttendanceRecords(
+    sessionId: string,
+    classId: string
+  ): Promise<void> {
+    try {
+      // Get all current students in the class (leftAt IS NULL)
+      const classStudents = await this.classStudentRepo.listByClass({
+        classId,
+      });
+      const currentStudents = classStudents.filter((cs) => cs.leftAt === null);
+
+      if (currentStudents.length === 0) {
+        return; // No students to create attendance for
+      }
+
+      // Create attendance records for all current students with default status 'absent'
+      const attendanceRecords = currentStudents.map((cs) => ({
+        id: crypto.randomUUID(),
+        sessionId,
+        studentId: cs.studentId,
+        status: "absent" as const, // Default status
+        note: null,
+        markedBy: null, // No one has marked it yet
+        feeOverride: null, // Use default fee calculation
+      }));
+
+      // Bulk insert attendance records
+      await this.attendanceRepo.bulkUpsert(attendanceRecords);
+    } catch (error) {
+      // Log error but don't fail session creation
+      console.error(
+        `Failed to create initial attendance records for session ${sessionId}:`,
+        error
+      );
+      // Could throw error if business requires attendance creation to be mandatory
+      // throw new AppError("ATTENDANCE_CREATION_FAILED", "Failed to create attendance records", 500);
+    }
   }
 
   /**
@@ -343,7 +601,7 @@ export class SessionService {
       feePerSession: row.feePerSession,
       type: row.type,
       seriesId: row.seriesId,
-      createdAt: row.createdAt
+      createdAt: row.createdAt,
     };
   }
 }

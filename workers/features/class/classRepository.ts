@@ -1,4 +1,5 @@
 import { selectAll, selectOne, execute } from "../../helpers/queryHelpers";
+import type { D1Database } from "@cloudflare/workers-types";
 
 export type ClassRepoDeps = { db: D1Database };
 
@@ -167,6 +168,52 @@ export class ClassRepository {
   async hasSessions(classId: string): Promise<boolean> {
     const sql = `SELECT 1 AS one FROM Session WHERE classId = ? LIMIT 1`;
     const row = await selectOne<{ one: number }>(this.deps.db, sql, [classId]);
+    return row != null;
+  }
+
+  /**
+   * Get unit price override for a student in a class (scoped by teacher ownership via Class.teacherId)
+   */
+  async getClassStudentUnitPriceOverride(
+    classId: string,
+    studentId: string,
+    teacherId: string
+  ): Promise<number | null> {
+    const sql = `
+      SELECT cs.unitPriceOverride AS unitPriceOverride
+      FROM ClassStudent cs
+      INNER JOIN Class c ON c.id = cs.classId
+      WHERE cs.classId = ? AND cs.studentId = ? AND c.teacherId = ?
+      LIMIT 1
+    `;
+    const row = await selectOne<{ unitPriceOverride: number | null }>(
+      this.deps.db,
+      sql,
+      [classId, studentId, teacherId]
+    );
+    return row ? row.unitPriceOverride : null;
+  }
+
+  /**
+   * Check if a student is a member of a class (scoped by teacher ownership via Class.teacherId)
+   */
+  async isStudentInClass(
+    classId: string,
+    studentId: string,
+    teacherId: string
+  ): Promise<boolean> {
+    const sql = `
+      SELECT 1 AS one
+      FROM ClassStudent cs
+      INNER JOIN Class c ON c.id = cs.classId
+      WHERE cs.classId = ? AND cs.studentId = ? AND c.teacherId = ?
+      LIMIT 1
+    `;
+    const row = await selectOne<{ one: number }>(this.deps.db, sql, [
+      classId,
+      studentId,
+      teacherId,
+    ]);
     return row != null;
   }
 }

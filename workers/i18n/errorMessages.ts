@@ -27,7 +27,15 @@ export const viMessages: Record<ErrorCode, string> = {
   SESSION_CONFLICT: "Buổi học trùng lịch với một buổi đã tồn tại",
   SESSION_HAS_ATTENDANCE: "Không thể xoá buổi vì đã có điểm danh/attendance",
   SERIES_TOO_LARGE: "Yêu cầu tạo chuỗi buổi quá lớn, vui lòng thu hẹp khoảng thời gian hoặc giảm số lượng",
-  CLASS_NOT_FOUND: "Không tìm thấy lớp học"
+  CLASS_NOT_FOUND: "Không tìm thấy lớp học",
+  STUDENT_NOT_FOUND: "Không tìm thấy học sinh",
+  // Attendance-specific error messages
+  ATTENDANCE_ALREADY_EXISTS: "Điểm danh cho học sinh này đã tồn tại",
+  ATTENDANCE_NOT_FOUND: "Không tìm thấy bản ghi điểm danh",
+  ATTENDANCE_SESSION_COMPLETED: "Không thể sửa điểm danh cho buổi học đã hoàn thành",
+  ATTENDANCE_STUDENT_NOT_IN_CLASS: "Học sinh không thuộc lớp học này",
+  ATTENDANCE_UPDATE_FAILED: "Cập nhật điểm danh thất bại",
+  ATTENDANCE_DELETE_FAILED: "Xóa điểm danh thất bại"
 };
 
 export function t(code: ErrorCode, fallback?: string): string {

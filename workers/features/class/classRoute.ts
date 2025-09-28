@@ -143,7 +143,15 @@ export function createClassRouter() {
       const classId = c.req.param("classId");
       const { SessionService } = await import("../session/sessionService");
       const svc = new SessionService({ db: c.env.DB });
-      const result = await svc.listByClass(classId, teacherId);
+      // Optional time filters
+      const startTimeBegin = c.req.query('startTimeBegin') || undefined;
+      const startTimeEnd = c.req.query('startTimeEnd') || undefined;
+      const result = await svc.listByClass(
+        classId,
+        teacherId,
+        startTimeBegin,
+        startTimeEnd
+      );
       return c.json(result, 200 as 200);
     } catch (err) {
       const e = toAppError(err, { code: "UNKNOWN" });

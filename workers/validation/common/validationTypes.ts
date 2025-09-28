@@ -48,7 +48,19 @@ export type ValidationCode =
   | "MAX_OCCURRENCES_INVALID"
   | "MAX_OCCURRENCES_TOO_SMALL"
   | "TIMEZONE_INVALID"
-  | "EXCLUSION_DATE_INVALID";
+  | "EXCLUSION_DATE_INVALID"
+  // Attendance-specific
+  | "ATTENDANCE_STATUS_INVALID"
+  | "SESSION_ID_REQUIRED"
+  | "NOTE_INVALID"
+  | "NOTE_TOO_LONG"
+  | "FEE_OVERRIDE_INVALID"
+  | "FEE_OVERRIDE_NEGATIVE"
+  | "ATTENDANCE_RECORDS_REQUIRED"
+  | "CLASS_ID_INVALID"
+  | "FROM_DATE_INVALID"
+  | "TO_DATE_INVALID"
+  | "STUDENT_ID_INVALID";
 
 export type ValidationField =
   | "body"
@@ -87,7 +99,14 @@ export type ValidationField =
   | "recurrence.endDate"
   | "recurrence.maxOccurrences"
   | "recurrence.timezone"
-  | "recurrence.exclusionDates";
+  | "recurrence.exclusionDates"
+  // Attendance-specific
+  | "sessionId"
+  | "attendanceRecords"
+  | "feeOverride"
+  | "classId"
+  | "fromDate"
+  | "toDate";
 
 export type ValidationErrorDetail = {
   field: ValidationField;

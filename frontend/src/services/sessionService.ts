@@ -13,6 +13,7 @@ export interface SessionDto {
   type: 'class' | 'ad_hoc';
   seriesId: string | null;
   createdAt: string;
+  className?: string | null;
 }
 
 export interface CreateSessionRequest {
@@ -53,8 +54,22 @@ export class SessionService {
   /**
    * List sessions for a specific class
    */
-  static async listSessions(classId: string): Promise<SessionDto[]> {
-    const response = await apiClient.get(`/api/classes/${classId}/sessions`);
+  static async listSessions(
+    classId: string,
+    options?: { startTimeBegin?: string; startTimeEnd?: string }
+  ): Promise<SessionDto[]> {
+    const params = new URLSearchParams();
+    if (options?.startTimeBegin) {
+      params.append('startTimeBegin', options.startTimeBegin);
+    }
+    if (options?.startTimeEnd) {
+      params.append('startTimeEnd', options.startTimeEnd);
+    }
+    const queryString = params.toString();
+    const url = queryString
+      ? `/api/classes/${classId}/sessions?${queryString}`
+      : `/api/classes/${classId}/sessions`;
+    const response = await apiClient.get(url);
     return response.data;
   }
 
@@ -95,6 +110,22 @@ export class SessionService {
    */
   static async cancelSession(id: string): Promise<SessionDto> {
     const response = await apiClient.patch(`${this.baseUrl}/${id}/cancel`);
+    return response.data;
+  }
+
+  /**
+   * Mark a session as completed
+   */
+  static async completeSession(id: string): Promise<SessionDto> {
+    const response = await apiClient.patch(`${this.baseUrl}/${id}/complete`);
+    return response.data;
+  }
+
+  /**
+   * Unlock a completed session back to scheduled with a reason
+   */
+  static async unlockSession(id: string, reason: string): Promise<SessionDto> {
+    const response = await apiClient.patch(`${this.baseUrl}/${id}/unlock`, { reason });
     return response.data;
   }
 

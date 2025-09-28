@@ -15,6 +15,7 @@ import Students from "./routes/dashboard/student/Students";
 import StudentNew from "./routes/dashboard/student/StudentNew";
 import StudentEdit from "./routes/dashboard/student/StudentEdit";
 import ClassRemark from "./routes/dashboard/ClassRemark";
+import AttendancePage from "./routes/dashboard/attendance/AttendancePage";
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const token = getToken();
@@ -49,6 +50,8 @@ export default function App() {
             <Route path="students/new" element={<StudentNew />} />
             <Route path="students/:id/edit" element={<StudentEdit />} />
             <Route path="class-remark" element={<ClassRemark />} />
+            {/* attendance */}
+            <Route path="attendance/:sessionId" element={<AttendancePage />} />
             <Route path="tuition" element={<DashboardTuition />} />
             <Route path="settings" element={<DashboardSettings />} />
           </Route>

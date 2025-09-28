@@ -5,7 +5,6 @@ export function withCORS<Env = unknown>(
     const origin = req.headers.get("Origin") || "";
     const isPreflight = req.method === "OPTIONS";
 
-    // TODO: Replace this with a strict allowlist for production if desired.
     // Example: const allowOrigin = origin && ALLOWLIST.includes(origin) ? origin : "";
     const allowOrigin = origin || ""; // echo request origin if present
 
