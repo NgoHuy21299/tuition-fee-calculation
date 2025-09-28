@@ -19,6 +19,7 @@ export interface SessionDto {
 export interface CreateSessionRequest {
   classId?: string | null;
   startTime: string;
+  durationMin: number;
   feePerSession?: number | null;
   notes?: string | null;
   status?: 'scheduled' | 'completed' | 'canceled';
