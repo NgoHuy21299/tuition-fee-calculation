@@ -77,10 +77,19 @@ export function SessionsTab({ classId, defaultFeePerSession }: SessionsTabProps)
       lastWeekEnd.setDate(thisWeek.start.getDate() - 1);
       const lastWeek = getWeekRange(lastWeekEnd);
 
-      const sessions = await SessionService.listSessions(classId);
+      // Fetch sessions in last week via API with time filters (UTC)
+      // Calculate UTC bounds for last week
+      const beginLocal = new Date(lastWeek.start);
+      beginLocal.setHours(0, 0, 0, 0);
+      const endLocal = new Date(lastWeek.end);
+      // Convert local start/end to UTC ISO strings
+      const startTimeBegin = beginLocal.toISOString();
+      const startTimeEnd = endLocal.toISOString();
+      const sessions = await SessionService.listSessions(classId, { startTimeBegin, startTimeEnd });
+      // Filter out any canceled sessions just in case
       const lastWeekSessions = sessions.filter((s) => {
         const d = new Date(s.startTime);
-        return d >= lastWeek.start && d <= lastWeek.end && s.status !== 'canceled';
+        return d >= lastWeek.start && d <= lastWeek.end;
       });
 
       if (lastWeekSessions.length === 0) {

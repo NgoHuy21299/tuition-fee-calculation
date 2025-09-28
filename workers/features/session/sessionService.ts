@@ -189,14 +189,29 @@ export class SessionService {
   /**
    * List sessions by class
    */
-  async listByClass(classId: string, teacherId: string): Promise<SessionDto[]> {
+  async listByClass(
+    classId: string,
+    teacherId: string,
+    startTimeBegin?: string,
+    startTimeEnd?: string
+  ): Promise<SessionDto[]> {
     // Verify class ownership
     const classExists = await this.classRepo.getById(classId, teacherId);
     if (!classExists) {
       throw new AppError("CLASS_NOT_FOUND", "Class not found", 404);
     }
+    let statusExclude: string[] = [];
+    if (!!startTimeBegin && !!startTimeEnd) {
+      statusExclude.push(`canceled`);
+    }
 
-    const sessions = await this.sessionRepo.listByClass({ classId, teacherId });
+    const sessions = await this.sessionRepo.listByClass({
+      classId,
+      teacherId,
+      startTimeBegin,
+      startTimeEnd,
+      statusExclude
+    });
     return sessions.map((row) => this.mapToDto(row));
   }
 

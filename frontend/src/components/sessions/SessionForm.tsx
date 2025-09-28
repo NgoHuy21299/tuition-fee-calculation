@@ -17,6 +17,7 @@ import {
   type SessionDto,
 } from '../../services/sessionService';
 import { formatDateTimeLocal, parseDateTimeLocal, getCurrentDateTimeLocal, getPresetTime1, getPresetTime2 } from '../../utils/dateHelpers';
+import { DateTimePicker } from '../ui/datetime-picker';
 
 interface SessionFormProps {
   open: boolean;
@@ -51,6 +52,7 @@ export function SessionForm({
     reset,
     formState: { errors },
     setValue,
+    watch,
   } = useForm<FormData>({
     defaultValues: {
       startTime: getCurrentDateTimeLocal(),
@@ -148,45 +150,36 @@ export function SessionForm({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {/* Start Time */}
           <div className="space-y-2">
-            <Label htmlFor="startTime">Ngày và giờ bắt đầu *</Label>
-            <div className="space-y-3">
-              <div className="relative">
-                <Input
-                  id="startTime"
-                  type="datetime-local"
-                  className="pr-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:w-4 [&::-webkit-calendar-picker-indicator]:h-4 [&::-webkit-calendar-picker-indicator]:bg-gray-500 [&::-webkit-calendar-picker-indicator]:hover:bg-gray-700"
-                  {...register('startTime', { 
-                    required: 'Vui lòng chọn ngày và giờ bắt đầu' 
-                  })}
-                />
+            <DateTimePicker
+              label="Ngày và giờ bắt đầu"
+              required
+              value={watch('startTime')}
+              onChange={(val) => setValue('startTime', val)}
+              error={errors.startTime?.message}
+              disabled={isSubmitting}
+            />
+            {/* Preset buttons - only show in create mode */}
+            {!editingSession && (
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePresetTime('ca1')}
+                  className="text-xs"
+                >
+                  🕐 Ca 1 (16:45 - 90p)
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePresetTime('ca2')}
+                  className="text-xs"
+                >
+                  🕕 Ca 2 (18:30 - 90p)
+                </Button>
               </div>
-              
-              {/* Preset buttons - only show in create mode */}
-              {!editingSession && (
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePresetTime('ca1')}
-                    className="text-xs"
-                  >
-                    🕐 Ca 1 (16:45 - 90p)
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handlePresetTime('ca2')}
-                    className="text-xs"
-                  >
-                    🕕 Ca 2 (18:30 - 90p)
-                  </Button>
-                </div>
-              )}
-            </div>
-            {errors.startTime && (
-              <p className="text-sm text-destructive">{errors.startTime.message}</p>
             )}
           </div>
 
