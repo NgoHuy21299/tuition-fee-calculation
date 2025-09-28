@@ -99,6 +99,14 @@ export class SessionService {
   }
 
   /**
+   * Mark a session as completed
+   */
+  static async completeSession(id: string): Promise<SessionDto> {
+    const response = await apiClient.patch(`${this.baseUrl}/${id}/complete`);
+    return response.data;
+  }
+
+  /**
    * Delete a session
    */
   static async deleteSession(id: string): Promise<void> {

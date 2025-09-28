@@ -225,6 +225,34 @@ export class SessionService {
   }
 
   /**
+   * Mark session as completed
+   */
+  async completeSession(sessionId: string, teacherId: string): Promise<SessionDto | null> {
+    // Check if session exists and is owned by teacher
+    const existing = await this.sessionRepo.getById({ id: sessionId, teacherId });
+    if (!existing) {
+      throw new AppError("SESSION_NOT_FOUND", "Session not found", 404);
+    }
+
+    // Business rule: Can only complete scheduled sessions
+    if (existing.status === 'canceled') {
+      throw new AppError("VALIDATION_ERROR", "Cannot complete a canceled session", 400);
+    }
+    if (existing.status === 'completed') {
+      // Idempotent behaviour: return the existing session without changes
+      return this.mapToDto(existing);
+    }
+
+    const updated = await this.sessionRepo.update({
+      id: sessionId,
+      patch: { status: 'completed' },
+      teacherId
+    });
+
+    return updated ? this.mapToDto(updated) : null;
+  }
+
+  /**
    * Cancel session
    */
   async cancelSession(sessionId: string, teacherId: string): Promise<SessionDto | null> {

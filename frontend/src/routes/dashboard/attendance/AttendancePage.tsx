@@ -160,6 +160,17 @@ export default function AttendancePage() {
           onRefresh={loadData}
           isLoading={isLoading}
           isSaving={isSaving}
+          onComplete={async () => {
+            if (!sessionId) return;
+            try {
+              await SessionService.completeSession(sessionId);
+              // After successful completion, navigate back similar to back button
+              handleBack();
+            } catch (err) {
+              console.error('Failed to complete session:', err);
+              setError('Không thể đánh dấu hoàn thành buổi học. Vui lòng thử lại.');
+            }
+          }}
         />
       )}
     </div>

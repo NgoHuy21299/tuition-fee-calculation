@@ -25,25 +25,6 @@ export function createSessionRouter() {
             const teacherId = getTeacherId(c);
             const service = new SessionService({ db: c.env.DB });
             const result = await service.createSession(sessionData, teacherId);
-
-            return c.json(result, 201 as 201);
-        } catch (err) {
-            const e = toAppError(err, { code: "UNKNOWN" });
-            return c.json({ error: e.message }, e.status as any);
-        }
-    });
-
-    /**
-     * Create a series of recurring sessions
-     * POST /api/sessions/series
-     */
-    router.post('/series', validateBody(CreateSessionSeriesSchema), async (c: Context) => {
-        try {
-            const seriesData = getValidatedData<InferOutput<typeof CreateSessionSeriesSchema>>(c);
-            const teacherId = getTeacherId(c);
-            const service = new SessionService({ db: c.env.DB });
-            const result = await service.createSessionSeries(seriesData, teacherId);
-
             return c.json(result, 201 as 201);
         } catch (err) {
             const e = toAppError(err, { code: "UNKNOWN" });
@@ -74,8 +55,6 @@ export function createSessionRouter() {
         }
     });
 
-
-
     /**
      * List upcoming sessions (for dashboard/reminders)
      * GET /api/sessions/upcoming
@@ -94,6 +73,46 @@ export function createSessionRouter() {
             });
 
             return c.json(result, 200 as 200);
+        } catch (err) {
+            const e = toAppError(err, { code: "UNKNOWN" });
+            return c.json({ error: e.message }, e.status as any);
+        }
+    });
+
+    /**
+     * Complete a session
+     * PATCH /api/sessions/:id/complete
+     */
+    router.patch('/:id/complete', async (c: Context) => {
+        try {
+            const sessionId = c.req.param('id');
+            const teacherId = getTeacherId(c);
+
+            const service = new SessionService({ db: c.env.DB });
+            const result = await service.completeSession(sessionId, teacherId);
+
+            if (!result) {
+                return c.json({ error: 'Session not found' }, 404);
+            }
+
+            return c.json(result, 200 as 200);
+        } catch (err) {
+            const e = toAppError(err, { code: "UNKNOWN" });
+            return c.json({ error: e.message }, e.status as any);
+        }
+    });
+
+    /**
+     * Create a series of recurring sessions
+     * POST /api/sessions/series
+     */
+    router.post('/series', validateBody(CreateSessionSeriesSchema), async (c: Context) => {
+        try {
+            const seriesData = getValidatedData<InferOutput<typeof CreateSessionSeriesSchema>>(c);
+            const teacherId = getTeacherId(c);
+            const service = new SessionService({ db: c.env.DB });
+            const result = await service.createSessionSeries(seriesData, teacherId);
+            return c.json(result, 201 as 201);
         } catch (err) {
             const e = toAppError(err, { code: "UNKNOWN" });
             return c.json({ error: e.message }, e.status as any);

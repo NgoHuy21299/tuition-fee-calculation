@@ -26,6 +26,7 @@ interface AttendanceFormProps {
   onRefresh: () => void;
   isLoading?: boolean;
   isSaving?: boolean;
+  onComplete?: () => Promise<void>;
 }
 
 interface AttendanceChanges {
@@ -42,11 +43,13 @@ export function AttendanceForm({
   onSave,
   onRefresh,
   isLoading = false,
-  isSaving = false
+  isSaving = false,
+  onComplete,
 }: AttendanceFormProps) {
   const [changes, setChanges] = useState<AttendanceChanges>({});
   const [isEditing, setIsEditing] = useState(false);
   const [saveResult, setSaveResult] = useState<BulkAttendanceResult | null>(null);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   // Calculate statistics
   const stats = {
@@ -138,6 +141,22 @@ export function AttendanceForm({
     setSaveResult(null);
   };
 
+  const handleComplete = async () => {
+    if (!onComplete) return;
+    if (hasChanges) {
+      const proceed = window.confirm('Bạn có thay đổi chưa lưu. Hoàn thành buổi học sẽ không lưu các thay đổi này. Tiếp tục?');
+      if (!proceed) return;
+    }
+    setIsCompleting(true);
+    try {
+      await onComplete();
+    } catch (err) {
+      console.error('Complete session failed', err);
+    } finally {
+      setIsCompleting(false);
+    }
+  };
+
   // Create merged attendance list with changes
   const mergedAttendanceList: AttendanceDto[] = attendanceList.map(attendance => ({
     ...attendance,
@@ -175,6 +194,20 @@ export function AttendanceForm({
                 <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
                 Làm mới
               </Button>
+
+              {/* Complete session button: show only when session is scheduled */}
+              {session.status === 'scheduled' && (
+                <Button
+                  size="sm"
+                  variant="success"
+                  onClick={handleComplete}
+                  disabled={isCompleting}
+                  title="Đánh dấu buổi học đã hoàn thành"
+                >
+                  <CheckCircle className={`h-4 w-4 mr-1 ${isCompleting ? 'animate-spin' : ''}`} />
+                  {isCompleting ? 'Đang hoàn thành...' : 'Hoàn thành buổi học'}
+                </Button>
+              )}
               
               {!isEditing ? (
                 <Button
