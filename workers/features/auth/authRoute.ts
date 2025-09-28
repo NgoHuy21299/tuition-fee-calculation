@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { COOKIE_MAX_AGE } from "../../constants";
 import { toAppError } from "../../errors";
 import { t } from "../../i18n/errorMessages";
+import { ServerEmailValidator } from "../../helpers/serverEmailValidator";
 import { signJWT, type JwtPayload } from "./jwtService";
 import { validateBody, getValidatedData } from "../../middleware/validationMiddleware";
 import { LoginSchema, ChangePasswordSchema, RegisterSchema } from "./authSchemas";
@@ -14,6 +15,20 @@ export function createAuthRouter() {
   router.post("/login", validateBody(LoginSchema), async (c) => {
     const parsed = getValidatedData<InferOutput<typeof LoginSchema>>(c);
     const { email, password } = parsed;
+    
+    // Validate email against allowed hashes
+    try {
+      await ServerEmailValidator.validateEmailOrThrow(email, c.env);
+    } catch (error) {
+      return c.json(
+        {
+          error: t("EMAIL_NOT_ALLOWED"),
+          code: "EMAIL_NOT_ALLOWED",
+        },
+        403 as 403
+      );
+    }
+    
     const auth = new AuthService({ db: c.env.DB });
     const user = await auth.verifyCredentials(email, password);
     if (!user) {
@@ -77,6 +92,20 @@ export function createAuthRouter() {
   router.post("/register", validateBody(RegisterSchema), async (c) => {
     const parsed = getValidatedData<InferOutput<typeof RegisterSchema>>(c);
     const { email, password, name } = parsed;
+    
+    // Validate email against allowed hashes
+    try {
+      await ServerEmailValidator.validateEmailOrThrow(email, c.env);
+    } catch (error) {
+      return c.json(
+        {
+          error: t("EMAIL_NOT_ALLOWED"),
+          code: "EMAIL_NOT_ALLOWED",
+        },
+        403 as 403
+      );
+    }
+    
     const auth = new AuthService({ db: c.env.DB });
     try {
       const created = await auth.createUser({ email, password, name });

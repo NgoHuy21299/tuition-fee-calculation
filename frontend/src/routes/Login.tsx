@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { setToken } from "../utils/auth";
+import { EmailValidator } from "../utils/emailValidation";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -9,6 +10,7 @@ import { useEffect, useRef } from "react";
 import { useToast } from "../components/commons/Toast";
 import { Card } from "../components/ui/card";
 import { authService } from "../services/authService";
+import EmailValidationError from "../components/commons/EmailValidationError";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -52,6 +54,8 @@ export default function Login() {
     setLoading(true);
     setError(null);
     try {
+      await EmailValidator.validateEmailOrThrow(email);
+
       const data = await authService.login({ email, password });
       if (data?.token) {
         setToken(data.token);
@@ -85,7 +89,7 @@ export default function Login() {
           </p>
         </div>
 
-        {error && <div className="mb-4 text-sm text-red-400">{error}</div>}
+        <EmailValidationError error={error} email={email} />
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">

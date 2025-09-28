@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { setToken } from "../utils/auth";
+import { EmailValidator } from "../utils/emailValidation";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -8,6 +9,7 @@ import LoadingSpinner from "../components/commons/LoadingSpinner";
 import { useToast } from "../components/commons/Toast";
 import { Card } from "../components/ui/card";
 import { authService } from "../services/authService";
+import EmailValidationError from "../components/commons/EmailValidationError";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -23,6 +25,8 @@ export default function Register() {
     setLoading(true);
     setError(null);
     try {
+      await EmailValidator.validateEmailOrThrow(email);
+
       const data = await authService.register({ email, password, name });
       if (data?.token) {
         setToken(data.token);
@@ -58,7 +62,7 @@ export default function Register() {
           <p className="text-sm text-gray-400 mt-1">Tạo tài khoản để bắt đầu</p>
         </div>
 
-        {error && <div className="mb-4 text-sm text-red-400">{error}</div>}
+        <EmailValidationError error={error} email={email} />
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">

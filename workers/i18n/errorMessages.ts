@@ -10,6 +10,7 @@ export const viMessages: Record<ErrorCode, string> = {
   AUTH_INVALID_OLD_PASSWORD: "Mật khẩu cũ không đúng",
   AUTH_EMAIL_EXISTS: "Email đã được đăng ký",
   AUTH_REGISTER_FAILED: "Đăng ký thất bại",
+  EMAIL_NOT_ALLOWED: "Email này không được phép đăng nhập/đăng ký vào hệ thống",
   SERVER_MISCONFIGURED: "Máy chủ cấu hình sai: JWT_SECRET thiếu",
   RESOURCE_NOT_FOUND: "Không tìm thấy tài nguyên",
   UNKNOWN: "Đã xảy ra lỗi",

@@ -9,6 +9,7 @@ export type ErrorCode =
   | "AUTH_INVALID_OLD_PASSWORD"
   | "AUTH_EMAIL_EXISTS"
   | "AUTH_REGISTER_FAILED"
+  | "EMAIL_NOT_ALLOWED"
   // Server errors
   | "SERVER_MISCONFIGURED"
   | "RESOURCE_NOT_FOUND"
