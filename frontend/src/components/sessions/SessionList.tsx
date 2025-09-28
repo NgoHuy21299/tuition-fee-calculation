@@ -296,9 +296,10 @@ export function SessionList({
                   </TableCell>
                   <TableCell className="max-w-xs">
                     <div className="truncate" title={session.notes || ""}>
-                      {session.notes || (
-                        <span className="text-gray-400">—</span>
-                      )}
+                      {session.notes
+                        ? (session.notes.split('\n')[0] || '').trim()
+                        : <span className="text-gray-400">—</span>
+                      }
                     </div>
                   </TableCell>
                   <TableCell>

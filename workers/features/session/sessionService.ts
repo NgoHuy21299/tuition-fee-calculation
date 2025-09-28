@@ -437,11 +437,10 @@ export class SessionService {
       );
     }
 
-    // Additional check: Cannot delete if has attendance records
-    const hasAttendance = await this.attendanceRepo.hasAttendanceForSession(
-      sessionId
-    );
-    if (hasAttendance) {
+    // Additional check: Cannot delete if there are any non-absent attendance records
+    const hasNonAbsent =
+      await this.attendanceRepo.hasNonAbsentAttendanceForSession(sessionId);
+    if (hasNonAbsent) {
       throw new AppError(
         "SESSION_HAS_ATTENDANCE",
         "Cannot delete session with attendance records",

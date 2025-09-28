@@ -19,6 +19,7 @@ import type {
   BulkAttendanceResult 
 } from '../../services/attendanceService';
 import type { SessionDto } from '../../services/sessionService';
+import { useToast } from '../commons/Toast';
 
 interface AttendanceFormProps {
   session: SessionDto;
@@ -54,6 +55,7 @@ export function AttendanceForm({
   const [saveResult, setSaveResult] = useState<BulkAttendanceResult | null>(null);
   const [isCompleting, setIsCompleting] = useState(false);
   const [isUnlocking, setIsUnlocking] = useState(false);
+  const { toast } = useToast();
 
   // Calculate statistics
   const stats = {
@@ -91,6 +93,13 @@ export function AttendanceForm({
   // Removed effective fee helper
 
   const handleStatusChange = (studentId: string, status: 'present' | 'absent' | 'late') => {
+    // Avoid redundant updates and toasts if status hasn't effectively changed
+    const original = attendanceList.find(a => a.studentId === studentId)?.status ?? 'absent';
+    const currentEffective = getEffectiveStatus(studentId, original as AttendanceDto['status']);
+    if (currentEffective === status) {
+      return;
+    }
+
     setChanges(prev => ({
       ...prev,
       [studentId]: {
@@ -98,6 +107,16 @@ export function AttendanceForm({
         status
       }
     }));
+
+    const student = attendanceList.find(a => a.studentId === studentId);
+    const statusLabel = status === 'present' ? 'Có mặt' : status === 'absent' ? 'Vắng mặt' : 'Muộn';
+    // Show a lightweight toast indicating the local change (not yet saved)
+    toast({
+      variant: 'success',
+      title: 'Đã chọn trạng thái',
+      description: `${student?.studentName ?? 'Học sinh'} → ${statusLabel} (chưa lưu)`,
+      duration: 2000,
+    });
   };
 
   const handleNoteChange = (studentId: string, note: string) => {
