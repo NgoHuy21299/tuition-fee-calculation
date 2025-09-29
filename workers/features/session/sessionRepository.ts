@@ -326,9 +326,13 @@ export class SessionRepository {
    */
   async listByTeacher({ 
     teacherId, 
+    startTimeBegin,
+    startTimeEnd,
     statusExclude 
   }: { 
     teacherId: string; 
+    startTimeBegin?: string;
+    startTimeEnd?: string;
     statusExclude?: string[]; 
   }): Promise<(SessionRow & { className: string | null })[]> {
     let query = `
@@ -347,6 +351,16 @@ export class SessionRepository {
       const placeholders = statusExclude.map(() => '?').join(', ');
       query += ` AND s.status NOT IN (${placeholders})`;
       params.push(...statusExclude);
+    }
+
+    // Add time filtering
+    if (startTimeBegin) {
+      query += ` AND s.startTime >= ?`;
+      params.push(startTimeBegin);
+    }
+    if (startTimeEnd) {
+      query += ` AND s.startTime <= ?`;
+      params.push(startTimeEnd);
     }
 
     query += ` ORDER BY s.startTime DESC, s.createdAt DESC`;

@@ -386,7 +386,12 @@ export function TeacherSessionList({
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => navigate(`/dashboard/classes/${session.classId}/attendance/${session.id}`)}
+                          onClick={() => navigate(`/dashboard/attendance/${session.id}`, {
+                            state: {
+                              backTo: `/dashboard/sessions`,
+                              backTab: "sessions",
+                            },
+                          })}
                           title="Điểm danh"
                         >
                           <UserCheck className="h-4 w-4" />
@@ -442,15 +447,7 @@ export function TeacherSessionList({
                               Xóa buổi học
                             </DropdownMenuItem>
                           )}
-                          {/* Navigate to attendance if class session (duplicate in menu for discoverability) */}
-                          {session.classId && session.status !== "canceled" && (
-                            <DropdownMenuItem
-                              onClick={() => navigate(`/dashboard/classes/${session.classId}/attendance/${session.id}`)}
-                            >
-                              <UserCheck className="h-4 w-4 mr-2" />
-                              Điểm danh
-                            </DropdownMenuItem>
-                          )}
+
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>

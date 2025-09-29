@@ -23,8 +23,11 @@ export function createSessionRouter() {
     router.get('/', async (c: Context) => {
         try {
             const teacherId = getTeacherId(c);
+            const startTimeBegin = c.req.query('startTimeBegin');
+            const startTimeEnd = c.req.query('startTimeEnd');
+            
             const service = new SessionService({ db: c.env.DB });
-            const result = await service.listByTeacher(teacherId);
+            const result = await service.listByTeacher(teacherId, startTimeBegin, startTimeEnd);
             return c.json(result, 200 as 200);
         } catch (err) {
             const e = toAppError(err, { code: "UNKNOWN" });

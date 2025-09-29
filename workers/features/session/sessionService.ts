@@ -489,10 +489,20 @@ export class SessionService {
    * List all sessions for a teacher (for the teacher's session management page)
    */
   async listByTeacher(
-    teacherId: string
+    teacherId: string,
+    startTimeBegin?: string,
+    startTimeEnd?: string
   ): Promise<SessionDto[]> {
+    let statusExclude: string[] = [];
+    if (!!startTimeBegin && !!startTimeEnd) {
+      statusExclude.push('canceled');
+    }
+
     const sessions = await this.sessionRepo.listByTeacher({
       teacherId,
+      startTimeBegin,
+      startTimeEnd,
+      statusExclude,
     });
 
     return sessions.map((row) => this.mapToDtoWithClassName(row));

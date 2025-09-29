@@ -54,8 +54,18 @@ export class SessionService {
   /**
    * List all sessions for the current teacher (for teacher's session management page)
    */
-  static async getAllSessions(): Promise<SessionDto[]> {
-    const response = await apiClient.get(this.baseUrl);
+  static async getAllSessions(options?: { startTimeBegin?: string; startTimeEnd?: string }): Promise<SessionDto[]> {
+    const params = new URLSearchParams();
+    if (options?.startTimeBegin) {
+      params.append('startTimeBegin', options.startTimeBegin);
+    }
+    if (options?.startTimeEnd) {
+      params.append('startTimeEnd', options.startTimeEnd);
+    }
+    const queryString = params.toString();
+    const url = queryString ? `${this.baseUrl}?${queryString}` : this.baseUrl;
+    
+    const response = await apiClient.get(url);
     return response.data;
   }
 
