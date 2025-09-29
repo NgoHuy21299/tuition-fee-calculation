@@ -17,6 +17,22 @@ export function createSessionRouter() {
     const router = new Hono<{ Bindings: Env; Variables: { user: JwtPayload; teacherId: string } }>();
 
     /**
+     * List all sessions for the teacher (for teacher's session management page)
+     * GET /api/sessions
+     */
+    router.get('/', async (c: Context) => {
+        try {
+            const teacherId = getTeacherId(c);
+            const service = new SessionService({ db: c.env.DB });
+            const result = await service.listByTeacher(teacherId);
+            return c.json(result, 200 as 200);
+        } catch (err) {
+            const e = toAppError(err, { code: "UNKNOWN" });
+            return c.json({ error: e.message }, e.status as any);
+        }
+    });
+
+    /**
      * Create a single session
      * POST /api/sessions
      */

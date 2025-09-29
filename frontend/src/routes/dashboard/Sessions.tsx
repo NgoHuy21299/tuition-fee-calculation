@@ -1,27 +1,61 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { SessionService, type SessionDto } from '../../services/sessionService';
-import LoadingSpinner from '../../components/commons/LoadingSpinner';
+import { useState } from 'react';
+import { TeacherSessionList, CreateSessionDialog } from '../../components/sessions';
+import type { SessionDto } from '../../services/sessionService';
 
 export default function SessionsPage() {
-  const [sessions, setSessions] = useState<SessionDto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<"single" | "series">("single");
+  const [editingSession, setEditingSession] = useState<SessionDto | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-  }, []);
+  const handleCreateSession = () => {
+    setDialogMode("single");
+    setEditingSession(null);
+    setDialogOpen(true);
+  };
 
-  if (loading) {
-    return (
-      <div className="container mx-auto p-6 flex justify-center">
-        <LoadingSpinner size={32} padding={6} />
-      </div>
-    );
-  }
+  const handleCreateSeries = () => {
+    setDialogMode("series");
+    setEditingSession(null);
+    setDialogOpen(true);
+  };
+
+  const handleEditSession = (session: SessionDto) => {
+    setDialogMode("single");
+    setEditingSession(session);
+    setDialogOpen(true);
+  };
+
+  const handleDialogSuccess = () => {
+    setRefreshKey(prev => prev + 1); // Trigger refresh
+    setDialogOpen(false);
+    setEditingSession(null);
+  };
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Quản lý buổi học</h1>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-2">Quản lý buổi học</h1>
+        <p className="text-gray-600">
+          Quản lý tất cả buổi học của bạn từ tất cả các lớp
+        </p>
+      </div>
+
+      <TeacherSessionList
+        key={refreshKey}
+        onCreateSession={handleCreateSession}
+        onCreateSeries={handleCreateSeries}
+        onEditSession={handleEditSession}
+      />
+
+      <CreateSessionDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        mode={dialogMode}
+        classId={null} // No specific class for teacher's global view
+        onSuccess={handleDialogSuccess}
+        editingSession={editingSession}
+      />
     </div>
   );
 }

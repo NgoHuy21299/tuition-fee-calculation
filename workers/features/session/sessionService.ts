@@ -486,6 +486,19 @@ export class SessionService {
   }
 
   /**
+   * List all sessions for a teacher (for the teacher's session management page)
+   */
+  async listByTeacher(
+    teacherId: string
+  ): Promise<SessionDto[]> {
+    const sessions = await this.sessionRepo.listByTeacher({
+      teacherId,
+    });
+
+    return sessions.map((row) => this.mapToDtoWithClassName(row));
+  }
+
+  /**
    * Generate session dates from recurrence pattern
    */
   private generateSessionDates(
@@ -602,6 +615,26 @@ export class SessionService {
       type: row.type,
       seriesId: row.seriesId,
       createdAt: row.createdAt,
+    };
+  }
+
+  /**
+   * Map database row with className to DTO
+   */
+  private mapToDtoWithClassName(row: SessionRow & { className: string | null }): SessionDto {
+    return {
+      id: row.id,
+      classId: row.classId,
+      teacherId: row.teacherId,
+      startTime: row.startTime,
+      durationMin: row.durationMin,
+      status: row.status,
+      notes: row.notes,
+      feePerSession: row.feePerSession,
+      type: row.type,
+      seriesId: row.seriesId,
+      createdAt: row.createdAt,
+      className: row.className,
     };
   }
 }

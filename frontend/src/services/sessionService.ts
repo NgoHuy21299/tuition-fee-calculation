@@ -52,6 +52,14 @@ export class SessionService {
   private static baseUrl = '/api/sessions';
 
   /**
+   * List all sessions for the current teacher (for teacher's session management page)
+   */
+  static async getAllSessions(): Promise<SessionDto[]> {
+    const response = await apiClient.get(this.baseUrl);
+    return response.data;
+  }
+
+  /**
    * List sessions for a specific class
    */
   static async listSessions(
