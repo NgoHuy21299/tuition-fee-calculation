@@ -5,6 +5,7 @@ import { SessionService } from './sessionService';
 import {
     CreateSessionSchema,
     CreateSessionSeriesSchema,
+    CreatePrivateSessionSchema,
     UpdateSessionSchema,
     UnlockSessionSchema
 } from './sessionSchemas';
@@ -15,7 +16,6 @@ import type { InferOutput } from 'valibot';
 
 export function createSessionRouter() {
     const router = new Hono<{ Bindings: Env; Variables: { user: JwtPayload; teacherId: string } }>();
-
     /**
      * List all sessions for the teacher (for teacher's session management page)
      * GET /api/sessions
@@ -222,6 +222,23 @@ export function createSessionRouter() {
             await service.deleteSession(sessionId, teacherId);
 
             return c.json({ success: true }, 200 as 200);
+        } catch (err) {
+            const e = toAppError(err, { code: "UNKNOWN" });
+            return c.json({ error: e.message }, e.status as any);
+        }
+    });
+
+    /**
+     * Create a private session for multiple students
+     * POST /api/sessions/private-class
+     */
+    router.post('/private-class', validateBody(CreatePrivateSessionSchema), async (c: Context) => {
+        try {
+            const sessionData = getValidatedData<InferOutput<typeof CreatePrivateSessionSchema>>(c);
+            const teacherId = getTeacherId(c);
+            const service = new SessionService({ db: c.env.DB });
+            const result = await service.createPrivateSession(sessionData, teacherId);
+            return c.json(result, 201 as 201);
         } catch (err) {
             const e = toAppError(err, { code: "UNKNOWN" });
             return c.json({ error: e.message }, e.status as any);

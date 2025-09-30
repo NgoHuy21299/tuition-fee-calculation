@@ -382,7 +382,7 @@ export function TeacherSessionList({
                   <TableCell>
                     <div className="flex items-center gap-2">
                       {/* Quick attendance button: placed outside the menu for fast access */}
-                      {session.classId && session.status !== "canceled" && (
+                      {session.status !== "canceled" && (
                         <Button
                           variant="ghost"
                           size="sm"

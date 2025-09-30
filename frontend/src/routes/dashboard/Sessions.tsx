@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { TeacherSessionList } from '../../components/sessions';
 import { SessionForm } from '../../components/sessions/SessionForm';
 import { SessionSeriesForm } from '../../components/sessions/SessionSeriesForm';
+import { PrivateSessionForm } from '../../components/sessions/PrivateSessionForm';
 import { SessionService, type SessionDto, type CreateSessionRequest } from '../../services/sessionService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../components/ui/dialog';
 import { Button } from '../../components/ui/button';
@@ -10,6 +11,7 @@ import { formatDate, formatTime, formatDuration } from '../../utils/dateHelpers'
 
 export default function SessionsPage() {
   const [showSessionForm, setShowSessionForm] = useState(false);
+  const [showPrivateSessionForm, setShowPrivateSessionForm] = useState(false);
   const [showSeriesForm, setShowSeriesForm] = useState(false);
   const [showSeriesOptions, setShowSeriesOptions] = useState(false);
   const [copyPreviewOpen, setCopyPreviewOpen] = useState(false);
@@ -18,6 +20,8 @@ export default function SessionsPage() {
     durationMin: number;
     feePerSession: number | null;
     notes: string | null;
+    classId: string | null;
+    type: string;
   }>>([]);
   const [editingSession, setEditingSession] = useState<SessionDto | undefined>();
   const [refreshKey, setRefreshKey] = useState(0);
@@ -26,6 +30,20 @@ export default function SessionsPage() {
   const handleCreateSession = () => {
     setEditingSession(undefined);
     setShowSessionForm(true);
+  };
+
+  const [showSessionTypeDialog, setShowSessionTypeDialog] = useState(false);
+
+  const handleOpenCreateSession = () => {
+    setShowSessionTypeDialog(true);
+  };
+
+  const handleCreatePrivateSession = () => {
+    setShowPrivateSessionForm(true);
+  };
+
+  const handleClosePrivateSessionForm = () => {
+    setShowPrivateSessionForm(false);
   };
 
   const handleCreateSeries = () => {
@@ -99,6 +117,8 @@ export default function SessionsPage() {
             feePerSession: s.feePerSession ?? null,
             // Do not carry over notes for copied schedule
             notes: null,
+            classId: s.classId,
+            type: s.type,
           };
         });
 
@@ -114,14 +134,14 @@ export default function SessionsPage() {
   async function confirmCreateFromPreview() {
     try {
       const payloads: CreateSessionRequest[] = copyPreviewItems.map((it) => ({
-        classId: null, // For teacher's global sessions, classId can be null
+        classId: it.classId,
         startTime: it.startTime,
         durationMin: it.durationMin,
         feePerSession: it.feePerSession,
         // Explicitly drop notes when creating from last week's preview
         notes: null,
         status: 'scheduled',
-        type: 'ad_hoc', // Since no specific class
+        type: it.type === 'class' || it.type === 'ad_hoc' ? it.type : 'ad_hoc',
       }));
 
       for (const p of payloads) {
@@ -149,10 +169,45 @@ export default function SessionsPage() {
 
       <TeacherSessionList
         key={refreshKey}
-        onCreateSession={handleCreateSession}
+        onCreateSession={handleOpenCreateSession}
         onCreateSeries={handleCreateSeries}
         onEditSession={handleEditSession}
       />
+
+      {/* Session Type Selection Dialog */}
+      <Dialog open={showSessionTypeDialog} onOpenChange={setShowSessionTypeDialog}>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Chọn loại buổi học</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p>Vui lòng chọn loại buổi học bạn muốn tạo:</p>
+            <div className="grid gap-2">
+              <Button
+                variant="default"
+                onClick={() => {
+                  setShowSessionTypeDialog(false);
+                  handleCreateSession();
+                }}
+              >
+                Buổi học cho lớp
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowSessionTypeDialog(false);
+                  handleCreatePrivateSession();
+                }}
+              >
+                Buổi học riêng
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSessionTypeDialog(false)}>Đóng</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <SessionForm
         open={showSessionForm}
@@ -160,6 +215,12 @@ export default function SessionsPage() {
         onSuccess={handleFormSuccess}
         classId={undefined} // No specific class for teacher's global view
         editingSession={editingSession}
+      />
+
+      <PrivateSessionForm
+        open={showPrivateSessionForm}
+        onClose={handleClosePrivateSessionForm}
+        onSuccess={handleFormSuccess}
       />
 
       <SessionSeriesForm

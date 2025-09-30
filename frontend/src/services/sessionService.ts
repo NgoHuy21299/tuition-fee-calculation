@@ -40,6 +40,16 @@ export interface CreateSessionSeriesRequest {
   };
 }
 
+export interface CreatePrivateSessionRequest {
+  studentIds: string[];
+  startTime: string;
+  durationMin: number;
+  feePerSession: number;
+  notes?: string | null;
+  status?: 'scheduled' | 'completed' | 'canceled';
+  type?: 'class' | 'ad_hoc';
+}
+
 export interface UpdateSessionRequest {
   startTime?: string;
   durationMin?: number;

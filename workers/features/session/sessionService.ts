@@ -11,6 +11,7 @@ import type {
   SessionDto,
   CreateSessionInput,
   CreateSessionSeriesInput,
+  CreatePrivateSessionInput,
   UpdateSessionInput,
 } from "./sessionSchemas";
 import { AppError } from "../../errors";
@@ -626,6 +627,65 @@ export class SessionService {
       seriesId: row.seriesId,
       createdAt: row.createdAt,
     };
+  }
+
+  /**
+   * Create a private session for multiple students
+   */
+  async createPrivateSession(
+    input: CreatePrivateSessionInput,
+    teacherId: string
+  ): Promise<SessionDto> {
+    // Check for time conflicts
+    const endTime = this.calculateEndTime(input.startTime, input.durationMin);
+    const conflicts = await this.sessionRepo.findConflicts({
+      teacherId,
+      startTime: input.startTime,
+      endTime,
+    });
+
+    if (conflicts.length > 0) {
+      throw new AppError(
+        "SESSION_CONFLICT",
+        "Time conflict with existing session",
+        409
+      );
+    }
+
+    // Generate session ID
+    const sessionId = crypto.randomUUID();
+
+    // Create session row
+    const sessionRow: CreateSessionRow = {
+      id: sessionId,
+      classId: null,
+      teacherId,
+      startTime: input.startTime,
+      durationMin: input.durationMin,
+      status: input.status ?? "scheduled",
+      notes: input.notes ?? null,
+      feePerSession: input.feePerSession,
+      type: "ad_hoc",
+      seriesId: null,
+    };
+
+    const created = await this.sessionRepo.create(sessionRow);
+
+    // Create attendance records for all selected students
+    const attendanceRecords = input.studentIds.map((studentId: string) => ({
+      id: crypto.randomUUID(),
+      sessionId,
+      studentId,
+      status: "absent" as const, // Default status
+      note: null,
+      markedBy: null,
+      feeOverride: null,
+    }));
+
+    // Bulk insert attendance records
+    await this.attendanceRepo.bulkUpsert(attendanceRecords);
+
+    return this.mapToDto(created);
   }
 
   /**
