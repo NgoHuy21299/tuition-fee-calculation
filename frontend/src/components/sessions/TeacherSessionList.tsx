@@ -25,6 +25,7 @@ import {
   Trash2,
   Ban,
   UserCheck,
+  Unlock,
 } from "lucide-react";
 import {
   formatDate,
@@ -33,8 +34,7 @@ import {
 } from "../../utils/dateHelpers";
 import LoadingSpinner from "../commons/LoadingSpinner";
 
-interface SessionListProps {
-  classId: string;
+interface TeacherSessionListProps {
   onCreateSession?: () => void;
   onCreateSeries?: () => void;
   onEditSession?: (session: SessionDto) => void;
@@ -52,12 +52,11 @@ const statusLabels: Record<SessionDto["status"], string> = {
   canceled: "Đã hủy",
 };
 
-export function SessionList({
-  classId,
+export function TeacherSessionList({
   onCreateSession,
   onCreateSeries,
   onEditSession,
-}: SessionListProps) {
+}: TeacherSessionListProps) {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<SessionDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,7 +72,7 @@ export function SessionList({
     setLoading(true);
     const start = Date.now();
     try {
-      const data = await SessionService.listSessions(classId);
+      const data = await SessionService.getAllSessions();
       setSessions(data);
     } catch (error) {
       console.error("Failed to load sessions:", error);
@@ -82,7 +81,7 @@ export function SessionList({
       if (elapsed < MIN_SPINNER_MS) await delay(MIN_SPINNER_MS - elapsed);
       setLoading(false);
     }
-  }, [classId]);
+  }, []);
 
   useEffect(() => {
     loadSessions();
@@ -99,6 +98,38 @@ export function SessionList({
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Không thể hủy buổi học";
+      alert("Lỗi: " + errorMessage);
+    }
+  };
+
+  const handleCompleteSession = async (sessionId: string) => {
+    if (!confirm("Bạn có chắc chắn muốn hoàn thành buổi học này?")) {
+      return;
+    }
+
+    try {
+      await SessionService.completeSession(sessionId);
+      await loadSessions(); // Refresh list
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Không thể hoàn thành buổi học";
+      alert("Lỗi: " + errorMessage);
+    }
+  };
+
+  const handleUnlockSession = async (sessionId: string) => {
+    const reason = prompt("Lý do mở khóa điểm danh:");
+    if (!reason || reason.trim().length < 3) {
+      alert("Vui lòng nhập lý do mở khóa (ít nhất 3 ký tự)");
+      return;
+    }
+
+    try {
+      await SessionService.unlockSession(sessionId, reason.trim());
+      await loadSessions(); // Refresh list
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Không thể mở khóa buổi học";
       alert("Lỗi: " + errorMessage);
     }
   };
@@ -206,6 +237,7 @@ export function SessionList({
             variant={filter === "this_month" ? "default" : "outline"}
             size="sm"
             onClick={() => setFilter("this_month")}
+            className={filter === "this_month" ? "ring-1 ring-sky-700" : undefined}
           >
             Tháng này (
             {sessions.filter((s) => s.status !== "canceled" && isThisMonth(s.startTime)).length}
@@ -215,6 +247,7 @@ export function SessionList({
             variant={filter === "this_week" ? "default" : "outline"}
             size="sm"
             onClick={() => setFilter("this_week")}
+            className={filter === "this_week" ? "ring-1 ring-sky-700" : undefined}
           >
             Tuần này (
             {
@@ -228,6 +261,7 @@ export function SessionList({
             variant={filter === "upcoming" ? "default" : "outline"}
             size="sm"
             onClick={() => setFilter("upcoming")}
+            className={filter === "upcoming" ? "ring-1 ring-sky-700" : undefined}
           >
             Sắp tới (
             {
@@ -241,6 +275,7 @@ export function SessionList({
             variant={filter === "completed" ? "default" : "outline"}
             size="sm"
             onClick={() => setFilter("completed")}
+            className={filter === "completed" ? "ring-1 ring-sky-700" : undefined}
           >
             Hoàn thành (
             {sessions.filter((s) => s.status === "completed").length})
@@ -249,6 +284,7 @@ export function SessionList({
             variant={filter === "canceled" ? "default" : "outline"}
             size="sm"
             onClick={() => setFilter("canceled")}
+            className={filter === "canceled" ? "ring-1 ring-sky-700" : undefined}
           >
             Đã hủy ({sessions.filter((s) => s.status === "canceled").length})
           </Button>
@@ -256,6 +292,7 @@ export function SessionList({
             variant={filter === "all" ? "default" : "outline"}
             size="sm"
             onClick={() => setFilter("all")}
+            className={filter === "all" ? "ring-1 ring-sky-700" : undefined}
           >
             Tất cả ({sessions.filter((s) => s.status !== "canceled").length})
           </Button>
@@ -291,6 +328,7 @@ export function SessionList({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Lớp học</TableHead>
                 <TableHead>Thời gian</TableHead>
                 <TableHead>Thời lượng</TableHead>
                 <TableHead>Trạng thái</TableHead>
@@ -304,9 +342,18 @@ export function SessionList({
                   <TableCell>
                     <div className="space-y-1">
                       <div className="font-medium">
-                        {`${formatTime(session.startTime)} - ${formatDate(
-                          session.startTime
-                        )}`}
+                        {session.className || (
+                          <span className="text-gray-400 italic">
+                            Buổi học riêng
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="space-y-1">
+                      <div className="font-medium">
+                        {formatTime(session.startTime)} - {formatDate(session.startTime)}
                       </div>
                     </div>
                   </TableCell>
@@ -323,83 +370,79 @@ export function SessionList({
                     <div className="truncate" title={session.notes || ""}>
                       {session.notes
                         ? (session.notes.split('\n')[0] || '').trim()
-                        : <span className="text-gray-400">—</span>
+                        : "-"
                       }
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant={'outline'}
-                        onClick={() =>
-                          navigate(`/dashboard/attendance/${session.id}`, {
+                      {/* Quick attendance button: placed outside the menu for fast access */}
+                      {session.status !== "canceled" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate(`/dashboard/attendance/${session.id}`, {
                             state: {
-                              backTo: `/dashboard/classes/${classId}`,
+                              backTo: `/dashboard/sessions`,
                               backTab: "sessions",
                             },
-                          })
-                        }
-                      >
-                        <UserCheck className="h-4 w-4" />
-                      </Button>
+                          })}
+                          title="Điểm danh"
+                        >
+                          <UserCheck className="h-4 w-4" />
+                        </Button>
+                      )}
+
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                          >
+                          <Button variant="ghost" size="sm">
                             <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Mở menu</span>
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={
-                              session.status === "completed"
-                                ? undefined
-                                : () => onEditSession?.(session)
-                            }
-                            disabled={session.status === "completed"}
-                            className="data-[disabled]:cursor-not-allowed"
-                            title={
-                              session.status === "completed"
-                                ? "Không thể chỉnh sửa buổi học đã hoàn thành"
-                                : undefined
-                            }
-                          >
-                            <Edit className="mr-2 h-4 w-4" />
-                            Chỉnh sửa
-                          </DropdownMenuItem>
-                          {/* Always show Cancel, but disable when not scheduled */}
-                          <DropdownMenuItem
-                            onClick={
-                              session.status !== "scheduled"
-                                ? undefined
-                                : () => handleCancelSession(session.id)
-                            }
-                            disabled={session.status !== "scheduled"}
-                            className="data-[disabled]:cursor-not-allowed"
-                            title={
-                              session.status === "completed"
-                                ? "Không thể hủy buổi học đã hoàn thành"
-                                : session.status === "canceled"
-                                ? "Buổi học đã được hủy"
-                                : undefined
-                            }
-                          >
-                            <Ban className="mr-2 h-4 w-4" />
-                            Hủy buổi học
-                          </DropdownMenuItem>
+                          {session.status === "scheduled" && (
+                            <>
+                              <DropdownMenuItem
+                                onClick={() => onEditSession?.(session)}
+                              >
+                                <Edit className="h-4 w-4 mr-2" />
+                                Chỉnh sửa
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleCompleteSession(session.id)}
+                              >
+                                <UserCheck className="h-4 w-4 mr-2" />
+                                Hoàn thành
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleCancelSession(session.id)}
+                                className="text-yellow-600"
+                              >
+                                <Ban className="h-4 w-4 mr-2" />
+                                Hủy buổi học
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                          {session.status === "completed" && (
+                            <DropdownMenuItem
+                              onClick={() => handleUnlockSession(session.id)}
+                              className="text-blue-600"
+                            >
+                              <Unlock className="h-4 w-4 mr-2" />
+                              Mở khóa điểm danh
+                            </DropdownMenuItem>
+                          )}
                           {session.status === "canceled" && (
                             <DropdownMenuItem
                               onClick={() => handleDeleteSession(session.id)}
-                              className="text-destructive"
+                              className="text-red-600"
                             >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Xóa vĩnh viễn
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Xóa buổi học
                             </DropdownMenuItem>
                           )}
+
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>

@@ -10,22 +10,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from '../ui/dialog';
-import { 
-  SessionService,
-  type CreateSessionRequest, 
-  type UpdateSessionRequest,
-  type SessionDto,
-} from '../../services/sessionService';
-import { classService, type ClassDTO } from '../../services/classService';
-import { formatDateTimeLocal, parseDateTimeLocal, getCurrentDateTimeLocal, getPresetTime1, getPresetTime2 } from '../../utils/dateHelpers';
+import { studentService, type StudentDTO } from '../../services/studentService';
+import { PrivateSessionService, type CreatePrivateSessionRequest } from '../../services/privateSessionService';
+import MultipleSelector, { type Option } from '../ui/multiple-selector';
+import { parseDateTimeLocal, getCurrentDateTimeLocal, getPresetTime1, getPresetTime2 } from '../../utils/dateHelpers';
 import { DateTimePicker } from '../ui/datetime-picker';
 
-interface SessionFormProps {
+interface PrivateSessionFormProps {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  classId?: string;
-  editingSession?: SessionDto;
   defaultFeePerSession?: number;
 }
 
@@ -34,20 +28,18 @@ type FormData = {
   durationMin: number;
   feePerSession: string; // string for form input
   notes: string;
-  classId?: string;
 };
 
-export function SessionForm({ 
+export function PrivateSessionForm({ 
   open, 
   onClose, 
   onSuccess, 
-  classId, 
-  editingSession,
   defaultFeePerSession 
-}: SessionFormProps) {
+}: PrivateSessionFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [classes, setClasses] = useState<ClassDTO[]>([]);
+  const [students, setStudents] = useState<StudentDTO[]>([]);
+  const [selectedStudents, setSelectedStudents] = useState<Option[]>([]);
 
   const {
     register,
@@ -62,74 +54,61 @@ export function SessionForm({
       durationMin: 90, // Default to 90 minutes
       feePerSession: '',
       notes: '',
-      classId: '',
     },
   });
 
-  // Load classes when dialog opens
+  // Load students when dialog opens
   useEffect(() => {
-    const loadClasses = async () => {
+    const loadStudents = async () => {
       try {
-        const response = await classService.listClasses({ isGetAll: false, isActive: true });
-        setClasses(response.items);
+        const response = await studentService.listStudents({});
+        setStudents(response.items);
       } catch (error) {
-        console.error('Failed to load classes:', error);
+        console.error('Failed to load students:', error);
       }
     };
 
-    if (open && !editingSession) {
-      loadClasses();
+    if (open) {
+      loadStudents();
     }
-  }, [open, editingSession]);
+  }, [open]);
 
-  // Reset form when dialog opens/closes or editing session changes
+  // Reset form when dialog opens/closes
   useEffect(() => {
     if (open) {
-      if (editingSession) {
-        // Editing mode
-        setValue('startTime', formatDateTimeLocal(editingSession.startTime));
-        setValue('durationMin', editingSession.durationMin);
-        setValue('feePerSession', editingSession.feePerSession?.toString() || '');
-        setValue('notes', editingSession.notes || '');
-        setValue('classId', editingSession.classId || '');
-      } else {
-        // Create mode
-        setValue('startTime', getCurrentDateTimeLocal());
-        setValue('durationMin', 90); // Default to 90 minutes
-        setValue('feePerSession', defaultFeePerSession?.toString() || '');
-        setValue('notes', '');
-        setValue('classId', classId || '');
-      }
+      setValue('startTime', getCurrentDateTimeLocal());
+      setValue('durationMin', 90); // Default to 90 minutes
+      setValue('feePerSession', defaultFeePerSession?.toString() || '');
+      setValue('notes', '');
+      setSelectedStudents([]);
       setSubmitError(null);
     }
-  }, [open, editingSession, defaultFeePerSession, setValue, classId]);
+  }, [open, defaultFeePerSession, setValue]);
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     setSubmitError(null);
 
     try {
-      const payload = {
+      // Create private session for selected students
+      const studentIds = selectedStudents.map(option => option.value);
+      
+      if (studentIds.length === 0) {
+        throw new Error('Vui lòng chọn ít nhất một học sinh');
+      }
+
+      const payload: CreatePrivateSessionRequest = {
+        studentIds,
         startTime: parseDateTimeLocal(data.startTime),
         durationMin: data.durationMin,
-        feePerSession: data.feePerSession ? parseInt(data.feePerSession, 10) : null,
+        feePerSession: parseInt(data.feePerSession, 10),
         notes: data.notes || null,
+        type: 'ad_hoc',
+        status: 'scheduled',
       };
 
-      if (editingSession) {
-        // Update existing session
-        const updatePayload: UpdateSessionRequest = payload;
-        await SessionService.updateSession(editingSession.id, updatePayload);
-      } else {
-        // Create new session
-        const createPayload: CreateSessionRequest = {
-          ...payload,
-          classId: data.classId || null,
-          type: 'class',
-          status: 'scheduled',
-        };
-        await SessionService.createSession(createPayload);
-      }
+      // Create a single private session for all selected students
+      await PrivateSessionService.createPrivateSession(payload);
 
       onSuccess();
       onClose();
@@ -160,40 +139,38 @@ export function SessionForm({
     }
   };
 
+  // Convert students to options for MultipleSelector
+  const studentOptions: Option[] = students.map(student => ({
+    value: student.id,
+    label: student.name,
+  }));
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>
-            {editingSession ? 'Chỉnh sửa buổi học' : 'Tạo buổi học mới'}
-          </DialogTitle>
+          <DialogTitle>Tạo buổi học riêng</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Class Selection - only in create mode */}
-          {!editingSession && (
-            <div className="space-y-2">
-              <Label htmlFor="classId">Chọn lớp *</Label>
-              <select
-                id="classId"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                {...register('classId', { 
-                  required: 'Vui lòng chọn lớp học' 
-                })}
-                disabled={isSubmitting || classes.length === 0}
-              >
-                <option value="">Chọn lớp học...</option>
-                {classes.map((cls) => (
-                  <option key={cls.id} value={cls.id}>
-                    {cls.name}
-                  </option>
-                ))}
-              </select>
-              {errors.classId && (
-                <p className="text-sm text-destructive">{errors.classId.message}</p>
-              )}
-            </div>
-          )}
+          {/* Student Selection */}
+          <div className="space-y-2">
+            <Label>Chọn học sinh *</Label>
+            <MultipleSelector
+              value={selectedStudents}
+              onChange={setSelectedStudents}
+              defaultOptions={studentOptions}
+              placeholder="Tìm và chọn học sinh..."
+              emptyIndicator={
+                <p className="text-center text-sm text-gray-500">
+                  Không tìm thấy học sinh
+                </p>
+              }
+            />
+            {selectedStudents.length === 0 && (
+              <p className="text-sm text-destructive">Vui lòng chọn ít nhất một học sinh</p>
+            )}
+          </div>
 
           {/* Start Time */}
           <div className="space-y-2">
@@ -205,29 +182,27 @@ export function SessionForm({
               error={errors.startTime?.message}
               disabled={isSubmitting}
             />
-            {/* Preset buttons - only show in create mode */}
-            {!editingSession && (
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePresetTime('ca1')}
-                  className="text-xs"
-                >
-                  🕐 Ca 1 (16:45 - 90p)
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePresetTime('ca2')}
-                  className="text-xs"
-                >
-                  🕕 Ca 2 (18:30 - 90p)
-                </Button>
-              </div>
-            )}
+            {/* Preset buttons */}
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handlePresetTime('ca1')}
+                className="text-xs"
+              >
+                🕐 Ca 1 (16:45 - 90p)
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handlePresetTime('ca2')}
+                className="text-xs"
+              >
+                🕕 Ca 2 (18:30 - 90p)
+              </Button>
+            </div>
           </div>
 
           {/* Duration */}
@@ -251,19 +226,15 @@ export function SessionForm({
           {/* Fee Per Session */}
           <div className="space-y-2">
             <Label htmlFor="feePerSession">
-              Học phí buổi học 
-              {defaultFeePerSession && (
-                <span className="text-sm text-muted-foreground ml-1">
-                  (Mặc định: {new Intl.NumberFormat('vi-VN').format(defaultFeePerSession)} VNĐ)
-                </span>
-              )}
+              Học phí buổi học *
             </Label>
             <Input
               id="feePerSession"
               type="number"
               min="0"
-              placeholder={defaultFeePerSession?.toString() || "Để trống sẽ dùng giá mặc định của lớp"}
+              placeholder="Nhập học phí buổi học"
               {...register('feePerSession', {
+                required: 'Vui lòng nhập học phí buổi học',
                 valueAsNumber: false, // Keep as string to handle empty values
               })}
             />
@@ -299,8 +270,8 @@ export function SessionForm({
             >
               Hủy
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Đang lưu...' : (editingSession ? 'Cập nhật' : 'Tạo buổi học')}
+            <Button type="submit" disabled={isSubmitting || selectedStudents.length === 0}>
+              {isSubmitting ? 'Đang lưu...' : 'Tạo buổi học'}
             </Button>
           </DialogFooter>
         </form>

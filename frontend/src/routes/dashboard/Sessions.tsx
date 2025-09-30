@@ -1,20 +1,17 @@
 import { useState } from 'react';
-import { SessionList } from './SessionList';
-import { SessionForm } from './SessionForm';
-import { SessionSeriesForm } from './SessionSeriesForm';
+import { TeacherSessionList } from '../../components/sessions';
+import { SessionForm } from '../../components/sessions/SessionForm';
+import { SessionSeriesForm } from '../../components/sessions/SessionSeriesForm';
+import { PrivateSessionForm } from '../../components/sessions/PrivateSessionForm';
 import { SessionService, type SessionDto, type CreateSessionRequest } from '../../services/sessionService';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
-import { Button } from '../ui/button';
-import { useToast } from '../commons/Toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../components/ui/dialog';
+import { Button } from '../../components/ui/button';
+import { useToast } from '../../components/commons/Toast';
 import { formatDate, formatTime, formatDuration } from '../../utils/dateHelpers';
 
-interface SessionsTabProps {
-  classId: string;
-  defaultFeePerSession?: number;
-}
-
-export function SessionsTab({ classId, defaultFeePerSession }: SessionsTabProps) {
+export default function SessionsPage() {
   const [showSessionForm, setShowSessionForm] = useState(false);
+  const [showPrivateSessionForm, setShowPrivateSessionForm] = useState(false);
   const [showSeriesForm, setShowSeriesForm] = useState(false);
   const [showSeriesOptions, setShowSeriesOptions] = useState(false);
   const [copyPreviewOpen, setCopyPreviewOpen] = useState(false);
@@ -23,6 +20,8 @@ export function SessionsTab({ classId, defaultFeePerSession }: SessionsTabProps)
     durationMin: number;
     feePerSession: number | null;
     notes: string | null;
+    classId: string | null;
+    type: string;
   }>>([]);
   const [editingSession, setEditingSession] = useState<SessionDto | undefined>();
   const [refreshKey, setRefreshKey] = useState(0);
@@ -31,6 +30,20 @@ export function SessionsTab({ classId, defaultFeePerSession }: SessionsTabProps)
   const handleCreateSession = () => {
     setEditingSession(undefined);
     setShowSessionForm(true);
+  };
+
+  const [showSessionTypeDialog, setShowSessionTypeDialog] = useState(false);
+
+  const handleOpenCreateSession = () => {
+    setShowSessionTypeDialog(true);
+  };
+
+  const handleCreatePrivateSession = () => {
+    setShowPrivateSessionForm(true);
+  };
+
+  const handleClosePrivateSessionForm = () => {
+    setShowPrivateSessionForm(false);
   };
 
   const handleCreateSeries = () => {
@@ -85,12 +98,7 @@ export function SessionsTab({ classId, defaultFeePerSession }: SessionsTabProps)
       // Convert local start/end to UTC ISO strings
       const startTimeBegin = beginLocal.toISOString();
       const startTimeEnd = endLocal.toISOString();
-      const sessions = await SessionService.listSessions(classId, { startTimeBegin, startTimeEnd });
-      // Filter out any canceled sessions just in case
-      const lastWeekSessions = sessions.filter((s) => {
-        const d = new Date(s.startTime);
-        return d >= lastWeek.start && d <= lastWeek.end;
-      });
+      const lastWeekSessions = await SessionService.getAllSessions({ startTimeBegin, startTimeEnd });
 
       if (lastWeekSessions.length === 0) {
         toast({ variant: 'warning', title: 'Không có dữ liệu', description: 'Tuần trước không có buổi học để sao chép.' });
@@ -107,8 +115,10 @@ export function SessionsTab({ classId, defaultFeePerSession }: SessionsTabProps)
             startTime: d.toISOString(),
             durationMin: s.durationMin,
             feePerSession: s.feePerSession ?? null,
-            // Do not carry over notes when copying last week's schedule
+            // Do not carry over notes for copied schedule
             notes: null,
+            classId: s.classId,
+            type: s.type,
           };
         });
 
@@ -124,14 +134,14 @@ export function SessionsTab({ classId, defaultFeePerSession }: SessionsTabProps)
   async function confirmCreateFromPreview() {
     try {
       const payloads: CreateSessionRequest[] = copyPreviewItems.map((it) => ({
-        classId,
+        classId: it.classId,
         startTime: it.startTime,
         durationMin: it.durationMin,
         feePerSession: it.feePerSession,
         // Explicitly drop notes when creating from last week's preview
         notes: null,
         status: 'scheduled',
-        type: 'class',
+        type: it.type === 'class' || it.type === 'ad_hoc' ? it.type : 'ad_hoc',
       }));
 
       for (const p of payloads) {
@@ -149,39 +159,75 @@ export function SessionsTab({ classId, defaultFeePerSession }: SessionsTabProps)
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-medium">Lịch học</h3>
-          <p className="text-sm text-muted-foreground">
-            Quản lý các buổi học của lớp
-          </p>
-        </div>
+    <div className="container mx-auto p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-2">Quản lý buổi học</h1>
+        <p className="text-gray-600">
+          Quản lý tất cả buổi học của bạn từ tất cả các lớp
+        </p>
       </div>
 
-      <SessionList
+      <TeacherSessionList
         key={refreshKey}
-        classId={classId}
-        onCreateSession={handleCreateSession}
+        onCreateSession={handleOpenCreateSession}
         onCreateSeries={handleCreateSeries}
         onEditSession={handleEditSession}
       />
+
+      {/* Session Type Selection Dialog */}
+      <Dialog open={showSessionTypeDialog} onOpenChange={setShowSessionTypeDialog}>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle>Chọn loại buổi học</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p>Vui lòng chọn loại buổi học bạn muốn tạo:</p>
+            <div className="grid gap-2">
+              <Button
+                variant="default"
+                onClick={() => {
+                  setShowSessionTypeDialog(false);
+                  handleCreateSession();
+                }}
+              >
+                Buổi học cho lớp
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowSessionTypeDialog(false);
+                  handleCreatePrivateSession();
+                }}
+              >
+                Buổi học riêng
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSessionTypeDialog(false)}>Đóng</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <SessionForm
         open={showSessionForm}
         onClose={handleCloseSessionForm}
         onSuccess={handleFormSuccess}
-        classId={classId}
+        classId={undefined} // No specific class for teacher's global view
         editingSession={editingSession}
-        defaultFeePerSession={defaultFeePerSession}
+      />
+
+      <PrivateSessionForm
+        open={showPrivateSessionForm}
+        onClose={handleClosePrivateSessionForm}
+        onSuccess={handleFormSuccess}
       />
 
       <SessionSeriesForm
         open={showSeriesForm}
         onClose={handleCloseSeriesForm}
         onSuccess={handleFormSuccess}
-        classId={classId}
-        defaultFeePerSession={defaultFeePerSession}
+        classId={undefined} // No specific class
       />
 
       {/* Options dialog for series creation */}

@@ -11,6 +11,7 @@ import type {
   SessionDto,
   CreateSessionInput,
   CreateSessionSeriesInput,
+  CreatePrivateSessionInput,
   UpdateSessionInput,
 } from "./sessionSchemas";
 import { AppError } from "../../errors";
@@ -486,6 +487,29 @@ export class SessionService {
   }
 
   /**
+   * List all sessions for a teacher (for the teacher's session management page)
+   */
+  async listByTeacher(
+    teacherId: string,
+    startTimeBegin?: string,
+    startTimeEnd?: string
+  ): Promise<SessionDto[]> {
+    let statusExclude: string[] = [];
+    if (!!startTimeBegin && !!startTimeEnd) {
+      statusExclude.push('canceled');
+    }
+
+    const sessions = await this.sessionRepo.listByTeacher({
+      teacherId,
+      startTimeBegin,
+      startTimeEnd,
+      statusExclude,
+    });
+
+    return sessions.map((row) => this.mapToDtoWithClassName(row));
+  }
+
+  /**
    * Generate session dates from recurrence pattern
    */
   private generateSessionDates(
@@ -602,6 +626,85 @@ export class SessionService {
       type: row.type,
       seriesId: row.seriesId,
       createdAt: row.createdAt,
+    };
+  }
+
+  /**
+   * Create a private session for multiple students
+   */
+  async createPrivateSession(
+    input: CreatePrivateSessionInput,
+    teacherId: string
+  ): Promise<SessionDto> {
+    // Check for time conflicts
+    const endTime = this.calculateEndTime(input.startTime, input.durationMin);
+    const conflicts = await this.sessionRepo.findConflicts({
+      teacherId,
+      startTime: input.startTime,
+      endTime,
+    });
+
+    if (conflicts.length > 0) {
+      throw new AppError(
+        "SESSION_CONFLICT",
+        "Time conflict with existing session",
+        409
+      );
+    }
+
+    // Generate session ID
+    const sessionId = crypto.randomUUID();
+
+    // Create session row
+    const sessionRow: CreateSessionRow = {
+      id: sessionId,
+      classId: null,
+      teacherId,
+      startTime: input.startTime,
+      durationMin: input.durationMin,
+      status: input.status ?? "scheduled",
+      notes: input.notes ?? null,
+      feePerSession: input.feePerSession,
+      type: "ad_hoc",
+      seriesId: null,
+    };
+
+    const created = await this.sessionRepo.create(sessionRow);
+
+    // Create attendance records for all selected students
+    const attendanceRecords = input.studentIds.map((studentId: string) => ({
+      id: crypto.randomUUID(),
+      sessionId,
+      studentId,
+      status: "absent" as const, // Default status
+      note: null,
+      markedBy: null,
+      feeOverride: null,
+    }));
+
+    // Bulk insert attendance records
+    await this.attendanceRepo.bulkUpsert(attendanceRecords);
+
+    return this.mapToDto(created);
+  }
+
+  /**
+   * Map database row with className to DTO
+   */
+  private mapToDtoWithClassName(row: SessionRow & { className: string | null }): SessionDto {
+    return {
+      id: row.id,
+      classId: row.classId,
+      teacherId: row.teacherId,
+      startTime: row.startTime,
+      durationMin: row.durationMin,
+      status: row.status,
+      notes: row.notes,
+      feePerSession: row.feePerSession,
+      type: row.type,
+      seriesId: row.seriesId,
+      createdAt: row.createdAt,
+      className: row.className,
     };
   }
 }

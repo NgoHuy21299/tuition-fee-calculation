@@ -322,6 +322,53 @@ export class SessionRepository {
   }
 
   /**
+   * List all sessions for a teacher (for the teacher's session management page)
+   */
+  async listByTeacher({ 
+    teacherId, 
+    startTimeBegin,
+    startTimeEnd,
+    statusExclude 
+  }: { 
+    teacherId: string; 
+    startTimeBegin?: string;
+    startTimeEnd?: string;
+    statusExclude?: string[]; 
+  }): Promise<(SessionRow & { className: string | null })[]> {
+    let query = `
+      SELECT 
+        s.id, s.classId, s.teacherId, s.startTime, s.durationMin,
+        s.status, s.notes, s.feePerSession, s.type, s.seriesId, s.createdAt,
+        c.name as className
+      FROM Session s
+      LEFT JOIN Class c ON s.classId = c.id
+      WHERE s.teacherId = ?
+    `;
+    const params: any[] = [teacherId];
+
+    // Exclude given statuses if any
+    if (statusExclude && statusExclude.length > 0) {
+      const placeholders = statusExclude.map(() => '?').join(', ');
+      query += ` AND s.status NOT IN (${placeholders})`;
+      params.push(...statusExclude);
+    }
+
+    // Add time filtering
+    if (startTimeBegin) {
+      query += ` AND s.startTime >= ?`;
+      params.push(startTimeBegin);
+    }
+    if (startTimeEnd) {
+      query += ` AND s.startTime <= ?`;
+      params.push(startTimeEnd);
+    }
+
+    query += ` ORDER BY s.startTime DESC, s.createdAt DESC`;
+
+    return await selectAll<SessionRow & { className: string | null }>(this.deps.db, query, params);
+  }
+
+  /**
    * List sessions by series ID
    */
   private async listBySeries(seriesId: string, teacherId: string): Promise<SessionRow[]> {

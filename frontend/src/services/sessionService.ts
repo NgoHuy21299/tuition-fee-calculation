@@ -40,6 +40,16 @@ export interface CreateSessionSeriesRequest {
   };
 }
 
+export interface CreatePrivateSessionRequest {
+  studentIds: string[];
+  startTime: string;
+  durationMin: number;
+  feePerSession: number;
+  notes?: string | null;
+  status?: 'scheduled' | 'completed' | 'canceled';
+  type?: 'class' | 'ad_hoc';
+}
+
 export interface UpdateSessionRequest {
   startTime?: string;
   durationMin?: number;
@@ -50,6 +60,24 @@ export interface UpdateSessionRequest {
 
 export class SessionService {
   private static baseUrl = '/api/sessions';
+
+  /**
+   * List all sessions for the current teacher (for teacher's session management page)
+   */
+  static async getAllSessions(options?: { startTimeBegin?: string; startTimeEnd?: string }): Promise<SessionDto[]> {
+    const params = new URLSearchParams();
+    if (options?.startTimeBegin) {
+      params.append('startTimeBegin', options.startTimeBegin);
+    }
+    if (options?.startTimeEnd) {
+      params.append('startTimeEnd', options.startTimeEnd);
+    }
+    const queryString = params.toString();
+    const url = queryString ? `${this.baseUrl}?${queryString}` : this.baseUrl;
+    
+    const response = await apiClient.get(url);
+    return response.data;
+  }
 
   /**
    * List sessions for a specific class

@@ -168,10 +168,39 @@ export const UnlockSessionSchema = object({
   )
 });
 
+// Create private session schema
+export const CreatePrivateSessionSchema = object({
+  studentIds: pipe(
+    array(pipe(string(), minLength(1))),
+    minLength(1, Msg("STUDENT_IDS_REQUIRED"))
+  ),
+  startTime: pipe(
+    string(Msg("START_TIME_REQUIRED")),
+    minLength(1, Msg("START_TIME_REQUIRED"))
+  ),
+  durationMin: pipe(
+    number(Msg("DURATION_INVALID")),
+    minValue(1, Msg("DURATION_TOO_SHORT"))
+  ),
+  feePerSession: pipe(
+    number(Msg("FEE_INVALID")),
+    minValue(0, Msg("FEE_NEGATIVE"))
+  ),
+  notes: optional(nullable(
+    pipe(
+      string(Msg("NOTES_INVALID")),
+      maxLength(2000, Msg("NOTES_TOO_LONG"))
+    )
+  )),
+  status: optional(StatusSchema, 'scheduled'),
+  type: optional(TypeSchema, 'ad_hoc')
+});
+
 export type CreateSessionInput = InferOutput<typeof CreateSessionSchema>;
 export type CreateSessionSeriesInput = InferOutput<typeof CreateSessionSeriesSchema>;
 export type UpdateSessionInput = InferOutput<typeof UpdateSessionSchema>;
 export type UnlockSessionInput = InferOutput<typeof UnlockSessionSchema>;
+export type CreatePrivateSessionInput = InferOutput<typeof CreatePrivateSessionSchema>;
 
 // Session DTO
 export interface SessionDto {

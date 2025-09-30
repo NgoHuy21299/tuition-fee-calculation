@@ -49,6 +49,7 @@ export type ValidationCode =
   | "MAX_OCCURRENCES_TOO_SMALL"
   | "TIMEZONE_INVALID"
   | "EXCLUSION_DATE_INVALID"
+  | "STUDENT_IDS_REQUIRED"
   // Attendance-specific
   | "ATTENDANCE_STATUS_INVALID"
   | "SESSION_ID_REQUIRED"
