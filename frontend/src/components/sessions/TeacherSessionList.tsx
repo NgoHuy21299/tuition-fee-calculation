@@ -343,16 +343,11 @@ export function TeacherSessionList({
                     <div className="space-y-1">
                       <div className="font-medium">
                         {session.className || (
-                          <span className="text-gray-500 italic">
+                          <span className="text-gray-400 italic">
                             Buổi học riêng
                           </span>
                         )}
                       </div>
-                      {session.type === 'ad_hoc' && (
-                        <Badge variant="outline" className="text-xs">
-                          Buổi học riêng
-                        </Badge>
-                      )}
                     </div>
                   </TableCell>
                   <TableCell>

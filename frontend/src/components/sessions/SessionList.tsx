@@ -331,6 +331,7 @@ export function SessionList({
                     <div className="flex items-center gap-2">
                       <Button
                         size="sm"
+                        variant={'outline'}
                         onClick={() =>
                           navigate(`/dashboard/attendance/${session.id}`, {
                             state: {
@@ -340,8 +341,7 @@ export function SessionList({
                           })
                         }
                       >
-                        <UserCheck className="h-4 w-4 mr-2" />
-                        Điểm danh
+                        <UserCheck className="h-4 w-4" />
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
