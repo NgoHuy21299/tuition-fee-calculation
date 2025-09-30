@@ -1,6 +1,8 @@
-# GitHub Copilot Instructions
+---
+trigger: always_on
+---
 
-This document provides essential context for AI agents working in this codebase. Read this first to understand key patterns and workflows.
+
 ## 1. Project Overview
 
 Full-stack **tuition fee management system**:
