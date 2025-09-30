@@ -275,6 +275,23 @@ export class StudentRepository {
   }
 
   /**
+   * Get multiple students by IDs (for reports)
+   */
+  async getByIds(ids: string[]): Promise<StudentRow[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    const placeholders = ids.map(() => '?').join(', ');
+    const sql = `
+      SELECT id, name, phone, email, note, createdAt
+      FROM Student
+      WHERE id IN (${placeholders})`;
+
+    return await selectAll<StudentRow>(this.deps.db, sql, ids);
+  }
+
+  /**
    * Check if a duplicate student exists by `(name OR phone OR email)`.
    *
    * Caller should decide exact duplicate policy; this method exposes a simple presence check.

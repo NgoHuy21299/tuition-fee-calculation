@@ -36,7 +36,12 @@ export const viMessages: Record<ErrorCode, string> = {
   ATTENDANCE_SESSION_COMPLETED: "Không thể sửa điểm danh cho buổi học đã hoàn thành",
   ATTENDANCE_STUDENT_NOT_IN_CLASS: "Học sinh không thuộc lớp học này",
   ATTENDANCE_UPDATE_FAILED: "Cập nhật điểm danh thất bại",
-  ATTENDANCE_DELETE_FAILED: "Xóa điểm danh thất bại"
+  ATTENDANCE_DELETE_FAILED: "Xóa điểm danh thất bại",
+  // Reports-specific error messages
+  REPORT_INVALID_MONTH_FORMAT: "Định dạng tháng không hợp lệ. Sử dụng YYYY-MM",
+  REPORT_CLASS_NOT_FOUND: "Không tìm thấy lớp học",
+  REPORT_NO_DATA: "Không có dữ liệu báo cáo cho tháng này",
+  REPORT_UNAUTHORIZED: "Không có quyền xem báo cáo của lớp học này"
 };
 
 export function t(code: ErrorCode, fallback?: string): string {

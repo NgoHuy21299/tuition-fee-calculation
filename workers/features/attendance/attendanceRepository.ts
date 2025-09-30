@@ -137,6 +137,35 @@ export class AttendanceRepository {
   }
 
   /**
+   * Find attendance records by multiple session IDs (for reports)
+   */
+  async findBySessionIds({
+    sessionIds,
+    teacherId,
+  }: {
+    sessionIds: string[];
+    teacherId: string;
+  }): Promise<AttendanceRow[]> {
+    if (sessionIds.length === 0) {
+      return [];
+    }
+
+    const placeholders = sessionIds.map(() => '?').join(', ');
+    const sql = `
+      SELECT a.id, a.sessionId, a.studentId, a.status, a.note, a.markedBy, a.markedAt, a.feeOverride
+      FROM Attendance a
+      INNER JOIN Session s ON a.sessionId = s.id
+      WHERE a.sessionId IN (${placeholders})
+        AND s.teacherId = ?
+        AND a.status IN ('present', 'late')`;
+
+    return await selectAll<AttendanceRow>(this.deps.db, sql, [
+      ...sessionIds,
+      teacherId,
+    ]);
+  }
+
+  /**
    * Get attendance history for a student with session information
    * Used for student attendance reports
    */

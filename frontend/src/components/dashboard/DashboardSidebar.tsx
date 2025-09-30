@@ -15,6 +15,7 @@ export default function DashboardSidebar() {
     { label: "Học sinh", to: "/dashboard/students" },
     { label: "Buổi học", to: "/dashboard/sessions" },
     { label: "Học phí", to: "/dashboard/tuition" },
+    { label: "Báo cáo", to: "/dashboard/reports" },
     {
       label: "Công cụ",
       children: [{ label: "Nhận xét lớp", to: "/dashboard/class-remark" }],

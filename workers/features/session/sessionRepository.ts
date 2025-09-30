@@ -61,6 +61,29 @@ export class SessionRepository {
   }
 
   /**
+   * List sessions for a specific month (for reports)
+   */
+  async listByClassAndMonth(params: {
+    classId: string;
+    teacherId: string;
+    year: number;
+    month: number;
+  }): Promise<SessionRow[]> {
+    const startTime = `${params.year}-${params.month.toString().padStart(2, '0')}-01`;
+    const nextMonth = params.month === 12 ? 1 : params.month + 1;
+    const nextYear = params.month === 12 ? params.year + 1 : params.year;
+    const endTime = `${nextYear}-${nextMonth.toString().padStart(2, '0')}-01`;
+    
+    return this.listByClass({
+      classId: params.classId,
+      teacherId: params.teacherId,
+      startTimeBegin: startTime,
+      startTimeEnd: endTime,
+      statusExclude: ['canceled']
+    });
+  }
+
+  /**
    * Create a single session
    */
   async create(sessionRow: CreateSessionRow): Promise<SessionRow> {
