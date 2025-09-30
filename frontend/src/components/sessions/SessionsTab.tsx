@@ -107,7 +107,8 @@ export function SessionsTab({ classId, defaultFeePerSession }: SessionsTabProps)
             startTime: d.toISOString(),
             durationMin: s.durationMin,
             feePerSession: s.feePerSession ?? null,
-            notes: s.notes ?? null,
+            // Do not carry over notes when copying last week's schedule
+            notes: null,
           };
         });
 
@@ -127,7 +128,8 @@ export function SessionsTab({ classId, defaultFeePerSession }: SessionsTabProps)
         startTime: it.startTime,
         durationMin: it.durationMin,
         feePerSession: it.feePerSession,
-        notes: it.notes,
+        // Explicitly drop notes when creating from last week's preview
+        notes: null,
         status: 'scheduled',
         type: 'class',
       }));

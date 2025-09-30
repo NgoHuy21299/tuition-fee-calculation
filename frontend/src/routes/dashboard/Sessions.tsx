@@ -97,7 +97,8 @@ export default function SessionsPage() {
             startTime: d.toISOString(),
             durationMin: s.durationMin,
             feePerSession: s.feePerSession ?? null,
-            notes: s.notes ?? null,
+            // Do not carry over notes for copied schedule
+            notes: null,
           };
         });
 
@@ -117,7 +118,8 @@ export default function SessionsPage() {
         startTime: it.startTime,
         durationMin: it.durationMin,
         feePerSession: it.feePerSession,
-        notes: it.notes,
+        // Explicitly drop notes when creating from last week's preview
+        notes: null,
         status: 'scheduled',
         type: 'ad_hoc', // Since no specific class
       }));
