@@ -9,6 +9,15 @@ import {
 import { Button } from "../ui/button";
 import type { ClassDTO } from "../../services/classService";
 
+// Helper to produce the label shown in the class dropdown trigger
+const getClassLabel = (classes: ClassDTO[], selectedClassId: string) => {
+  if (selectedClassId === 'ALL') return 'Tất cả các lớp';
+  if (!selectedClassId) return 'Chọn lớp học';
+  const cls = classes.find((c) => c.id === selectedClassId);
+  if (!cls) return 'Chọn lớp học';
+  return cls.subject ? `${cls.name} - ${cls.subject}` : cls.name;
+};
+
 interface MonthlyReportFiltersProps {
   classes: ClassDTO[];
   selectedClassId: string;
@@ -38,7 +47,7 @@ export default function MonthlyReportFilters({
       const year = date.getFullYear();
       const month = date.getMonth() + 1;
       const monthStr = month.toString().padStart(2, '0');
-      const value = `${year}-${monthStr}`;
+      const value = `${monthStr}-${year}`;
       const label = date.toLocaleDateString('vi-VN', { 
         year: 'numeric', 
         month: 'long' 
@@ -58,13 +67,10 @@ export default function MonthlyReportFilters({
         <Label htmlFor="class-select">Lớp học</Label>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button className="w-full text-left" variant="outline">
-              {selectedClassId
-                ? (classes.find((c) => c.id === selectedClassId)?.name ?? 'Chọn lớp học') +
-                  (classes.find((c) => c.id === selectedClassId)?.subject ? ` - ${classes.find((c) => c.id === selectedClassId)?.subject}` : '')
-                : 'Chọn lớp học'}
-            </Button>
-          </DropdownMenuTrigger>
+              <Button className="w-full text-left" variant="outline">
+                {getClassLabel(classes, selectedClassId)}
+              </Button>
+            </DropdownMenuTrigger>
           <DropdownMenuContent className="w-full">
             <DropdownMenuItem>
               <button
@@ -72,6 +78,14 @@ export default function MonthlyReportFilters({
                 onClick={() => onClassChange('')}
               >
                 Chọn lớp học
+              </button>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <button
+                className="w-full text-left"
+                onClick={() => onClassChange('ALL')}
+              >
+                Tất cả các lớp
               </button>
             </DropdownMenuItem>
             {classes.map((classItem) => (

@@ -19,7 +19,7 @@ export function createReportsRouter() {
         try {
             const query = getValidatedData<InferOutput<typeof MonthlyReportQuerySchema>>(c);
             const teacherId = getTeacherId(c);
-            
+
             const service = new ReportsService({ db: c.env.DB });
             const result = await service.getMonthlyReport({
                 classId: query.classId,
@@ -28,7 +28,7 @@ export function createReportsRouter() {
                 includeStudentDetails: query.includeStudentDetails,
                 forceRefresh: query.forceRefresh
             });
-            
+
             return c.json(result, 200 as 200);
         } catch (err) {
             const e = toAppError(err, { code: "UNKNOWN" });
@@ -44,7 +44,7 @@ export function createReportsRouter() {
         try {
             const query = getValidatedData<InferOutput<typeof MonthlyReportQuerySchema>>(c);
             const teacherId = getTeacherId(c);
-            
+
             const service = new ReportsService({ db: c.env.DB });
             const result = await service.getMonthlyReport({
                 classId: query.classId,
@@ -53,7 +53,7 @@ export function createReportsRouter() {
                 includeStudentDetails: false, // Always false for summary
                 forceRefresh: query.forceRefresh
             });
-            
+
             // Return only class info and summary, not detailed student data
             const summary = {
                 classInfo: result.classInfo,
@@ -61,7 +61,7 @@ export function createReportsRouter() {
                 summary: result.summary,
                 studentCount: result.students.length
             };
-            
+
             return c.json(summary, 200 as 200);
         } catch (err) {
             const e = toAppError(err, { code: "UNKNOWN" });

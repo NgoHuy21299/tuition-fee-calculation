@@ -16,10 +16,11 @@ export default function Reports() {
   const [selectedMonth, setSelectedMonth] = useState<string>("");
   const [includeStudentDetails, setIncludeStudentDetails] = useState(false);
   const [forceRefresh, setForceRefresh] = useState(false);
-  
+
   // States for manual loading management
   const [classes, setClasses] = useState<ClassDTO[]>([]);
   const [report, setReport] = useState<MonthlyReport | null>(null);
+  const [reports, setReports] = useState<MonthlyReport[] | null>(null);
   const [isLoadingClasses, setIsLoadingClasses] = useState(true);
   const [isLoadingReport, setIsLoadingReport] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,6 +52,7 @@ export default function Reports() {
   useEffect(() => {
     if (!selectedClassId || !selectedMonth) {
       setReport(null);
+      setReports(null);
       return;
     }
 
@@ -59,27 +61,41 @@ export default function Reports() {
       try {
         setIsLoadingReport(true);
         setError(null);
-        const reportData = await reportsService.getMonthlyReport(
-          selectedClassId,
-          selectedMonth,
-          includeStudentDetails,
-          forceRefresh
-        );
-        setReport(reportData);
+        // If ALL selected, fetch per-class reports and collect
+        if (selectedClassId === 'ALL') {
+          const allReports: MonthlyReport[] = [];
+          for (const cls of classes) {
+            try {
+              const r = await reportsService.getMonthlyReport(cls.id, convertMonthGetReport(selectedMonth), includeStudentDetails, forceRefresh);
+              allReports.push(r);
+            } catch {
+              // treat no-data or error as empty report with zeros
+              allReports.push({
+                classInfo: { id: cls.id, name: cls.name, subject: cls.subject || '' },
+                month: selectedMonth,
+                summary: { totalSessions: 0, totalParticipatingStudents: 0, totalFees: 0 },
+                students: [],
+              });
+            }
+          }
+          setReports(allReports);
+          setReport(null);
+        } else {
+          const reportData = await reportsService.getMonthlyReport(
+            selectedClassId,
+            convertMonthGetReport(selectedMonth),
+            includeStudentDetails,
+            forceRefresh
+          );
+          setReport(reportData);
+          setReports(null);
+        }
       } catch (err) {
         console.error('Failed to load report:', err);
-        let errorMsg = 'Không thể tải báo cáo';
-        if (typeof err === 'object' && err !== null) {
-          const maybeAxios = err as { response?: { data?: unknown } };
-          const data = maybeAxios.response?.data;
-          if (data && typeof data === 'object' && 'error' in data && typeof (data as Record<string, unknown>)['error'] === 'string') {
-            errorMsg = (data as { error: string }).error;
-          } else if ('message' in err && typeof (err as Record<string, unknown>)['message'] === 'string') {
-            errorMsg = (err as { message: string }).message;
-          }
-        }
-        setError(errorMsg);
+        // For errors at outer level, show a neutral empty state instead of red error
+        setError(null);
         setReport(null);
+        setReports(null);
       } finally {
         const elapsed = Date.now() - start;
         if (elapsed < MIN_SPINNER_MS) {
@@ -91,7 +107,7 @@ export default function Reports() {
     };
 
     loadReport();
-  }, [selectedClassId, selectedMonth, includeStudentDetails, forceRefresh, reloadKey]);
+  }, [selectedClassId, selectedMonth, includeStudentDetails, forceRefresh, reloadKey, classes]);
 
   const handleForceRefresh = () => {
     setForceRefresh(true);
@@ -107,6 +123,16 @@ export default function Reports() {
     setConfirmRecalcOpen(false);
     setForceRefresh(true);
   };
+
+  const convertMonthGetReport = (selectedMonth: string) => {
+    const yearMonthRegex = /^\d{4}-\d{2}$/;
+    const monthRegex = /^\d{2}$/;
+    const yearRegex = /^\d{4}$/;
+    if (yearMonthRegex.test(selectedMonth)) return selectedMonth;
+    const split = selectedMonth.split('-');
+    if (split.length === 2 && monthRegex.test(split[0]) && yearRegex.test(split[1])) return `${split[1]}-${split[0]}`
+    return selectedMonth;
+  }
 
   if (isLoadingClasses) {
     return (
@@ -140,7 +166,7 @@ export default function Reports() {
             onMonthChange={setSelectedMonth}
             onDetailsToggleChange={setIncludeStudentDetails}
           />
-          
+
           {selectedClassId && selectedMonth && (
             <div className="flex items-center gap-2 mt-4">
               <Button
@@ -196,10 +222,22 @@ export default function Reports() {
                 </Button>
               </div>
             ) : report ? (
-              <MonthlyReportView 
-                report={report} 
+              <MonthlyReportView
+                report={report}
                 includeDetails={includeStudentDetails}
               />
+            ) : reports ? (
+              <div className="space-y-6">
+                {reports.map((r) => (
+                  <div key={r.classInfo.id}>
+                    <Card>
+                      <CardContent>
+                        <MonthlyReportView report={r} includeDetails={includeStudentDetails} />
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
                 Chọn lớp học và tháng để xem báo cáo
