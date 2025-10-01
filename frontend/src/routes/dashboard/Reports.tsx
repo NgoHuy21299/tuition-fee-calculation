@@ -8,6 +8,7 @@ import MonthlyReportFilters from "../../components/reports/MonthlyReportFilters"
 import ConfirmDialog from "../../components/commons/ConfirmDialog";
 import { classService } from "../../services/classService";
 import { reportsService } from "../../services/reportsService";
+import { isAxiosError } from 'axios';
 import type { ClassDTO } from "../../services/classService";
 import type { MonthlyReport } from "../../services/reportsService";
 
@@ -96,6 +97,17 @@ export default function Reports() {
         setError(null);
         setReport(null);
         setReports(null);
+        if (isAxiosError(err)
+          && err.response?.status === 404
+          && err.response?.data?.error === "Không có dữ liệu báo cáo cho tháng này") {
+          const cls = classes.find(c => c.id === selectedClassId);
+          setReport({
+            classInfo: { id: selectedClassId, name: cls?.name || '', subject: cls?.subject || '' },
+            month: selectedMonth,
+            summary: { totalSessions: 0, totalParticipatingStudents: 0, totalFees: 0 },
+            students: [],
+          })
+        }
       } finally {
         const elapsed = Date.now() - start;
         if (elapsed < MIN_SPINNER_MS) {
