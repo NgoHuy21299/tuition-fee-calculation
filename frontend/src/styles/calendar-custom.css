@@ -1,0 +1,443 @@
+/* Custom styles for React Big Calendar */
+
+/* Calendar container */
+.rbc-calendar {
+  font-family: inherit;
+  background: oklch(var(--card));
+  color: oklch(var(--card-foreground));
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Toolbar */
+.rbc-toolbar {
+  padding: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid oklch(var(--border));
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.rbc-toolbar button {
+  padding: 8px 16px;
+  border: 1px solid oklch(var(--border));
+  background: oklch(var(--background));
+  color: oklch(var(--foreground));
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.rbc-toolbar button:hover {
+  background: oklch(var(--accent));
+  border-color: oklch(var(--border));
+}
+
+.rbc-toolbar button:active,
+.rbc-toolbar button.rbc-active {
+  background: oklch(var(--primary));
+  color: oklch(var(--primary-foreground));
+  border-color: oklch(var(--primary));
+}
+
+.rbc-toolbar-label {
+  font-size: 18px;
+  font-weight: 600;
+  color: oklch(var(--foreground));
+}
+
+/* Month view */
+.rbc-month-view {
+  border: 1px solid oklch(var(--border));
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Header */
+.rbc-header {
+  padding: 12px 8px;
+  font-weight: 600;
+  color: oklch(var(--foreground));
+  background: oklch(var(--muted));
+  border-bottom: 2px solid oklch(var(--border));
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+/* Date cells */
+.rbc-date-cell {
+  padding: 8px;
+  text-align: right;
+}
+
+.rbc-date-cell > a {
+  color: oklch(var(--foreground));
+  font-weight: 500;
+}
+
+.rbc-off-range {
+  color: oklch(var(--muted-foreground));
+}
+
+.rbc-today {
+  background-color: oklch(var(--accent));
+}
+
+.rbc-date-cell.rbc-now > a {
+  background: oklch(var(--primary));
+  color: oklch(var(--primary-foreground));
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+/* Day cells */
+.rbc-day-bg {
+  border-left: 1px solid oklch(var(--border));
+  border-right: 1px solid oklch(var(--border));
+}
+
+.rbc-month-row {
+  border-top: 1px solid oklch(var(--border));
+  min-height: 140px !important; /* Increase minimum height for more events */
+  overflow: visible;
+}
+
+/* Events */
+.rbc-event {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  margin-bottom: 2px;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.rbc-event:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.rbc-event-label {
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.rbc-event-content {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Show more link */
+.rbc-show-more {
+  background: transparent;
+  color: oklch(var(--primary));
+  font-weight: 600;
+  font-size: 12px;
+  padding: 4px 8px;
+  margin: 2px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.rbc-show-more:hover {
+  background: oklch(var(--accent));
+  color: oklch(var(--primary));
+}
+
+/* Overlay for "show more" popup */
+.rbc-overlay {
+  background: oklch(var(--popover));
+  color: oklch(var(--popover-foreground));
+  border: 1px solid oklch(var(--border));
+  border-radius: 8px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  padding: 12px;
+  z-index: 50;
+}
+
+.rbc-overlay-header {
+  border-bottom: 1px solid oklch(var(--border));
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: oklch(var(--foreground));
+}
+
+/* Week and Day views */
+.rbc-time-view {
+  border: 1px solid oklch(var(--border));
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.rbc-time-header {
+  border-bottom: 1px solid oklch(var(--border));
+}
+
+.rbc-time-content {
+  border-top: 1px solid oklch(var(--border));
+}
+
+.rbc-time-slot {
+  border-top: 1px solid oklch(var(--border) / 0.5);
+}
+
+.rbc-current-time-indicator {
+  background-color: #ef4444;
+  height: 2px;
+}
+
+/* Agenda view */
+.rbc-agenda-view {
+  border: 1px solid oklch(var(--border));
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.rbc-agenda-view table {
+  border-spacing: 0;
+}
+
+.rbc-agenda-date-cell,
+.rbc-agenda-time-cell {
+  padding: 12px;
+  font-weight: 500;
+  color: oklch(var(--foreground));
+}
+
+.rbc-agenda-event-cell {
+  padding: 12px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .rbc-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .rbc-toolbar button {
+    width: 100%;
+  }
+  
+  .rbc-month-row {
+    min-height: 80px;
+  }
+  
+  .rbc-event {
+    font-size: 11px;
+    padding: 2px 6px;
+  }
+}
+
+/* Increase event display limit */
+.rbc-row-segment {
+  padding: 2px 4px;
+}
+
+/* Allow more vertical space for events */
+.rbc-row-content {
+  position: relative;
+  user-select: none;
+  z-index: 4;
+  min-height: 100px; /* Increase to show more events */
+}
+
+/* Adjust event positioning to show more */
+.rbc-addons-dnd .rbc-row-segment {
+  padding: 1px 2px;
+}
+
+/* Make events more compact to fit more */
+.rbc-event {
+  line-height: 1.2;
+  min-height: 22px;
+}
+
+/* Ensure consistent row heights */
+.rbc-month-view .rbc-month-row {
+  min-height: 140px !important;
+  flex: 1 0 140px;
+}
+
+/* Fix last row visibility */
+.rbc-month-view {
+  min-height: 600px;
+  display: flex;
+  flex-direction: column;
+}
+
+.rbc-month-view .rbc-row-bg {
+  display: flex;
+  flex: 1;
+}
+
+/* Allow overflow to show all events */
+.rbc-row {
+  position: relative;
+  overflow: visible !important;
+}
+
+/* Adjust day slot to accommodate more events */
+.rbc-day-slot .rbc-events-container {
+  margin-right: 0;
+}
+
+/* Make the event container taller */
+.rbc-events-container {
+  min-height: 100px;
+}
+
+/* Compact event spacing */
+.rbc-event + .rbc-event {
+  margin-top: 1px;
+}
+
+/* Ensure show more button is visible and styled */
+.rbc-show-more {
+  display: block;
+  margin-top: 4px;
+  text-align: center;
+  font-size: 11px;
+  padding: 2px 4px;
+}
+
+/* Better event title display */
+.rbc-event-content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Add subtle shadow to calendar */
+.rbc-calendar {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* Improve month view cell spacing */
+.rbc-month-view .rbc-day-bg + .rbc-day-bg {
+  border-left: 1px solid oklch(var(--border));
+}
+
+/* Better weekend styling and off-range dates */
+.rbc-off-range-bg {
+  background: oklch(var(--muted) / 0.5);
+  opacity: 0.6;
+}
+
+/* Dark mode: make off-range even darker */
+.dark .rbc-off-range-bg {
+  background: oklch(var(--background) / 0.5);
+  opacity: 0.5;
+}
+
+/* Improve event hover state */
+.rbc-event:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Better selected event styling */
+.rbc-selected {
+  background-color: #1d4ed8 !important;
+}
+
+/* Improve time grid styling */
+.rbc-time-header-content {
+  border-left: 1px solid oklch(var(--border));
+}
+
+/* Better current time indicator */
+.rbc-current-time-indicator {
+  background-color: #ef4444;
+  height: 2px;
+  box-shadow: 0 0 4px rgba(239, 68, 68, 0.5);
+}
+
+/* Improve agenda view */
+.rbc-agenda-view table.rbc-agenda-table {
+  border: 1px solid oklch(var(--border));
+}
+
+.rbc-agenda-view table.rbc-agenda-table tbody > tr > td {
+  padding: 12px;
+  border-top: 1px solid oklch(var(--border) / 0.5);
+}
+
+.rbc-agenda-view table.rbc-agenda-table tbody > tr + tr {
+  border-top: 1px solid oklch(var(--border));
+}
+
+/* Smooth transitions */
+.rbc-event,
+.rbc-toolbar button,
+.rbc-show-more {
+  transition: all 0.15s ease-in-out;
+}
+
+/* Better focus states for accessibility */
+.rbc-toolbar button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Improve date cell hover */
+.rbc-date-cell:hover {
+  background-color: oklch(var(--accent) / 0.5);
+}
+
+/* Better spacing for event labels */
+.rbc-event-label {
+  margin-right: 4px;
+}
+
+/* Add session button in calendar cells */
+.rbc-day-bg-wrapper {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.rbc-add-session-btn {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  background: oklch(var(--primary) / 0.15);
+  color: oklch(var(--primary));
+  border: 1px solid oklch(var(--primary) / 0.4);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s ease;
+  z-index: 2;
+  white-space: nowrap;
+}
+
+.rbc-day-bg-wrapper:hover .rbc-add-session-btn {
+  opacity: 1;
+}
+
+.rbc-add-session-btn:hover {
+  background: oklch(var(--primary) / 0.25);
+  border-color: oklch(var(--primary) / 0.6);
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.rbc-add-session-btn svg {
+  flex-shrink: 0;
+}

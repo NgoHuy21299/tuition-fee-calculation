@@ -13,7 +13,7 @@ import {
 import { studentService, type StudentDTO } from '../../services/studentService';
 import { PrivateSessionService, type CreatePrivateSessionRequest } from '../../services/privateSessionService';
 import MultipleSelector, { type Option } from '../ui/multiple-selector';
-import { parseDateTimeLocal, getCurrentDateTimeLocal, getPresetTime1, getPresetTime2 } from '../../utils/dateHelpers';
+import { formatDateTimeLocal, parseDateTimeLocal, getCurrentDateTimeLocal, getPresetTime1, getPresetTime2 } from '../../utils/dateHelpers';
 import { DateTimePicker } from '../ui/datetime-picker';
 
 interface PrivateSessionFormProps {
@@ -21,6 +21,7 @@ interface PrivateSessionFormProps {
   onClose: () => void;
   onSuccess: () => void;
   defaultFeePerSession?: number;
+  initialDate?: Date;
 }
 
 type FormData = {
@@ -34,7 +35,8 @@ export function PrivateSessionForm({
   open, 
   onClose, 
   onSuccess, 
-  defaultFeePerSession 
+  defaultFeePerSession,
+  initialDate
 }: PrivateSessionFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -76,14 +78,17 @@ export function PrivateSessionForm({
   // Reset form when dialog opens/closes
   useEffect(() => {
     if (open) {
-      setValue('startTime', getCurrentDateTimeLocal());
+      const startTime = initialDate 
+        ? formatDateTimeLocal(initialDate.toISOString())
+        : getCurrentDateTimeLocal();
+      setValue('startTime', startTime);
       setValue('durationMin', 90); // Default to 90 minutes
       setValue('feePerSession', defaultFeePerSession?.toString() || '');
       setValue('notes', '');
       setSelectedStudents([]);
       setSubmitError(null);
     }
-  }, [open, defaultFeePerSession, setValue]);
+  }, [open, defaultFeePerSession, setValue, initialDate]);
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
@@ -130,11 +135,12 @@ export function PrivateSessionForm({
   };
 
   const handlePresetTime = (presetType: 'ca1' | 'ca2') => {
+    const currentStartTime = watch("startTime");
     if (presetType === 'ca1') {
-      setValue('startTime', getPresetTime1());
+      setValue("startTime", getPresetTime1(currentStartTime));
       setValue('durationMin', 90);
     } else {
-      setValue('startTime', getPresetTime2());
+      setValue("startTime", getPresetTime2(currentStartTime));
       setValue('durationMin', 90);
     }
   };

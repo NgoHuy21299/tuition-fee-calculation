@@ -85,19 +85,19 @@ export function getDayOfWeek(date: Date): number {
 }
 
 /**
- * Get preset time for "Ca 1" (today 16:45)
+ * Get preset time for "Ca 1" (16:45) - preserves current date in form
  */
-export function getPresetTime1(): string {
-  const today = new Date();
-  today.setHours(16, 45, 0, 0);
-  return formatDateTimeLocal(today.toISOString());
+export function getPresetTime1(currentDateTime?: string): string {
+  const date = currentDateTime ? new Date(currentDateTime) : new Date();
+  date.setHours(16, 45, 0, 0);
+  return formatDateTimeLocal(date.toISOString());
 }
 
 /**
- * Get preset time for "Ca 2" (today 18:30)
+ * Get preset time for "Ca 2" (18:30) - preserves current date in form
  */
-export function getPresetTime2(): string {
-  const today = new Date();
-  today.setHours(18, 30, 0, 0);
-  return formatDateTimeLocal(today.toISOString());
+export function getPresetTime2(currentDateTime?: string): string {
+  const date = currentDateTime ? new Date(currentDateTime) : new Date();
+  date.setHours(18, 30, 0, 0);
+  return formatDateTimeLocal(date.toISOString());
 }
