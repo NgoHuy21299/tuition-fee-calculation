@@ -48,50 +48,50 @@ export default function MonthlyReportView({ report, includeDetails }: MonthlyRep
       {/* Class Info & Summary */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-1">
             <CardTitle className="text-sm font-medium text-gray-600">Lớp học</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{report.classInfo.name}</div>
+            <div className="text-2xl font-bold pb-2">{report.classInfo.name}</div>
             <p className="text-xs text-gray-500">{report.classInfo.subject}</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-1">
             <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
               <Clock className="h-4 w-4" />
               Tổng buổi học
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{report.summary.totalSessions}</div>
+            <div className="text-2xl font-bold pb-2">{report.summary.totalSessions}</div>
             <p className="text-xs text-gray-500">buổi trong tháng</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-1">
             <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
               <Users className="h-4 w-4" />
               Học sinh tham gia
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{report.summary.totalParticipatingStudents}</div>
+            <div className="text-2xl font-bold pb-2">{report.summary.totalParticipatingStudents}</div>
             <p className="text-xs text-gray-500">học sinh có tham gia</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-1">
             <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
               <DollarSign className="h-4 w-4" />
               Tổng học phí
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(report.summary.totalFees)}</div>
+            <div className="text-2xl font-bold pb-2">{formatCurrency(report.summary.totalFees)}</div>
             <p className="text-xs text-gray-500">trong tháng {report.month}</p>
           </CardContent>
         </Card>
@@ -152,7 +152,8 @@ export default function MonthlyReportView({ report, includeDetails }: MonthlyRep
                             {student.attendanceDetails.map((detail, index) => (
                               <div 
                                 key={detail.sessionId} 
-                                className="flex items-center justify-between p-3 bg-white rounded border text-sm"
+                                className="flex items-center justify-between p-3 bg-gray-50 rounded border text-sm"
+                                style={{ borderColor: 'rgba(0,0,0,0.04)' }}
                               >
                                 <div className="flex items-center gap-4">
                                   <span>Buổi {index + 1}</span>

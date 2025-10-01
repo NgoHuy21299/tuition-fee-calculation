@@ -61,7 +61,17 @@ export default function Reports() {
         setReport(reportData);
       } catch (err) {
         console.error('Failed to load report:', err);
-        setError((err as Error).message || 'Không thể tải báo cáo');
+        let errorMsg = 'Không thể tải báo cáo';
+        if (typeof err === 'object' && err !== null) {
+          const maybeAxios = err as { response?: { data?: unknown } };
+          const data = maybeAxios.response?.data;
+          if (data && typeof data === 'object' && 'error' in data && typeof (data as Record<string, unknown>)['error'] === 'string') {
+            errorMsg = (data as { error: string }).error;
+          } else if ('message' in err && typeof (err as Record<string, unknown>)['message'] === 'string') {
+            errorMsg = (err as { message: string }).message;
+          }
+        }
+        setError(errorMsg);
         setReport(null);
       } finally {
         setIsLoadingReport(false);

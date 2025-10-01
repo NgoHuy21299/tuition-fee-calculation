@@ -1,5 +1,12 @@
 import { Label } from "../ui/label";
 import { Checkbox } from "../ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "../ui/dropdown-menu";
+import { Button } from "../ui/button";
 import type { ClassDTO } from "../../services/classService";
 
 interface MonthlyReportFiltersProps {
@@ -49,41 +56,66 @@ export default function MonthlyReportFilters({
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div className="space-y-2">
         <Label htmlFor="class-select">Lớp học</Label>
-        <select
-          id="class-select"
-          value={selectedClassId}
-          onChange={(e) => onClassChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          <option value="">Chọn lớp học</option>
-          {classes.map((classItem) => (
-            <option key={classItem.id} value={classItem.id}>
-              {classItem.name} - {classItem.subject || 'Chưa có môn học'}
-            </option>
-          ))}
-        </select>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button className="w-full text-left" variant="outline">
+              {selectedClassId
+                ? (classes.find((c) => c.id === selectedClassId)?.name ?? 'Chọn lớp học') +
+                  (classes.find((c) => c.id === selectedClassId)?.subject ? ` - ${classes.find((c) => c.id === selectedClassId)?.subject}` : '')
+                : 'Chọn lớp học'}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-full">
+            <DropdownMenuItem>
+              <button
+                className="w-full text-left"
+                onClick={() => onClassChange('')}
+              >
+                Chọn lớp học
+              </button>
+            </DropdownMenuItem>
+            {classes.map((classItem) => (
+              <DropdownMenuItem key={classItem.id}>
+                <button
+                  className="w-full text-left"
+                  onClick={() => onClassChange(classItem.id)}
+                >
+                  {classItem.name} - {classItem.subject || 'Chưa có môn học'}
+                </button>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="month-select">Tháng</Label>
-        <select
-          id="month-select"
-          value={selectedMonth}
-          onChange={(e) => onMonthChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          <option value="">Chọn tháng</option>
-          {monthOptions.map((month) => (
-            <option key={month.value} value={month.value}>
-              {month.label}
-            </option>
-          ))}
-        </select>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button className="w-full text-left" variant="outline">
+              {selectedMonth
+                ? (monthOptions.find((m) => m.value === selectedMonth)?.label ?? 'Chọn tháng')
+                : 'Chọn tháng'}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-full">
+            <DropdownMenuItem>
+              <button className="w-full text-left" onClick={() => onMonthChange('')}>Chọn tháng</button>
+            </DropdownMenuItem>
+            {monthOptions.map((month) => (
+              <DropdownMenuItem key={month.value}>
+                <button className="w-full text-left" onClick={() => onMonthChange(month.value)}>
+                  {month.label}
+                </button>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="space-y-2">
         <Label>Tùy chọn</Label>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 pt-3">
           <Checkbox
             id="include-details"
             checked={includeStudentDetails}
