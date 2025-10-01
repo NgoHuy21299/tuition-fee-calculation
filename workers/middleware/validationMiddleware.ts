@@ -1,6 +1,6 @@
 import type { Context, Next } from 'hono';
 import type { BaseSchema } from 'valibot';
-import { parseBodyWithSchema } from '../validation/common/request';
+import { parseBodyWithSchema, parseQueryWithSchema } from '../validation/common/request';
 
 /**
  * Middleware để validate request body với schema
@@ -28,6 +28,40 @@ export function validateBody<T>(schema: BaseSchema<any, T, any>) {
       return c.json(
         { 
           error: 'Invalid request body', 
+          code: "VALIDATION_ERROR" 
+        },
+        400 as 400
+      );
+    }
+  };
+}
+
+/**
+ * Middleware để validate query parameters với schema
+ * Sử dụng: router.get('/', validateQuery(QuerySchema), async (c) => { ... })
+ */
+export function validateQuery<T>(schema: BaseSchema<any, T, any>) {
+  return async (c: Context, next: Next) => {
+    try {
+      const parsed = parseQueryWithSchema(c, schema);
+      if (!parsed.ok) {
+        return c.json(
+          { 
+            error: 'Query validation error', 
+            code: "VALIDATION_ERROR", 
+            details: parsed.errors 
+          },
+          400 as 400
+        );
+      }
+      
+      // Lưu validated data vào context để route handler sử dụng
+      c.set('validatedData', parsed.value);
+      await next();
+    } catch (error) {
+      return c.json(
+        { 
+          error: 'Invalid query parameters', 
           code: "VALIDATION_ERROR" 
         },
         400 as 400

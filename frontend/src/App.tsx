@@ -7,7 +7,6 @@ import Dashboard from "./routes/Dashboard";
 import { ToastProvider } from "./components/commons/Toast";
 import DashboardOverview from "./routes/dashboard/Overview";
 import DashboardClasses from "./routes/dashboard/class/Classes";
-import DashboardTuition from "./routes/dashboard/Tuition";
 import DashboardSettings from "./routes/dashboard/Settings";
 import ClassNew from "./routes/dashboard/class/ClassNew";
 import ClassDetail from "./routes/dashboard/class/ClassDetail";
@@ -17,6 +16,7 @@ import StudentEdit from "./routes/dashboard/student/StudentEdit";
 import ClassRemark from "./routes/dashboard/ClassRemark";
 import AttendancePage from "./routes/dashboard/attendance/AttendancePage";
 import SessionsPage from "./routes/dashboard/Sessions";
+import Reports from "./routes/dashboard/Reports";
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const token = getToken();
@@ -55,7 +55,8 @@ export default function App() {
             <Route path="sessions" element={<SessionsPage />} />
             {/* attendance */}
             <Route path="attendance/:sessionId" element={<AttendancePage />} />
-            <Route path="tuition" element={<DashboardTuition />} />
+            {/* reports */}
+            <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<DashboardSettings />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
