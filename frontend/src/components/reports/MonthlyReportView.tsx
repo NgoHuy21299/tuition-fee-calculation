@@ -145,28 +145,27 @@ export default function MonthlyReportView({ report, includeDetails }: MonthlyRep
                    expandedStudents.has(student.studentId) && 
                    student.attendanceDetails && (
                     <TableRow>
-                      <TableCell colSpan={4} className="bg-gray-50 p-0">
-                        <div className="p-4">
-                          <h4 className="font-medium mb-3">Chi tiết buổi học của {student.studentName}</h4>
+                      <TableCell colSpan={4} className="bg-gray-950 p-0">
+                        <div className="p-4 text-sm text-slate-200">
+                          <h4 className="font-medium mb-3 text-slate-100">Chi tiết buổi học của {student.studentName}</h4>
                           <div className="space-y-2">
                             {student.attendanceDetails.map((detail, index) => (
                               <div 
                                 key={detail.sessionId} 
-                                className="flex items-center justify-between p-3 bg-gray-50 rounded border text-sm"
-                                style={{ borderColor: 'rgba(0,0,0,0.04)' }}
+                                className="flex items-center justify-between p-3 bg-gray-950 rounded border border-slate-700 text-sm"
                               >
-                                <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-4 text-slate-100">
                                   <span>Buổi {index + 1}</span>
-                                  <span>{formatDate(detail.date)}</span>
+                                  <span className="opacity-80">{formatDate(detail.date)}</span>
                                   {getStatusBadge(detail.status)}
                                 </div>
                                 <div className="flex items-center gap-4">
-                                  <span className="font-medium">{formatCurrency(detail.calculatedFee)}</span>
-                                  <div className="text-xs text-gray-500">
+                                  <span className="font-medium text-slate-100">{formatCurrency(detail.calculatedFee)}</span>
+                                  <div className="text-xs text-slate-400">
                                     {detail.feeBreakdown.attendanceOverride !== undefined ? (
                                       <span>Override riêng</span>
                                     ) : detail.feeBreakdown.classOverride !== undefined ? (
-                                      <span>Phí lớp</span>
+                                      <span>Phí lớp riêng</span>
                                     ) : (
                                       <span>Phí buổi học</span>
                                     )}

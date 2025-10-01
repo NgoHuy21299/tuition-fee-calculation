@@ -5,6 +5,7 @@ import { Calendar, FileText, RefreshCw } from "lucide-react";
 import LoadingSpinner from "../../components/commons/LoadingSpinner";
 import MonthlyReportView from "../../components/reports/MonthlyReportView";
 import MonthlyReportFilters from "../../components/reports/MonthlyReportFilters";
+import ConfirmDialog from "../../components/commons/ConfirmDialog";
 import { classService } from "../../services/classService";
 import { reportsService } from "../../services/reportsService";
 import type { ClassDTO } from "../../services/classService";
@@ -22,6 +23,11 @@ export default function Reports() {
   const [isLoadingClasses, setIsLoadingClasses] = useState(true);
   const [isLoadingReport, setIsLoadingReport] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [confirmRecalcOpen, setConfirmRecalcOpen] = useState(false);
+  // Minimum spinner time to avoid flicker
+  const MIN_SPINNER_MS = 300;
+  const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   // Load classes on mount
   useEffect(() => {
@@ -49,12 +55,13 @@ export default function Reports() {
     }
 
     const loadReport = async () => {
+      const start = Date.now();
       try {
         setIsLoadingReport(true);
         setError(null);
         const reportData = await reportsService.getMonthlyReport(
-          selectedClassId, 
-          selectedMonth, 
+          selectedClassId,
+          selectedMonth,
           includeStudentDetails,
           forceRefresh
         );
@@ -74,15 +81,30 @@ export default function Reports() {
         setError(errorMsg);
         setReport(null);
       } finally {
+        const elapsed = Date.now() - start;
+        if (elapsed < MIN_SPINNER_MS) {
+          await delay(MIN_SPINNER_MS - elapsed);
+        }
         setIsLoadingReport(false);
         setForceRefresh(false); // Reset force refresh flag
       }
     };
 
     loadReport();
-  }, [selectedClassId, selectedMonth, includeStudentDetails, forceRefresh]);
+  }, [selectedClassId, selectedMonth, includeStudentDetails, forceRefresh, reloadKey]);
 
   const handleForceRefresh = () => {
+    setForceRefresh(true);
+  };
+
+  const handleRefresh = () => {
+    // simple re-fetch without forcing a full recompute
+    setReloadKey((k) => k + 1);
+  };
+
+  const handleRecalcConfirm = () => {
+    // called when user confirms recalculation
+    setConfirmRecalcOpen(false);
     setForceRefresh(true);
   };
 
@@ -122,14 +144,35 @@ export default function Reports() {
           {selectedClassId && selectedMonth && (
             <div className="flex items-center gap-2 mt-4">
               <Button
-                onClick={handleForceRefresh}
-                disabled={isLoadingReport || forceRefresh}
+                onClick={() => handleRefresh()}
+                disabled={isLoadingReport}
                 variant="outline"
                 size="sm"
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${(isLoadingReport || forceRefresh) ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingReport ? 'animate-spin' : ''}`} />
                 Làm mới báo cáo
               </Button>
+
+              <Button
+                onClick={() => setConfirmRecalcOpen(true)}
+                disabled={isLoadingReport || forceRefresh}
+                variant="warning"
+                size="sm"
+              >
+                Tính toán lại báo cáo
+              </Button>
+
+              <ConfirmDialog
+                open={confirmRecalcOpen}
+                title="Tính toán lại báo cáo"
+                description="Yêu cầu này sẽ buộc hệ thống tính toán lại báo cáo (dùng khi bạn vừa cập nhật buổi học). Bạn có chắc muốn tiếp tục?"
+                confirmText="Tính toán lại"
+                cancelText="Hủy"
+                loading={isLoadingReport || forceRefresh}
+                confirmVariant="danger"
+                onConfirm={handleRecalcConfirm}
+                onCancel={() => setConfirmRecalcOpen(false)}
+              />
             </div>
           )}
         </CardContent>
