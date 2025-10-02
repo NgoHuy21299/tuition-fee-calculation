@@ -255,10 +255,26 @@ export default function DashboardOverview() {
       {/* Calendar */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5" />
-            Lịch buổi học
-          </CardTitle>
+          <div className="flex items-center justify-between w-full">
+            <CardTitle className="flex items-center gap-2">
+              <CalendarIcon className="h-5 w-5" />
+              Lịch buổi học
+            </CardTitle>
+            <div className="flex items-center gap-3 text-xs">
+              <span className="flex items-center gap-1">
+                <span style={{background:'#10b981',width:14,height:14,borderRadius:3,display:'inline-block'}}></span>
+                <span>Đã hoàn thành</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span style={{background:'#3b82f6',width:14,height:14,borderRadius:3,display:'inline-block'}}></span>
+                <span>Đã lên lịch</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span style={{background:'#ef4444',width:14,height:14,borderRadius:3,display:'inline-block'}}></span>
+                <span>Đã huỷ</span>
+              </span>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoadingSessions ? (

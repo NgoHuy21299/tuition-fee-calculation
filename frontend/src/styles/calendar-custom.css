@@ -77,7 +77,7 @@
 }
 
 .rbc-off-range {
-  color: oklch(var(--muted-foreground));
+  color: #db722c;
 }
 
 .rbc-today {
@@ -86,7 +86,7 @@
 
 .rbc-date-cell.rbc-now>a,
 .rbc-current {
-  color: #fff9c4 !important;
+  color: rgb(63, 230, 71);
 }
 
 /* Day cells with vertical borders */
@@ -418,7 +418,7 @@
 .rbc-add-session-btn {
   position: absolute !important;
   top: 7px !important;
-  right: 45px !important;
+  right: 55px !important;
   bottom: auto !important;
   left: auto !important;
   transform: none !important;
