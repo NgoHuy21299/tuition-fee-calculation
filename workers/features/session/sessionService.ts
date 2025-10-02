@@ -4,7 +4,7 @@ import {
   type CreateSessionRow,
   type SessionRow,
 } from "./sessionRepository";
-import { ClassRepository } from "../class/classRepository";
+import { ClassRepository, type ClassRow } from "../class/classRepository";
 import { AttendanceRepository } from "../attendance/attendanceRepository";
 import { ClassStudentRepository } from "../class-student/classStudentRepository";
 import type {
@@ -47,8 +47,9 @@ export class SessionService {
     teacherId: string
   ): Promise<SessionDto> {
     // Validate class ownership if provided
+    let classExists: ClassRow | null = null;
     if (input.classId) {
-      const classExists = await this.classRepo.getById(
+      classExists = await this.classRepo.getById(
         input.classId,
         teacherId
       );
@@ -86,7 +87,7 @@ export class SessionService {
       durationMin: input.durationMin,
       status: "scheduled",
       notes: input.notes ?? null,
-      feePerSession: input.feePerSession ?? null,
+      feePerSession: input.feePerSession ?? classExists?.defaultFeePerSession ?? null,
       type: input.classId ? "class" : "ad_hoc",
       seriesId: null,
     };
@@ -273,6 +274,14 @@ export class SessionService {
           "Time conflict with existing session",
           409
         );
+      }
+    }
+
+    // Populate feePerSession from class default if not set and session is linked to a class
+    if (existing.classId && !existing.feePerSession) {
+      const classExists = await this.classRepo.getById(existing.classId, teacherId);
+      if (classExists?.defaultFeePerSession) {
+        input.feePerSession = classExists.defaultFeePerSession;
       }
     }
 

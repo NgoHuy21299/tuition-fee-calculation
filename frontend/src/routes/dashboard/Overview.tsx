@@ -195,7 +195,7 @@ export default function DashboardOverview() {
       const session = event.resource;
       // Navigate to attendance page with state for back navigation
       navigate(`/dashboard/attendance/${session.id}`, {
-        state: { from: "/dashboard" },
+        state: { from: "/dashboard/overview" },
       });
     },
     [navigate]
