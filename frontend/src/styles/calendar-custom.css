@@ -84,11 +84,9 @@
   background-color: oklch(var(--accent));
 }
 
-.rbc-date-cell.rbc-now>a {
-  background: oklch(var(--primary));
-  color: oklch(var(--primary-foreground));
-  padding: 4px 8px;
-  border-radius: 4px;
+.rbc-date-cell.rbc-now>a,
+.rbc-current {
+  color: #fff9c4 !important;
 }
 
 /* Day cells with vertical borders */
