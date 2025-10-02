@@ -4,8 +4,19 @@ import type { View } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "../../styles/calendar-custom.css";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/dialog";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "../../components/ui/dialog";
 import { Button } from "../../components/ui/button";
 import { CalendarIcon, Plus } from "lucide-react";
 import OverviewStats from "../../components/dashboard/OverviewStats";
@@ -24,15 +35,19 @@ const localizer = momentLocalizer(moment);
 
 // Configure moment to Vietnamese with Monday as first day of week
 moment.locale("vi", {
-  months: "Tháng 1_Tháng 2_Tháng 3_Tháng 4_Tháng 5_Tháng 6_Tháng 7_Tháng 8_Tháng 9_Tháng 10_Tháng 11_Tháng 12".split("_"),
-  monthsShort: "Th01_Th02_Th03_Th04_Th05_Th06_Th07_Th08_Th09_Th10_Th11_Th12".split("_"),
+  months:
+    "Tháng 1_Tháng 2_Tháng 3_Tháng 4_Tháng 5_Tháng 6_Tháng 7_Tháng 8_Tháng 9_Tháng 10_Tháng 11_Tháng 12".split(
+      "_"
+    ),
+  monthsShort:
+    "Th01_Th02_Th03_Th04_Th05_Th06_Th07_Th08_Th09_Th10_Th11_Th12".split("_"),
   weekdays: "Chủ nhật_Thứ hai_Thứ ba_Thứ tư_Thứ năm_Thứ sáu_Thứ bảy".split("_"),
   weekdaysShort: "CN_T2_T3_T4_T5_T6_T7".split("_"),
   weekdaysMin: "CN_T2_T3_T4_T5_T6_T7".split("_"),
   week: {
     dow: 1, // Monday is the first day of the week
-    doy: 4  // The week that contains Jan 4th is the first week of the year
-  }
+    doy: 4, // The week that contains Jan 4th is the first week of the year
+  },
 });
 
 interface CalendarEvent {
@@ -82,7 +97,9 @@ export default function DashboardOverview() {
         setIsLoadingStats(true);
 
         // Load total classes
-        const classesResponse = await classService.listClasses({ isGetAll: false });
+        const classesResponse = await classService.listClasses({
+          isGetAll: false,
+        });
         setTotalClasses(classesResponse.items.length);
 
         // Load total students
@@ -125,10 +142,10 @@ export default function DashboardOverview() {
     return sessions.map((session) => {
       const start = new Date(session.startTime);
       const end = new Date(start.getTime() + session.durationMin * 60000);
-      
+
       return {
         id: session.id,
-        title: session.className || "Buổi học",
+        title: session.className || "Buổi học riêng",
         start,
         end,
         resource: session,
@@ -140,7 +157,7 @@ export default function DashboardOverview() {
   const eventStyleGetter = useCallback((event: CalendarEvent) => {
     const session = event.resource;
     let backgroundColor = "#3b82f6"; // blue for scheduled
-    
+
     if (session.status === "completed") {
       backgroundColor = "#10b981"; // green
     } else if (session.status === "canceled") {
@@ -160,13 +177,16 @@ export default function DashboardOverview() {
   }, []);
 
   // Handle event click
-  const handleSelectEvent = useCallback((event: CalendarEvent) => {
-    const session = event.resource;
-    // Navigate to attendance page with state for back navigation
-    navigate(`/dashboard/attendance/${session.id}`, {
-      state: { from: '/dashboard' }
-    });
-  }, [navigate]);
+  const handleSelectEvent = useCallback(
+    (event: CalendarEvent) => {
+      const session = event.resource;
+      // Navigate to attendance page with state for back navigation
+      navigate(`/dashboard/attendance/${session.id}`, {
+        state: { from: "/dashboard" },
+      });
+    },
+    [navigate]
+  );
 
   // Handle view change
   const handleViewChange = useCallback((view: View) => {
@@ -187,30 +207,33 @@ export default function DashboardOverview() {
   // Handle session form success
   const handleSessionFormSuccess = useCallback(() => {
     // Reload sessions
-    SessionService.getAllSessions().then(data => setSessions(data));
+    SessionService.getAllSessions().then((data) => setSessions(data));
   }, []);
 
   // Custom DateCellWrapper to add "Create Session" button
-  const DateCellWrapper = useCallback(({ value, children }: { value: Date; children: React.ReactNode }) => {
-    return (
-      <div className="rbc-day-bg-wrapper">
-        {children}
-        <button
-          className="rbc-add-session-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            handleCreateSessionFromDate(value);
-          }}
-          title="Thêm lịch học"
-          type="button"
-        >
-          <Plus style={{ width: '12px', height: '12px' }} />
-          <span>Thêm lịch</span>
-        </button>
-      </div>
-    );
-  }, [handleCreateSessionFromDate]);
+  const DateCellWrapper = useCallback(
+    ({ value, children }: { value: Date; children: React.ReactNode }) => {
+      return (
+        <div className="rbc-day-bg-wrapper">
+          {children}
+          <button
+            className="rbc-add-session-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              handleCreateSessionFromDate(value);
+            }}
+            title="Thêm lịch học"
+            type="button"
+          >
+            <Plus style={{ width: "12px", height: "12px" }} />
+            <span>Thêm lịch</span>
+          </button>
+        </div>
+      );
+    },
+    [handleCreateSessionFromDate]
+  );
 
   return (
     <div className="space-y-6">
@@ -244,7 +267,7 @@ export default function DashboardOverview() {
             </div>
           ) : (
             <div className="h-[1000px]">
-              <div style={{ height: '100%', minHeight: '1000px' }}>
+              <div style={{ height: "100%", minHeight: "1000px" }}>
                 <Calendar
                   localizer={localizer}
                   events={events}
@@ -263,23 +286,24 @@ export default function DashboardOverview() {
                   step={60}
                   timeslots={1}
                   culture="vi"
-                messages={{
-                  next: "Sau",
-                  previous: "Trước",
-                  today: "Hôm nay",
-                  month: "Tháng",
-                  week: "Tuần",
-                  day: "Ngày",
-                  agenda: "Lịch trình",
-                  date: "Ngày",
-                  time: "Thời gian",
-                  event: "Sự kiện",
-                  noEventsInRange: "Không có buổi học nào trong khoảng thời gian này",
-                  showMore: (total) => `+ Xem thêm ${total} buổi học`,
-                }}
-                components={{
-                  dateCellWrapper: DateCellWrapper,
-                }}
+                  messages={{
+                    next: "Sau",
+                    previous: "Trước",
+                    today: "Hôm nay",
+                    month: "Tháng",
+                    week: "Tuần",
+                    day: "Ngày",
+                    agenda: "Lịch trình",
+                    date: "Ngày",
+                    time: "Thời gian",
+                    event: "Sự kiện",
+                    noEventsInRange:
+                      "Không có buổi học nào trong khoảng thời gian này",
+                    showMore: (total) => `+ Xem thêm ${total} buổi học`,
+                  }}
+                  components={{
+                    dateCellWrapper: DateCellWrapper,
+                  }}
                 />
               </div>
             </div>
@@ -288,7 +312,10 @@ export default function DashboardOverview() {
       </Card>
 
       {/* Session Type Selection Dialog */}
-      <Dialog open={showSessionTypeDialog} onOpenChange={setShowSessionTypeDialog}>
+      <Dialog
+        open={showSessionTypeDialog}
+        onOpenChange={setShowSessionTypeDialog}
+      >
         <DialogContent className="sm:max-w-[420px]">
           <DialogHeader>
             <DialogTitle>Chọn loại buổi học</DialogTitle>
@@ -317,7 +344,12 @@ export default function DashboardOverview() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSessionTypeDialog(false)}>Đóng</Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowSessionTypeDialog(false)}
+            >
+              Đóng
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
