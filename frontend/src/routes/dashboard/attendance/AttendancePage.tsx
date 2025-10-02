@@ -68,9 +68,16 @@ export default function AttendancePage() {
     }
   };
 
-  const backState = (location.state as { backTo?: string; backTab?: string } | null) || null;
+  // Support two shapes in location.state:
+  // - { from: string } (used by Overview when navigating to attendance)
+  // - { backTo?: string; backTab?: string } (older convention)
+  const backState = (location.state as { from?: string; backTo?: string; backTab?: string } | null) || null;
   const handleBack = () => {
-    // Navigate back to previous context if provided
+    // Navigate back to previous context if provided. Prefer `from` (Overview)
+    if (backState?.from) {
+      navigate(backState.from, { state: { tab: backState.backTab ?? 'sessions' } });
+      return;
+    }
     if (backState?.backTo) {
       navigate(backState.backTo, { state: { tab: backState.backTab ?? 'sessions' } });
       return;
@@ -103,7 +110,7 @@ export default function AttendancePage() {
       <div className="container mx-auto p-6">
         <div className="flex items-center gap-4 mb-6">
           <BackNavigation
-            to={backState?.backTo ?? (session?.classId ? `/dashboard/classes/${session.classId}` : '/dashboard/classes')}
+            to={backState?.from ?? backState?.backTo ?? (session?.classId ? `/dashboard/classes/${session.classId}` : '/dashboard/classes')}
             state={{ tab: backState?.backTab ?? 'sessions' }}
             text="Quay lại"
             className="w-auto"
@@ -129,7 +136,7 @@ export default function AttendancePage() {
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <BackNavigation
-          to={backState?.backTo ?? (session?.classId ? `/dashboard/classes/${session.classId}` : '/dashboard/classes')}
+          to={backState?.from ?? backState?.backTo ?? (session?.classId ? `/dashboard/classes/${session.classId}` : '/dashboard/classes')}
           state={{ tab: backState?.backTab ?? 'sessions' }}
           text="Quay lại"
           className="w-auto"
