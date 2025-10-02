@@ -72,8 +72,15 @@ export function SessionForm({
   useEffect(() => {
     const loadClasses = async () => {
       try {
-        const response = await classService.listClasses({ isGetAll: false, isActive: true });
-        setClasses(response.items);
+        if (classId) {
+          // If a classId is provided (we're in class detail), fetch that single class so
+          // the select can show the class name and be disabled.
+          const cls = await classService.getClass(classId);
+          setClasses([cls]);
+        } else {
+          const response = await classService.listClasses({ isGetAll: false, isActive: true });
+          setClasses(response.items);
+        }
       } catch (error) {
         console.error('Failed to load classes:', error);
       }
@@ -82,7 +89,7 @@ export function SessionForm({
     if (open && !editingSession) {
       loadClasses();
     }
-  }, [open, editingSession]);
+  }, [open, editingSession, classId]);
 
   // Reset form when dialog opens/closes or editing session changes
   useEffect(() => {
@@ -103,11 +110,25 @@ export function SessionForm({
         setValue('durationMin', 90); // Default to 90 minutes
         setValue('feePerSession', defaultFeePerSession?.toString() || '');
         setValue('notes', '');
-        setValue('classId', classId || '');
+          // Do not set classId here if provided: wait until classes are loaded so
+          // the <select> has the matching <option> and the selection is visible.
       }
       setSubmitError(null);
     }
   }, [open, editingSession, defaultFeePerSession, setValue, classId, initialDate]);
+
+      // When creating from a specific class (classId prop), ensure we set the
+      // form value after the classes list contains that class. This avoids the
+      // situation where the select has no matching <option> yet and the browser
+      // doesn't display the selected value on first open.
+      useEffect(() => {
+        if (open && !editingSession && classId && classes.length > 0) {
+          const found = classes.find((c) => c.id === classId);
+          if (found) {
+            setValue('classId', classId);
+          }
+        }
+      }, [open, editingSession, classId, classes, setValue]);
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
@@ -186,7 +207,7 @@ export function SessionForm({
                 {...register('classId', { 
                   required: 'Vui lòng chọn lớp học' 
                 })}
-                disabled={isSubmitting || classes.length === 0}
+                disabled={isSubmitting || !!classId}
               >
                 <option value="">Chọn lớp học...</option>
                 {classes.map((cls) => (
