@@ -18,7 +18,8 @@ import {
   DialogFooter,
 } from "../../components/ui/dialog";
 import { Button } from "../../components/ui/button";
-import { CalendarIcon, Plus } from "lucide-react";
+import { CalendarIcon, Plus, RefreshCw } from "lucide-react";
+import ConfirmDialog from "../../components/commons/ConfirmDialog";
 import OverviewStats from "../../components/dashboard/OverviewStats";
 import { Lock } from "lucide-react";
 import LoadingSpinner from "../../components/commons/LoadingSpinner";
@@ -77,6 +78,13 @@ export default function DashboardOverview() {
   const [showSessionForm, setShowSessionForm] = useState(false);
   const [showPrivateSessionForm, setShowPrivateSessionForm] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
+  // Confirm dialog + loading for forcing revenue recalculation
+  const [confirmRevenueRecalcOpen, setConfirmRevenueRecalcOpen] = useState(false);
+  const [isRecalcRevenueLoading, setIsRecalcRevenueLoading] = useState(false);
+  // Minimum spinner time for revenue recalc to avoid flicker
+  const MIN_RECALC_SPINNER_MS = 500;
+  const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
   // Load sessions for calendar
   useEffect(() => {
@@ -216,8 +224,41 @@ export default function DashboardOverview() {
     revenueTimeoutRef.current = window.setTimeout(() => {
       setShowRevenue(false);
       revenueTimeoutRef.current = null;
-    }, 10000);
+    }, 20000);
   }, []);
+
+  // Confirmed recalc of monthly revenue (force recompute)
+  const handleConfirmRecalcRevenue = async () => {
+    setConfirmRevenueRecalcOpen(false);
+    setIsRecalcRevenueLoading(true);
+    const start = Date.now();
+    try {
+      // Fetch classes (non-paginated list)
+      const classesResponse = await classService.listClasses({ isGetAll: false });
+      const currentMonth = moment().format('YYYY-MM');
+      let totalRevenue = 0;
+
+      for (const cls of classesResponse.items) {
+        try {
+          const r = await reportsService.getMonthlyReport(cls.id, currentMonth, false, true);
+          totalRevenue += r.summary.totalFees;
+        } catch {
+          // If a class has no data or fails, skip it
+          continue;
+        }
+      }
+
+      setMonthlyRevenue(totalRevenue);
+    } catch {
+      console.error('Failed to recalc monthly revenue');
+    } finally {
+      const elapsed = Date.now() - start;
+      if (elapsed < MIN_RECALC_SPINNER_MS) {
+        await delay(MIN_RECALC_SPINNER_MS - elapsed);
+      }
+      setIsRecalcRevenueLoading(false);
+    }
+  };
 
   // Clear timeout on unmount to avoid setting state after unmount
   useEffect(() => {
@@ -290,30 +331,49 @@ export default function DashboardOverview() {
         monthlyRevenue={monthlyRevenue}
         isLoading={isLoadingStats}
         renderRevenueCard={({ value }: { value: number }) => (
-          <Card
-            className="relative cursor-pointer"
-            onClick={() => {
-              if (!showRevenue) handleShowRevenue();
-            }}
-            aria-label={showRevenue ? "Doanh thu" : "Bấm để xem doanh thu"}
-            tabIndex={0}
-          >
-            {/* blurred overlay when hidden */}
+            <Card
+              className="relative cursor-pointer"
+              onClick={() => {
+                if (!showRevenue) handleShowRevenue();
+              }}
+              aria-label={showRevenue ? "Doanh thu" : "Bấm để xem doanh thu"}
+              tabIndex={0}
+            >
+            {/* blurred overlay when hidden (intercepts clicks and reveals on click) */}
             <div
-              className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+              className="absolute inset-0 flex items-center justify-center z-30 cursor-pointer"
               style={{
                 display: showRevenue ? "none" : "flex",
               }}
+              onClick={() => handleShowRevenue()}
+              role="button"
+              aria-label="Hiện doanh thu"
             >
               <Lock className="w-8 h-8 text-gray-400" />
             </div>
 
             <div
+              className="relative"
               style={{
                 filter: showRevenue ? "none" : "blur(6px)",
                 transition: "filter 0.3s",
               }}
             >
+              {/* Place refresh button inside blurred area so it gets blurred too */}
+              <div className="absolute top-1 right-1">
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setConfirmRevenueRecalcOpen(true);
+                  }}
+                  disabled={isRecalcRevenueLoading}
+                  aria-label="Tính toán lại doanh thu"
+                >
+                  <RefreshCw className={`h-3 w-3 ${isRecalcRevenueLoading ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium text-gray-500">
                   Doanh thu tháng này
@@ -325,14 +385,16 @@ export default function DashboardOverview() {
                     <span className="text-emerald-600">₫</span>
                   </div>
                   <div>
-                    <p className="text-3xl font-bold">
-                      {showRevenue ? (
-                        <span>{value.toLocaleString("vi-VN")}₫</span>
-                      ) : (
-                        // Masked placeholder to fully hide the numeric amount while blurred
-                        <span>₫</span>
-                      )}
-                    </p>
+                      <p className="text-3xl font-bold">
+                        {isRecalcRevenueLoading ? (
+                          <LoadingSpinner size={20} padding={4} />
+                        ) : showRevenue ? (
+                          <span>{value.toLocaleString("vi-VN")}₫</span>
+                        ) : (
+                          // Masked placeholder to fully hide the numeric amount while blurred
+                          <span>₫</span>
+                        )}
+                      </p>
                     <p className="text-sm text-gray-500">Tính đến thời điểm hiện tại</p>
                   </div>
                 </div>
@@ -340,6 +402,18 @@ export default function DashboardOverview() {
             </div>
           </Card>
         )}
+      />
+
+      <ConfirmDialog
+        open={confirmRevenueRecalcOpen}
+        title="Tính toán lại doanh thu"
+        description="Yêu cầu này sẽ buộc hệ thống tính toán lại doanh thu tháng này (dùng khi bạn vừa cập nhật buổi học). Bạn có chắc muốn tiếp tục?"
+        confirmText="Tính toán lại"
+        cancelText="Hủy"
+        loading={isRecalcRevenueLoading}
+        confirmVariant="danger"
+        onConfirm={handleConfirmRecalcRevenue}
+        onCancel={() => setConfirmRevenueRecalcOpen(false)}
       />
 
       {/* Calendar */}
