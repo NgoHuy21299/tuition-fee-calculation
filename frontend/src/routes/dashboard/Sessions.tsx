@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '../../components/ui/button';
 import { useToast } from '../../components/commons/Toast';
 import { formatDate, formatTime, formatDuration } from '../../utils/dateHelpers';
+import { Card } from '../../components/ui/card';
 
 export default function SessionsPage() {
   const [showSessionForm, setShowSessionForm] = useState(false);
@@ -166,14 +167,14 @@ export default function SessionsPage() {
           Quản lý tất cả buổi học của bạn từ tất cả các lớp
         </p>
       </div>
-
-      <TeacherSessionList
-        key={refreshKey}
-        onCreateSession={handleOpenCreateSession}
-        onCreateSeries={handleCreateSeries}
-        onEditSession={handleEditSession}
-      />
-
+      <Card>
+        <TeacherSessionList
+          key={refreshKey}
+          onCreateSession={handleOpenCreateSession}
+          onCreateSeries={handleCreateSeries}
+          onEditSession={handleEditSession}
+        />
+      </Card>
       {/* Session Type Selection Dialog */}
       <Dialog open={showSessionTypeDialog} onOpenChange={setShowSessionTypeDialog}>
         <DialogContent className="sm:max-w-[420px]">
