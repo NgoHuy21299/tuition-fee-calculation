@@ -7,6 +7,8 @@ interface OverviewStatsProps {
   totalStudents: number;
   monthlyRevenue: number;
   isLoading: boolean;
+  // Optional render prop to customize the entire revenue card
+  renderRevenueCard?: (args: { value: number }) => React.ReactNode;
 }
 
 export default function OverviewStats({
@@ -14,6 +16,7 @@ export default function OverviewStats({
   totalStudents,
   monthlyRevenue,
   isLoading,
+  renderRevenueCard,
 }: OverviewStatsProps) {
   if (isLoading) {
     return (
@@ -67,29 +70,31 @@ export default function OverviewStats({
         </CardContent>
       </Card>
 
-      {/* Monthly Revenue Card */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-gray-500">
-            Doanh thu tháng này
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-emerald-100 rounded-lg">
-              <DollarSign className="h-6 w-6 text-emerald-600" />
+      {/* Monthly Revenue Card (can be fully replaced via render prop) */}
+      {renderRevenueCard ? (
+        renderRevenueCard({ value: monthlyRevenue })
+      ) : (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-gray-500">
+              Doanh thu tháng này
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-emerald-100 rounded-lg">
+                <DollarSign className="h-6 w-6 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-3xl font-bold">
+                  {monthlyRevenue.toLocaleString("vi-VN")}
+                </p>
+                <p className="text-sm text-gray-500">Tính đến thời điểm hiện tại</p>
+              </div>
             </div>
-            <div>
-              <p className="text-3xl font-bold">
-                {monthlyRevenue.toLocaleString('vi-VN')}
-              </p>
-              <p className="text-sm text-gray-500">
-                Tính đến thời điểm hiện tại
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

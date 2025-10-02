@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Calendar, momentLocalizer } from "react-big-calendar";
 import type { View } from "react-big-calendar";
 import moment from "moment";
@@ -20,6 +20,7 @@ import {
 import { Button } from "../../components/ui/button";
 import { CalendarIcon, Plus } from "lucide-react";
 import OverviewStats from "../../components/dashboard/OverviewStats";
+import { Lock } from "lucide-react";
 import LoadingSpinner from "../../components/commons/LoadingSpinner";
 import { SessionService } from "../../services/sessionService";
 import { classService } from "../../services/classService";
@@ -59,6 +60,10 @@ interface CalendarEvent {
 }
 
 export default function DashboardOverview() {
+  // State cho bảo mật doanh thu
+  const [showRevenue, setShowRevenue] = useState(false);
+  // In browser environments setTimeout returns a number, so use number | null here
+  const revenueTimeoutRef = useRef<number | null>(null);
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<SessionDto[]>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
@@ -204,7 +209,41 @@ export default function DashboardOverview() {
     setShowSessionTypeDialog(true);
   }, []);
 
-  // Handle session form success
+  // Bảo mật doanh thu: bấm vào mới hiện, tự động ẩn sau 30s
+  const handleShowRevenue = useCallback(() => {
+    setShowRevenue(true);
+    if (revenueTimeoutRef.current) window.clearTimeout(revenueTimeoutRef.current);
+    revenueTimeoutRef.current = window.setTimeout(() => {
+      setShowRevenue(false);
+      revenueTimeoutRef.current = null;
+    }, 10000);
+  }, []);
+
+  // Clear timeout on unmount to avoid setting state after unmount
+  useEffect(() => {
+    return () => {
+      if (revenueTimeoutRef.current) {
+        window.clearTimeout(revenueTimeoutRef.current);
+        revenueTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  // Allow hiding revenue early with Escape key while it's shown
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && showRevenue) {
+        setShowRevenue(false);
+        if (revenueTimeoutRef.current) {
+          window.clearTimeout(revenueTimeoutRef.current);
+          revenueTimeoutRef.current = null;
+        }
+      }
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showRevenue]);
   const handleSessionFormSuccess = useCallback(() => {
     // Reload sessions
     SessionService.getAllSessions().then((data) => setSessions(data));
@@ -250,6 +289,57 @@ export default function DashboardOverview() {
         totalStudents={totalStudents}
         monthlyRevenue={monthlyRevenue}
         isLoading={isLoadingStats}
+        renderRevenueCard={({ value }: { value: number }) => (
+          <Card
+            className="relative cursor-pointer"
+            onClick={() => {
+              if (!showRevenue) handleShowRevenue();
+            }}
+            aria-label={showRevenue ? "Doanh thu" : "Bấm để xem doanh thu"}
+            tabIndex={0}
+          >
+            {/* blurred overlay when hidden */}
+            <div
+              className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+              style={{
+                display: showRevenue ? "none" : "flex",
+              }}
+            >
+              <Lock className="w-8 h-8 text-gray-400" />
+            </div>
+
+            <div
+              style={{
+                filter: showRevenue ? "none" : "blur(6px)",
+                transition: "filter 0.3s",
+              }}
+            >
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium text-gray-500">
+                  Doanh thu tháng này
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-emerald-100 rounded-lg">
+                    <span className="text-emerald-600">₫</span>
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold">
+                      {showRevenue ? (
+                        <span>{value.toLocaleString("vi-VN")}₫</span>
+                      ) : (
+                        // Masked placeholder to fully hide the numeric amount while blurred
+                        <span>₫</span>
+                      )}
+                    </p>
+                    <p className="text-sm text-gray-500">Tính đến thời điểm hiện tại</p>
+                  </div>
+                </div>
+              </CardContent>
+            </div>
+          </Card>
+        )}
       />
 
       {/* Calendar */}
