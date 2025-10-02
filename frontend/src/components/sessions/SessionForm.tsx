@@ -27,6 +27,7 @@ interface SessionFormProps {
   classId?: string;
   editingSession?: SessionDto;
   defaultFeePerSession?: number;
+  initialDate?: Date;
 }
 
 type FormData = {
@@ -43,7 +44,8 @@ export function SessionForm({
   onSuccess, 
   classId, 
   editingSession,
-  defaultFeePerSession 
+  defaultFeePerSession,
+  initialDate
 }: SessionFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -93,8 +95,11 @@ export function SessionForm({
         setValue('notes', editingSession.notes || '');
         setValue('classId', editingSession.classId || '');
       } else {
-        // Create mode
-        setValue('startTime', getCurrentDateTimeLocal());
+        // Create mode - use initialDate if provided
+        const startTime = initialDate 
+          ? formatDateTimeLocal(initialDate.toISOString())
+          : getCurrentDateTimeLocal();
+        setValue('startTime', startTime);
         setValue('durationMin', 90); // Default to 90 minutes
         setValue('feePerSession', defaultFeePerSession?.toString() || '');
         setValue('notes', '');
@@ -102,7 +107,7 @@ export function SessionForm({
       }
       setSubmitError(null);
     }
-  }, [open, editingSession, defaultFeePerSession, setValue, classId]);
+  }, [open, editingSession, defaultFeePerSession, setValue, classId, initialDate]);
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
@@ -151,11 +156,12 @@ export function SessionForm({
   };
 
   const handlePresetTime = (presetType: 'ca1' | 'ca2') => {
+    const currentStartTime = watch('startTime');
     if (presetType === 'ca1') {
-      setValue('startTime', getPresetTime1());
+      setValue('startTime', getPresetTime1(currentStartTime));
       setValue('durationMin', 90);
     } else {
-      setValue('startTime', getPresetTime2());
+      setValue('startTime', getPresetTime2(currentStartTime));
       setValue('durationMin', 90);
     }
   };

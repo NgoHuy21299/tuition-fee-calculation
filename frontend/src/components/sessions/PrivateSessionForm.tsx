@@ -13,7 +13,7 @@ import {
 import { studentService, type StudentDTO } from '../../services/studentService';
 import { PrivateSessionService, type CreatePrivateSessionRequest } from '../../services/privateSessionService';
 import MultipleSelector, { type Option } from '../ui/multiple-selector';
-import { parseDateTimeLocal, getCurrentDateTimeLocal, getPresetTime1, getPresetTime2 } from '../../utils/dateHelpers';
+import { formatDateTimeLocal, parseDateTimeLocal, getCurrentDateTimeLocal, getPresetTime1, getPresetTime2 } from '../../utils/dateHelpers';
 import { DateTimePicker } from '../ui/datetime-picker';
 
 interface PrivateSessionFormProps {
@@ -21,6 +21,7 @@ interface PrivateSessionFormProps {
   onClose: () => void;
   onSuccess: () => void;
   defaultFeePerSession?: number;
+  initialDate?: Date;
 }
 
 type FormData = {
@@ -34,12 +35,14 @@ export function PrivateSessionForm({
   open, 
   onClose, 
   onSuccess, 
-  defaultFeePerSession 
+  defaultFeePerSession,
+  initialDate
 }: PrivateSessionFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [students, setStudents] = useState<StudentDTO[]>([]);
   const [selectedStudents, setSelectedStudents] = useState<Option[]>([]);
+  const [isLoadingStudents, setIsLoadingStudents] = useState(false);
 
   const {
     register,
@@ -60,11 +63,14 @@ export function PrivateSessionForm({
   // Load students when dialog opens
   useEffect(() => {
     const loadStudents = async () => {
+      setIsLoadingStudents(true);
       try {
         const response = await studentService.listStudents({});
         setStudents(response.items);
       } catch (error) {
         console.error('Failed to load students:', error);
+      } finally {
+        setIsLoadingStudents(false);
       }
     };
 
@@ -75,15 +81,18 @@ export function PrivateSessionForm({
 
   // Reset form when dialog opens/closes
   useEffect(() => {
-    if (open) {
-      setValue('startTime', getCurrentDateTimeLocal());
+    if (open && !isLoadingStudents && students.length > 0) {
+      const startTime = initialDate 
+        ? formatDateTimeLocal(initialDate.toISOString())
+        : getCurrentDateTimeLocal();
+      setValue('startTime', startTime);
       setValue('durationMin', 90); // Default to 90 minutes
       setValue('feePerSession', defaultFeePerSession?.toString() || '');
       setValue('notes', '');
       setSelectedStudents([]);
       setSubmitError(null);
     }
-  }, [open, defaultFeePerSession, setValue]);
+  }, [open, defaultFeePerSession, setValue, initialDate, isLoadingStudents, students.length]);
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
@@ -130,11 +139,12 @@ export function PrivateSessionForm({
   };
 
   const handlePresetTime = (presetType: 'ca1' | 'ca2') => {
+    const currentStartTime = watch("startTime");
     if (presetType === 'ca1') {
-      setValue('startTime', getPresetTime1());
+      setValue("startTime", getPresetTime1(currentStartTime));
       setValue('durationMin', 90);
     } else {
-      setValue('startTime', getPresetTime2());
+      setValue("startTime", getPresetTime2(currentStartTime));
       setValue('durationMin', 90);
     }
   };
@@ -152,129 +162,139 @@ export function PrivateSessionForm({
           <DialogTitle>Tạo buổi học riêng</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Student Selection */}
-          <div className="space-y-2">
-            <Label>Chọn học sinh *</Label>
-            <MultipleSelector
-              value={selectedStudents}
-              onChange={setSelectedStudents}
-              defaultOptions={studentOptions}
-              placeholder="Tìm và chọn học sinh..."
-              emptyIndicator={
-                <p className="text-center text-sm text-gray-500">
-                  Không tìm thấy học sinh
-                </p>
-              }
-            />
-            {selectedStudents.length === 0 && (
-              <p className="text-sm text-destructive">Vui lòng chọn ít nhất một học sinh</p>
-            )}
+        {isLoadingStudents ? (
+          <div className="flex items-center justify-center h-32">
+            <span className="text-sm text-gray-500">Đang tải danh sách học sinh...</span>
           </div>
+        ) : students.length === 0 ? (
+          <div className="flex items-center justify-center h-32">
+            <span className="text-sm text-destructive">Không có học sinh nào để tạo buổi học riêng.</span>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Student Selection */}
+            <div className="space-y-2">
+              <Label>Chọn học sinh *</Label>
+              <MultipleSelector
+                value={selectedStudents}
+                onChange={setSelectedStudents}
+                defaultOptions={studentOptions}
+                placeholder="Tìm và chọn học sinh..."
+                emptyIndicator={
+                  <p className="text-center text-sm text-gray-500">
+                    Không tìm thấy học sinh
+                  </p>
+                }
+              />
+              {selectedStudents.length === 0 && (
+                <p className="text-sm text-destructive">Vui lòng chọn ít nhất một học sinh</p>
+              )}
+            </div>
 
-          {/* Start Time */}
-          <div className="space-y-2">
-            <DateTimePicker
-              label="Ngày và giờ bắt đầu"
-              required
-              value={watch('startTime')}
-              onChange={(val) => setValue('startTime', val)}
-              error={errors.startTime?.message}
-              disabled={isSubmitting}
-            />
-            {/* Preset buttons */}
-            <div className="flex gap-2">
+            {/* Start Time */}
+            <div className="space-y-2">
+              <DateTimePicker
+                label="Ngày và giờ bắt đầu"
+                required
+                value={watch('startTime')}
+                onChange={(val) => setValue('startTime', val)}
+                error={errors.startTime?.message}
+                disabled={isSubmitting}
+              />
+              {/* Preset buttons */}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePresetTime('ca1')}
+                  className="text-xs"
+                >
+                  🕐 Ca 1 (16:45 - 90p)
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePresetTime('ca2')}
+                  className="text-xs"
+                >
+                  🕕 Ca 2 (18:30 - 90p)
+                </Button>
+              </div>
+            </div>
+
+            {/* Duration */}
+            <div className="space-y-2">
+              <Label htmlFor="durationMin">Thời lượng (phút) *</Label>
+              <Input
+                id="durationMin"
+                type="number"
+                min="1"
+                {...register('durationMin', {
+                  required: 'Vui lòng nhập thời lượng',
+                  valueAsNumber: true,
+                  min: { value: 1, message: 'Thời lượng phải lớn hơn 0' },
+                })}
+              />
+              {errors.durationMin && (
+                <p className="text-sm text-destructive">{errors.durationMin.message}</p>
+              )}
+            </div>
+
+            {/* Fee Per Session */}
+            <div className="space-y-2">
+              <Label htmlFor="feePerSession">
+                Học phí buổi học *
+              </Label>
+              <Input
+                id="feePerSession"
+                type="number"
+                min="0"
+                placeholder="Nhập học phí buổi học"
+                {...register('feePerSession', {
+                  required: 'Vui lòng nhập học phí buổi học',
+                  valueAsNumber: false, // Keep as string to handle empty values
+                })}
+              />
+              {errors.feePerSession && (
+                <p className="text-sm text-destructive">{errors.feePerSession.message}</p>
+              )}
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label htmlFor="notes">Ghi chú</Label>
+              <textarea
+                id="notes"
+                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                placeholder="Thêm ghi chú cho buổi học..."
+                {...register('notes')}
+              />
+            </div>
+
+            {/* Error Display */}
+            {submitError && (
+              <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
+                {submitError}
+              </div>
+            )}
+
+            <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
-                onClick={() => handlePresetTime('ca1')}
-                className="text-xs"
+                onClick={handleClose}
+                disabled={isSubmitting}
               >
-                🕐 Ca 1 (16:45 - 90p)
+                Hủy
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => handlePresetTime('ca2')}
-                className="text-xs"
-              >
-                🕕 Ca 2 (18:30 - 90p)
+              <Button type="submit" disabled={isSubmitting || selectedStudents.length === 0}>
+                {isSubmitting ? 'Đang lưu...' : 'Tạo buổi học'}
               </Button>
-            </div>
-          </div>
-
-          {/* Duration */}
-          <div className="space-y-2">
-            <Label htmlFor="durationMin">Thời lượng (phút) *</Label>
-            <Input
-              id="durationMin"
-              type="number"
-              min="1"
-              {...register('durationMin', {
-                required: 'Vui lòng nhập thời lượng',
-                valueAsNumber: true,
-                min: { value: 1, message: 'Thời lượng phải lớn hơn 0' },
-              })}
-            />
-            {errors.durationMin && (
-              <p className="text-sm text-destructive">{errors.durationMin.message}</p>
-            )}
-          </div>
-
-          {/* Fee Per Session */}
-          <div className="space-y-2">
-            <Label htmlFor="feePerSession">
-              Học phí buổi học *
-            </Label>
-            <Input
-              id="feePerSession"
-              type="number"
-              min="0"
-              placeholder="Nhập học phí buổi học"
-              {...register('feePerSession', {
-                required: 'Vui lòng nhập học phí buổi học',
-                valueAsNumber: false, // Keep as string to handle empty values
-              })}
-            />
-            {errors.feePerSession && (
-              <p className="text-sm text-destructive">{errors.feePerSession.message}</p>
-            )}
-          </div>
-
-          {/* Notes */}
-          <div className="space-y-2">
-            <Label htmlFor="notes">Ghi chú</Label>
-            <textarea
-              id="notes"
-              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              placeholder="Thêm ghi chú cho buổi học..."
-              {...register('notes')}
-            />
-          </div>
-
-          {/* Error Display */}
-          {submitError && (
-            <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
-              {submitError}
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              disabled={isSubmitting}
-            >
-              Hủy
-            </Button>
-            <Button type="submit" disabled={isSubmitting || selectedStudents.length === 0}>
-              {isSubmitting ? 'Đang lưu...' : 'Tạo buổi học'}
-            </Button>
-          </DialogFooter>
-        </form>
+            </DialogFooter>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
