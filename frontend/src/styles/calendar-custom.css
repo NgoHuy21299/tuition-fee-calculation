@@ -91,10 +91,13 @@
   border-radius: 4px;
 }
 
-/* Day cells */
+/* Day cells with vertical borders */
 .rbc-day-bg {
-  border-left: 1px solid oklch(var(--border));
-  border-right: 1px solid oklch(var(--border));
+  border-left: 1px solid oklch(var(--border)) !important;
+}
+
+.rbc-month-view .rbc-day-bg {
+  border-left: 1px solid oklch(var(--border)) !important;
 }
 
 .rbc-month-row {
@@ -320,10 +323,7 @@
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
 
-/* Improve month view cell spacing */
-.rbc-month-view .rbc-day-bg + .rbc-day-bg {
-  border-left: 1px solid oklch(var(--border));
-}
+/* Remove duplicate border rule */
 
 /* Better weekend styling and off-range dates */
 .rbc-off-range-bg {
@@ -399,45 +399,68 @@
 
 /* Add session button in calendar cells */
 .rbc-day-bg-wrapper {
-  position: relative;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
 }
 
 .rbc-add-session-btn {
-  position: absolute;
-  bottom: 2px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  padding: 3px 8px;
-  background: oklch(var(--primary) / 0.15);
-  color: oklch(var(--primary));
-  border: 1px solid oklch(var(--primary) / 0.4);
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  cursor: pointer;
-  opacity: 0;
-  transition: all 0.2s ease;
-  z-index: 2;
-  white-space: nowrap;
+  position: absolute !important;
+  bottom: 4px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 5px 12px !important;
+  background: oklch(var(--primary)) !important;
+  color: oklch(var(--primary-foreground)) !important;
+  border: none !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  opacity: 0 !important;
+  transition: all 0.2s ease !important;
+  z-index: 100 !important;
+  white-space: nowrap !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  pointer-events: none !important;
 }
 
 .rbc-day-bg-wrapper:hover .rbc-add-session-btn {
-  opacity: 1;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 .rbc-add-session-btn:hover {
-  background: oklch(var(--primary) / 0.25);
-  border-color: oklch(var(--primary) / 0.6);
-  transform: translateX(-50%) translateY(-2px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: oklch(var(--primary) / 0.85) !important;
+  transform: translateX(-50%) translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
 }
 
 .rbc-add-session-btn svg {
-  flex-shrink: 0;
+  flex-shrink: 0 !important;
+  width: 12px !important;
+  height: 12px !important;
+}
+
+/* Ensure button is above everything */
+.rbc-month-view .rbc-row {
+  position: relative;
+}
+
+.rbc-row-content {
+  position: relative;
+  z-index: 1;
+}
+
+.rbc-row-segment {
+  z-index: 2;
+}
+
+.rbc-event {
+  z-index: 3;
 }
