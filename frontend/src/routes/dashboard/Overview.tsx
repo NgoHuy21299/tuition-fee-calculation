@@ -92,7 +92,8 @@ export default function DashboardOverview() {
       try {
         setIsLoadingSessions(true);
         const data = await SessionService.getAllSessions();
-        setSessions(data);
+        // Exclude canceled sessions from the overview calendar
+        setSessions(data.filter((s) => s.status !== "canceled"));
       } catch (error) {
         console.error("Failed to load sessions:", error);
       } finally {
@@ -433,10 +434,7 @@ export default function DashboardOverview() {
                 <span style={{background:'#3b82f6',width:14,height:14,borderRadius:3,display:'inline-block'}}></span>
                 <span>Đã lên lịch</span>
               </span>
-              <span className="flex items-center gap-1">
-                <span style={{background:'#ef4444',width:14,height:14,borderRadius:3,display:'inline-block'}}></span>
-                <span>Đã huỷ</span>
-              </span>
+              {/* Cancelled legend removed from overview per UX request */}
             </div>
           </div>
         </CardHeader>
