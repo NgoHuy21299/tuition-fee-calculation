@@ -68,6 +68,21 @@ export default function AttendancePage() {
     }
   };
 
+  const handleCancelSession = async () => {
+    if (!sessionId) return;
+    if (!confirm('Bạn có chắc chắn muốn hủy buổi học này?')) return;
+
+    setError(null);
+    try {
+      await SessionService.cancelSession(sessionId);
+      // After successful cancellation, go back to previous page
+      handleBack();
+    } catch (err) {
+      console.error('Failed to cancel session:', err);
+      setError('Không thể hủy buổi học. Vui lòng thử lại.');
+    }
+  };
+
   // Support two shapes in location.state:
   // - { from: string } (used by Overview when navigating to attendance)
   // - { backTo?: string; backTab?: string } (older convention)
@@ -151,6 +166,8 @@ export default function AttendancePage() {
         </div>
       </div>
 
+      {/* Action bar moved into AttendanceForm (cancel button placed next to Làm mới) */}
+
       {/* Main Content */}
       {isLoading || !session ? (
         <Card>
@@ -189,6 +206,8 @@ export default function AttendancePage() {
               setError('Không thể mở khoá điểm danh. Vui lòng thử lại.');
             }
           }}
+          onCancelSession={handleCancelSession}
+          isCancelling={false}
         />
       )}
     </div>

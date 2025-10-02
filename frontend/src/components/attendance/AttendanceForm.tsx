@@ -30,6 +30,8 @@ interface AttendanceFormProps {
   isSaving?: boolean;
   onComplete?: () => Promise<void>;
   onUnlock?: (reason: string) => Promise<void>;
+  onCancelSession?: () => Promise<void> | void;
+  isCancelling?: boolean;
 }
 
 interface AttendanceChanges {
@@ -49,6 +51,8 @@ export function AttendanceForm({
   isSaving = false,
   onComplete,
   onUnlock,
+  onCancelSession,
+  isCancelling = false,
 }: AttendanceFormProps) {
   const [changes, setChanges] = useState<AttendanceChanges>({});
   const [isEditing, setIsEditing] = useState(false);
@@ -222,6 +226,18 @@ export function AttendanceForm({
             </div>
             
             <div className="flex gap-2">
+              {/* Cancel session button — placed left of refresh (if provided) */}
+              {onCancelSession && session.status !== 'canceled' && (
+                <Button
+                  size="sm"
+                  variant="danger"
+                  onClick={() => void onCancelSession()}
+                  disabled={isCancelling}
+                >
+                  {isCancelling ? 'Đang hủy...' : 'Hủy buổi học'}
+                </Button>
+              )}
+
               <Button
                 size="sm"
                 variant="outline"
