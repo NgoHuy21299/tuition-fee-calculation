@@ -71,7 +71,7 @@
   text-align: right;
 }
 
-.rbc-date-cell > a {
+.rbc-date-cell>a {
   color: oklch(var(--foreground));
   font-weight: 500;
 }
@@ -84,7 +84,7 @@
   background-color: oklch(var(--accent));
 }
 
-.rbc-date-cell.rbc-now > a {
+.rbc-date-cell.rbc-now>a {
   background: oklch(var(--primary));
   color: oklch(var(--primary-foreground));
   padding: 4px 8px;
@@ -102,7 +102,8 @@
 
 .rbc-month-row {
   border-top: 1px solid oklch(var(--border));
-  min-height: 140px !important; /* Increase minimum height for more events */
+  min-height: 140px !important;
+  /* Increase minimum height for more events */
   overflow: visible;
 }
 
@@ -155,17 +156,20 @@
 
 /* Overlay for "show more" popup */
 .rbc-overlay {
-  background: oklch(30% 0 0 / 0.95); /* màu tối, gần đen, có alpha nhẹ */
+  background: oklch(30% 0 0 / 0.95);
+  /* màu tối, gần đen, có alpha nhẹ */
   color: oklch(var(--popover-foreground));
   border: 1px solid oklch(var(--border));
   border-radius: 8px;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3),
-              0 4px 6px -2px rgba(0, 0, 0, 0.2);
+    0 4px 6px -2px rgba(0, 0, 0, 0.2);
   padding: 12px;
   z-index: 50;
 
-  position: absolute; /* thay vì fixed */
-  top: 100%; /* hiển thị ngay dưới phần tử cha */
+  position: absolute;
+  /* thay vì fixed */
+  top: 100%;
+  /* hiển thị ngay dưới phần tử cha */
   left: 0;
 }
 
@@ -230,15 +234,15 @@
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .rbc-toolbar button {
     width: 100%;
   }
-  
+
   .rbc-month-row {
     min-height: 80px;
   }
-  
+
   .rbc-event {
     font-size: 11px;
     padding: 2px 6px;
@@ -255,7 +259,8 @@
   position: relative;
   user-select: none;
   z-index: 4;
-  min-height: 60px; /* Increase to show more events */
+  min-height: 60px;
+  /* Increase to show more events */
   max-height: 100px;
 }
 
@@ -305,7 +310,7 @@
 }
 
 /* Compact event spacing */
-.rbc-event + .rbc-event {
+.rbc-event+.rbc-event {
   margin-top: 1px;
 }
 
@@ -372,12 +377,12 @@
   border: 1px solid oklch(var(--border));
 }
 
-.rbc-agenda-view table.rbc-agenda-table tbody > tr > td {
+.rbc-agenda-view table.rbc-agenda-table tbody>tr>td {
   padding: 12px;
   border-top: 1px solid oklch(var(--border) / 0.5);
 }
 
-.rbc-agenda-view table.rbc-agenda-table tbody > tr + tr {
+.rbc-agenda-view table.rbc-agenda-table tbody>tr+tr {
   border-top: 1px solid oklch(var(--border));
 }
 
@@ -414,9 +419,11 @@
 
 .rbc-add-session-btn {
   position: absolute !important;
-  bottom: 4px !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
+  top: 7px !important;
+  right: 45px !important;
+  bottom: auto !important;
+  left: auto !important;
+  transform: none !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -434,17 +441,18 @@
   z-index: 100 !important;
   white-space: nowrap !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
-  pointer-events: none !important;
+  pointer-events: auto !important;
 }
 
 .rbc-day-bg-wrapper:hover .rbc-add-session-btn {
   opacity: 1 !important;
   pointer-events: auto !important;
+  /* Removed opacity and pointer-events override, keep only transform and box-shadow on hover */
 }
 
 .rbc-add-session-btn:hover {
   background: oklch(var(--primary) / 0.85) !important;
-  transform: translateX(-50%) translateY(-2px) !important;
+  transform: translateY(-2px) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
 }
 
