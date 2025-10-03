@@ -86,5 +86,23 @@ export const reportsService = {
     const qs = toQueryString(params);
     const { data } = await client.get<MonthlyReportSummaryResponse>(`/api/reports/monthly/summary${qs}`);
     return data;
+  },
+
+  /**
+   * Get monthly report for ad-hoc sessions
+   */
+  async getAdHocMonthlyReport(
+    month: string, 
+    includeStudentDetails: boolean = false,
+    forceRefresh: boolean = false
+  ): Promise<MonthlyReport> {
+    const params = {
+      month,
+      includeStudentDetails,
+      forceRefresh
+    };
+    const qs = toQueryString(params);
+    const { data } = await client.get<MonthlyReport>(`/api/reports/ad-hoc${qs}`);
+    return data;
   }
 };

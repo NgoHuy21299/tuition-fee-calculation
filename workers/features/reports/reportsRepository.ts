@@ -7,7 +7,7 @@ export type ReportsRepoDeps = { db: D1Database };
 export interface ReportCacheRow {
   id: string;
   teacherId: string;
-  classId: string;
+  classId: string | null;  // nullable for ad-hoc reports
   year: number;
   month: number;
   payload: string; // JSON string
@@ -17,7 +17,7 @@ export interface ReportCacheRow {
 export interface CreateReportCacheRow {
   id: string;
   teacherId: string;
-  classId: string;
+  classId: string | null;  // nullable for ad-hoc reports
   year: number;
   month: number;
   payload: string;
@@ -36,7 +36,7 @@ export class ReportsRepository {
    */
   async getCachedReport(params: { 
     teacherId: string; 
-    classId: string; 
+    classId: string | null;  // nullable for ad-hoc reports
     year: number; 
     month: number 
   }): Promise<ReportCacheRow | null> {

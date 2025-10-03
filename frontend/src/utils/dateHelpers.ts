@@ -101,3 +101,12 @@ export function getPresetTime2(currentDateTime?: string): string {
   date.setHours(18, 30, 0, 0);
   return formatDateTimeLocal(date.toISOString());
 }
+
+/**
+ * Format UTC date string to local date (applying client timezone)
+ * For use with dates from backend that are in UTC but need local display
+ */
+export function formatUTCDateToLocal(utcDateString: string): string {
+  const utcDate = new Date(utcDateString + 'T00:00:00Z'); // Ensure UTC interpretation
+  return utcDate.toLocaleDateString('vi-VN');
+}

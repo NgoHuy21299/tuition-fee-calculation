@@ -227,9 +227,12 @@ export class ReportsService {
         totalFees += calculatedFee.amount;
 
         if (includeStudentDetails) {
+          // Use session startTime as UTC - frontend will handle timezone conversion
+          const sessionDate = new Date(session.startTime);
+          
           attendanceDetails.push({
             sessionId: attendance.sessionId,
-            date: new Date(attendance.markedAt || session.startTime).toISOString().split('T')[0],
+            date: sessionDate.toISOString().split('T')[0],
             status: attendance.status,
             calculatedFee: calculatedFee.amount,
             feeBreakdown: {
@@ -293,15 +296,15 @@ export class ReportsService {
 
   private async cacheReport(params: {
     teacherId: string;
-    classId: string;
+    classId: string | null;  // nullable for ad-hoc reports
     year: number;
     month: number;
     report: MonthlyReport;
   }): Promise<void> {
     const { teacherId, classId, year, month, report } = params;
     
-    // Generate cache ID
-    const cacheId = `${teacherId}-${classId}-${year}-${month}`;
+    // Generate cache ID - use 'AD_HOC' for null classId to ensure uniqueness
+    const cacheId = `${teacherId}-${classId || 'AD_HOC'}-${year}-${month}`;
     
     await this.repo.saveReportCache({
       id: cacheId,
@@ -311,6 +314,172 @@ export class ReportsService {
       month,
       payload: JSON.stringify(report)
     });
+  }
+
+  /**
+   * Generate monthly report for ad-hoc sessions
+   */
+  async getAdHocMonthlyReport(params: {
+    teacherId: string;
+    month: string; // YYYY-MM format
+    includeStudentDetails?: boolean;
+    forceRefresh?: boolean;
+  }): Promise<MonthlyReport> {
+    const { teacherId, month, includeStudentDetails = false, forceRefresh = false } = params;
+
+    // Parse month
+    const [yearStr, monthStr] = month.split('-');
+    const year = parseInt(yearStr, 10);
+    const monthNum = parseInt(monthStr, 10);
+
+    if (isNaN(year) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+      throw new AppError("REPORT_INVALID_MONTH_FORMAT", t("REPORT_INVALID_MONTH_FORMAT"), 400);
+    }
+
+    // Check cache first (unless force refresh)
+    if (!forceRefresh) {
+      const cached = await this.repo.getCachedReport({ teacherId, classId: null, year, month: monthNum });
+      if (cached) {
+        const report = JSON.parse(cached.payload) as MonthlyReport;
+        // If cached report doesn't include details but user wants them, fall through to regenerate
+        if (!includeStudentDetails || this.reportHasDetails(report)) {
+          return report;
+        }
+      }
+    }
+
+    // Generate fresh report
+    const report = await this.generateAdHocMonthlyReport({
+      teacherId,
+      year,
+      month: monthNum,
+      includeStudentDetails
+    });
+
+    // Cache the result
+    await this.cacheReport({ teacherId, classId: null, year, month: monthNum, report });
+
+    return report;
+  }
+
+  private async generateAdHocMonthlyReport(params: {
+    teacherId: string;
+    year: number;
+    month: number;
+    includeStudentDetails: boolean;
+  }): Promise<MonthlyReport> {
+    const { teacherId, year, month, includeStudentDetails } = params;
+
+    // 1. Get ad-hoc sessions for the month
+    const sessions = await this.sessionRepo.listAdHocByMonth({ teacherId, year, month });
+    if (sessions.length === 0) {
+      throw new AppError("REPORT_NO_DATA", t("REPORT_NO_DATA"), 404);
+    }
+
+    // 2. Get attendance for all sessions
+    const sessionIds = sessions.map(s => s.id);
+    const attendances = await this.attendanceRepo.findBySessionIds({ sessionIds, teacherId });
+
+    // 3. Get student info
+    const studentIds = [...new Set(attendances.map(a => a.studentId))];
+    const students = await this.studentRepo.getByIds(studentIds);
+
+    // 4. Build maps for calculation
+    const sessionMap = new Map(sessions.map(s => [s.id, s]));
+    const studentMap = new Map(students.map(s => [s.id, s]));
+
+    // 5. Calculate fees for ad-hoc sessions (simpler calculation - just session fee * attendance)
+    const studentReports = this.calculateAdHocStudentReports({
+      attendances,
+      sessionMap,
+      studentMap,
+      includeStudentDetails
+    });
+
+    // 6. Calculate summary
+    const summary = this.calculateSummary(studentReports, sessions.length);
+
+    return {
+      classInfo: {
+        id: 'AD_HOC',
+        name: 'Lớp học riêng',
+        subject: ''
+      },
+      month: `${year}-${month.toString().padStart(2, '0')}`,
+      summary,
+      students: studentReports
+    };
+  }
+
+  private calculateAdHocStudentReports(params: {
+    attendances: any[];
+    sessionMap: Map<string, any>;
+    studentMap: Map<string, any>;
+    includeStudentDetails: boolean;
+  }): StudentReportData[] {
+    const { attendances, sessionMap, studentMap, includeStudentDetails } = params;
+
+    // Group attendances by student
+    const studentAttendanceMap = new Map<string, any[]>();
+    for (const attendance of attendances) {
+      // Only count present and late students (skip absent)
+      if (attendance.status === 'present' || attendance.status === 'late') {
+        const studentId = attendance.studentId;
+        if (!studentAttendanceMap.has(studentId)) {
+          studentAttendanceMap.set(studentId, []);
+        }
+        studentAttendanceMap.get(studentId)!.push(attendance);
+      }
+    }
+
+    const studentReports: StudentReportData[] = [];
+
+    for (const [studentId, studentAttendances] of studentAttendanceMap) {
+      const student = studentMap.get(studentId);
+      
+      if (!student) continue; // Skip if student not found
+
+      let totalFees = 0;
+      const attendanceDetails: StudentAttendanceDetail[] = [];
+
+      for (const attendance of studentAttendances) {
+        const session = sessionMap.get(attendance.sessionId);
+        if (!session) continue;
+
+        // For ad-hoc sessions, use the session's feePerSession directly (no fallback needed)
+        const calculatedFee = session.feePerSession || 0;
+        
+        totalFees += calculatedFee;
+
+        if (includeStudentDetails) {
+          // Use session startTime as UTC - frontend will handle timezone conversion
+          const sessionDate = new Date(session.startTime);
+          
+          attendanceDetails.push({
+            sessionId: attendance.sessionId,
+            date: sessionDate.toISOString().split('T')[0],
+            status: attendance.status,
+            calculatedFee: calculatedFee,
+            feeBreakdown: {
+              baseFee: calculatedFee,
+              classOverride: undefined,
+              attendanceOverride: attendance.feeOverride || undefined
+            }
+          });
+        }
+      }
+
+      studentReports.push({
+        studentId,
+        studentName: student.name,
+        totalSessionsAttended: studentAttendances.length,
+        totalFees,
+        attendanceDetails: includeStudentDetails ? attendanceDetails : undefined
+      });
+    }
+
+    // Sort by student name
+    return studentReports.sort((a, b) => a.studentName.localeCompare(b.studentName));
   }
 
   /**
