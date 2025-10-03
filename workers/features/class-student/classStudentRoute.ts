@@ -27,7 +27,7 @@ export function createClassStudentRouter() {
       const teacherId = getTeacherId(c);
       const body = getValidatedData<InferOutput<typeof AddClassStudentSchema>>(c);
       const classId = c.req.param("id");
-      const svc = new ClassStudentService({ db: c.env.DB });
+      const svc = new ClassStudentService({ db: c.env.DB, kv: c.env.KV });
       const id = uuidv7();
       const dto = await svc.add(teacherId, classId, { id, ...body });
       return c.json(dto, 201 as 201);
@@ -56,7 +56,7 @@ export function createClassStudentRouter() {
       const body = getValidatedData<InferOutput<typeof LeaveClassStudentSchema>>(c);
       const classId = c.req.param("id");
       const classStudentId = c.req.param("classStudentId");
-      const svc = new ClassStudentService({ db: c.env.DB });
+      const svc = new ClassStudentService({ db: c.env.DB, kv: c.env.KV });
       await svc.leave(teacherId, classId, classStudentId, body);
       return new Response(null, { status: 204 });
     } catch (err) {

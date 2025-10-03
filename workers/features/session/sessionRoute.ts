@@ -32,7 +32,7 @@ export function createSessionRouter() {
       const startTimeEnd = c.req.query("startTimeEnd");
       const excludeCancelledParam = c.req.query("isExcludeCancelled");
 
-      const service = new SessionService({ db: c.env.DB });
+      const service = new SessionService({ db: c.env.DB, kv: c.env.KV });
       const result = await service.listByTeacher(teacherId, {
         startTimeBegin: startTimeBegin ?? undefined,
         startTimeEnd: startTimeEnd ?? undefined,
@@ -58,7 +58,7 @@ export function createSessionRouter() {
       const sessionData =
         getValidatedData<InferOutput<typeof CreateSessionSchema>>(c);
       const teacherId = getTeacherId(c);
-      const service = new SessionService({ db: c.env.DB });
+      const service = new SessionService({ db: c.env.DB, kv: c.env.KV });
       const result = await service.createSession(sessionData, teacherId);
       return c.json(result, 201 as 201);
     } catch (err) {
@@ -80,7 +80,7 @@ export function createSessionRouter() {
         const teacherId = getTeacherId(c);
         const { reason } = getValidatedData<{ reason: string }>(c);
 
-        const service = new SessionService({ db: c.env.DB });
+        const service = new SessionService({ db: c.env.DB, kv: c.env.KV });
         const result = await service.unlockSession(
           sessionId,
           reason,
@@ -108,7 +108,7 @@ export function createSessionRouter() {
       const sessionId = c.req.param("id");
       const teacherId = getTeacherId(c);
 
-      const service = new SessionService({ db: c.env.DB });
+      const service = new SessionService({ db: c.env.DB, kv: c.env.KV });
       const result = await service.getById(sessionId, teacherId);
 
       if (!result) {
@@ -133,7 +133,7 @@ export function createSessionRouter() {
       const limit = c.req.query("limit");
       const from = c.req.query("from");
 
-      const service = new SessionService({ db: c.env.DB });
+      const service = new SessionService({ db: c.env.DB, kv: c.env.KV });
       const result = await service.listUpcoming(teacherId, {
         limit: limit ? parseInt(limit, 10) : undefined,
         from: from ?? undefined,
@@ -155,7 +155,7 @@ export function createSessionRouter() {
       const sessionId = c.req.param("id");
       const teacherId = getTeacherId(c);
 
-      const service = new SessionService({ db: c.env.DB });
+      const service = new SessionService({ db: c.env.DB, kv: c.env.KV });
       const result = await service.completeSession(sessionId, teacherId);
 
       if (!result) {
@@ -181,7 +181,7 @@ export function createSessionRouter() {
         const seriesData =
           getValidatedData<InferOutput<typeof CreateSessionSeriesSchema>>(c);
         const teacherId = getTeacherId(c);
-        const service = new SessionService({ db: c.env.DB });
+        const service = new SessionService({ db: c.env.DB, kv: c.env.KV });
         const result = await service.createSessionSeries(seriesData, teacherId);
         return c.json(result, 201 as 201);
       } catch (err) {
@@ -200,7 +200,7 @@ export function createSessionRouter() {
       const sessionId = c.req.param("id");
       const teacherId = getTeacherId(c);
 
-      const service = new SessionService({ db: c.env.DB });
+      const service = new SessionService({ db: c.env.DB, kv: c.env.KV });
       const result = await service.cancelSession(sessionId, teacherId);
 
       if (!result) {
@@ -227,7 +227,7 @@ export function createSessionRouter() {
         const updateData =
           getValidatedData<InferOutput<typeof UpdateSessionSchema>>(c);
         const teacherId = getTeacherId(c);
-        const service = new SessionService({ db: c.env.DB });
+        const service = new SessionService({ db: c.env.DB, kv: c.env.KV });
         const result = await service.updateSession(
           sessionId,
           updateData,
@@ -255,7 +255,7 @@ export function createSessionRouter() {
       const sessionId = c.req.param("id");
       const teacherId = getTeacherId(c);
 
-      const service = new SessionService({ db: c.env.DB });
+      const service = new SessionService({ db: c.env.DB, kv: c.env.KV });
       await service.deleteSession(sessionId, teacherId);
 
       return c.json({ success: true }, 200 as 200);
@@ -277,7 +277,7 @@ export function createSessionRouter() {
         const sessionData =
           getValidatedData<InferOutput<typeof CreatePrivateSessionSchema>>(c);
         const teacherId = getTeacherId(c);
-        const service = new SessionService({ db: c.env.DB });
+        const service = new SessionService({ db: c.env.DB, kv: c.env.KV });
         const result = await service.createPrivateSession(
           sessionData,
           teacherId

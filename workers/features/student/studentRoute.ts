@@ -24,7 +24,7 @@ export function createStudentRouter() {
       const teacherId = getTeacherId(c);
       const url = new URL(c.req.url);
       const classId = url.searchParams.get("classId") || undefined;
-      const svc = new StudentService({ db: c.env.DB });
+      const svc = new StudentService({ db: c.env.DB, kv: c.env.KV });
       const { items, total } = await svc.listByTeacher({
         teacherId,
         classId: classId || undefined,
@@ -41,7 +41,7 @@ export function createStudentRouter() {
     try {
       const teacherId = getTeacherId(c);
       const body = getValidatedData<InferOutput<typeof CreateStudentSchema>>(c);
-      const svc = new StudentService({ db: c.env.DB });
+      const svc = new StudentService({ db: c.env.DB, kv: c.env.KV });
       const id = uuidv7();
       const dto = await svc.create(teacherId, { id, ...body });
       return c.json(dto, 201 as 201);
@@ -57,7 +57,7 @@ export function createStudentRouter() {
     try {
       const teacherId = getTeacherId(c);
       const id = c.req.param("id");
-      const svc = new StudentService({ db: c.env.DB });
+      const svc = new StudentService({ db: c.env.DB, kv: c.env.KV });
       const dto = await svc.getDetailById(teacherId, id);
       return c.json(dto, 200 as 200);
     } catch (err) {
@@ -72,7 +72,7 @@ export function createStudentRouter() {
       const teacherId = getTeacherId(c);
       const body = getValidatedData<InferOutput<typeof UpdateStudentSchema>>(c);
       const id = c.req.param("id");
-      const svc = new StudentService({ db: c.env.DB });
+      const svc = new StudentService({ db: c.env.DB, kv: c.env.KV });
       const dto = await svc.update(teacherId, id, body);
       return c.json(dto, 200 as 200);
     } catch (err) {
@@ -86,7 +86,7 @@ export function createStudentRouter() {
     try {
       const teacherId = getTeacherId(c);
       const id = c.req.param("id");
-      const svc = new StudentService({ db: c.env.DB });
+      const svc = new StudentService({ db: c.env.DB, kv: c.env.KV });
       await svc.delete(teacherId, id);
       return new Response(null, { status: 204 });
     } catch (err) {
