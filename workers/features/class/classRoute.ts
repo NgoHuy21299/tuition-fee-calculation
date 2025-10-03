@@ -29,7 +29,7 @@ export function createClassRouter() {
   router.get("/", async (c) => {
     try {
       const teacherId = getTeacherId(c);
-      const svc = new ClassService({ db: c.env.DB });
+      const svc = new ClassService({ db: c.env.DB, kv: c.env.KV });
       const url = new URL(c.req.url);
       const isGetAll =
         (url.searchParams.get("isGetAll") || "").toLowerCase() === "true";
@@ -58,7 +58,7 @@ export function createClassRouter() {
     try {
       const teacherId = getTeacherId(c);
       const body = getValidatedData<InferOutput<typeof CreateClassSchema>>(c);
-      const svc = new ClassService({ db: c.env.DB });
+      const svc = new ClassService({ db: c.env.DB, kv: c.env.KV });
       const id = uuidv7();
       const dto = await svc.create(teacherId, { id, ...body });
       return c.json(dto, 201 as 201);
@@ -79,7 +79,7 @@ export function createClassRouter() {
     try {
       const teacherId = getTeacherId(c);
       const id = c.req.param("id");
-      const svc = new ClassService({ db: c.env.DB });
+      const svc = new ClassService({ db: c.env.DB, kv: c.env.KV });
       const dto = await svc.getById(teacherId, id);
       return c.json(dto, 200 as 200);
     } catch (err) {
@@ -101,7 +101,7 @@ export function createClassRouter() {
       const teacherId = getTeacherId(c);
       const id = c.req.param("id");
       const body = getValidatedData<InferOutput<typeof UpdateClassSchema>>(c);
-      const svc = new ClassService({ db: c.env.DB });
+      const svc = new ClassService({ db: c.env.DB, kv: c.env.KV });
       const dto = await svc.update(teacherId, id, body);
       return c.json(dto, 200 as 200);
     } catch (err) {
@@ -121,7 +121,7 @@ export function createClassRouter() {
     try {
       const teacherId = getTeacherId(c);
       const id = c.req.param("id");
-      const svc = new ClassService({ db: c.env.DB });
+      const svc = new ClassService({ db: c.env.DB, kv: c.env.KV });
       await svc.delete(teacherId, id);
       return new Response(null, { status: 204 });
     } catch (err) {
