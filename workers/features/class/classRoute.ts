@@ -36,7 +36,6 @@ export function createClassRouter() {
       const { items, total } = await svc.listByTeacher({
         teacherId,
         isActive: isGetAll ? undefined : true,
-        sort: "createdAt_desc",
         limit: isGetAll ? undefined : 10,
       });
       return c.json({ items, total }, 200 as 200);

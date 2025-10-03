@@ -30,7 +30,6 @@ export class ClassService {
   async listByTeacher(params: {
     teacherId: string;
     isActive?: boolean;
-    sort?: ClassSort;
     limit?: number;
   }): Promise<{ items: ClassDTO[]; total: number }> {
     // Try to get from cache if available
@@ -38,7 +37,6 @@ export class ClassService {
       const cacheKey = CacheService.buildKey("class", "list", {
         teacherId: params.teacherId,
         isActive: params.isActive,
-        sort: params.sort,
         limit: params.limit,
       });
       
@@ -57,7 +55,6 @@ export class ClassService {
       const cacheKey = CacheService.buildKey("class", "list", {
         teacherId: params.teacherId,
         isActive: params.isActive,
-        sort: params.sort,
         limit: params.limit,
       });
       await this.cache.set(cacheKey, result, { ttl: 300 });
