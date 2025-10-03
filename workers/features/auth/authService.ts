@@ -64,8 +64,8 @@ export class AuthService {
     const newHash = await hashPassword(newPassword);
     await this.userRepository.updatePasswordHash(userId, newHash);
 
-    // Invalidate caches for this user
-    await this.invalidateUserEmailCache(user.normalizedEmail);
+    // Invalidate all auth-related caches
+    await this.invalidateAllAuthCaches();
   }
 
   buildJwtPayload(u: User, maxAgeSec: number): JwtPayload {
@@ -109,18 +109,15 @@ export class AuthService {
         "Failed to load created user",
         500
       );
-    // Invalidate email lookup cache in case of race
-    await this.invalidateUserEmailCache(normalizedEmail);
+    // Invalidate all auth-related caches
+    await this.invalidateAllAuthCaches();
     return row;
   }
 
-  private async invalidateUserEmailCache(
-    normalizedEmail: string
-  ): Promise<void> {
+  /** Invalidate all auth-related caches */
+  private async invalidateAllAuthCaches(): Promise<void> {
     if (!this.cache) return;
-    await this.cache.deleteByPrefix(
-      `auth:userByEmail:normalized_${normalizedEmail}`
-    );
+    await this.cache.deleteByPrefix('auth');
   }
 }
 

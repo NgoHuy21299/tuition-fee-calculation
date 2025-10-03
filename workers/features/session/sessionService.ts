@@ -102,8 +102,8 @@ export class SessionService {
       await this.createInitialAttendanceRecords(sessionId, input.classId);
     }
 
-    // Invalidate caches related to this class/teacher
-    await this.invalidateClassCaches(input.classId ?? null, teacherId);
+    // Invalidate all session-related caches
+    await this.invalidateAllSessionCaches();
 
     return this.mapToDto(created);
   }
@@ -191,8 +191,8 @@ export class SessionService {
       }
     }
 
-    // Invalidate caches related to this class/teacher
-    await this.invalidateClassCaches(input.classId ?? null, teacherId);
+    // Invalidate all session-related caches
+    await this.invalidateAllSessionCaches();
 
     return created.map((row) => this.mapToDto(row));
   }
@@ -346,8 +346,8 @@ export class SessionService {
       teacherId,
     });
 
-    // Invalidate caches
-    await this.invalidateClassCaches(existing.classId ?? null, teacherId);
+    // Invalidate all session-related caches
+    await this.invalidateAllSessionCaches();
 
     return updated ? this.mapToDto(updated) : null;
   }
@@ -393,9 +393,8 @@ export class SessionService {
       teacherId,
     });
 
-    // Invalidate caches
-    await this.invalidateClassCaches(existing.classId ?? null, teacherId);
-    await this.invalidateSessionCache(sessionId, teacherId);
+    // Invalidate all session-related caches
+    await this.invalidateAllSessionCaches();
 
     return updated ? this.mapToDto(updated) : null;
   }
@@ -439,9 +438,8 @@ export class SessionService {
       teacherId,
     });
 
-    // Invalidate caches
-    await this.invalidateClassCaches(existing.classId ?? null, teacherId);
-    await this.invalidateSessionCache(sessionId, teacherId);
+    // Invalidate all session-related caches
+    await this.invalidateAllSessionCaches();
 
     return updated ? this.mapToDto(updated) : null;
   }
@@ -491,9 +489,8 @@ export class SessionService {
       teacherId,
     });
 
-    // Invalidate caches
-    await this.invalidateClassCaches(existing.classId ?? null, teacherId);
-    await this.invalidateSessionCache(sessionId, teacherId);
+    // Invalidate all session-related caches
+    await this.invalidateAllSessionCaches();
 
     return updated ? this.mapToDto(updated) : null;
   }
@@ -522,9 +519,8 @@ export class SessionService {
 
     await this.sessionRepo.delete({ id: sessionId, teacherId });
 
-    // Invalidate caches
-    await this.invalidateClassCaches(existing.classId ?? null, teacherId);
-    await this.invalidateSessionCache(sessionId, teacherId);
+    // Invalidate all session-related caches
+    await this.invalidateAllSessionCaches();
   }
 
   /**
@@ -787,8 +783,8 @@ export class SessionService {
     // Bulk insert attendance records
     await this.attendanceRepo.bulkUpsert(attendanceRecords);
 
-    // Invalidate caches
-    await this.invalidateClassCaches(null, teacherId);
+    // Invalidate all session-related caches
+    await this.invalidateAllSessionCaches();
 
     return this.mapToDto(created);
   }
@@ -815,31 +811,9 @@ export class SessionService {
     };
   }
 
-  /** Invalidate caches related to a class and teacher */
-  private async invalidateClassCaches(
-    classId: string | null,
-    teacherId: string
-  ): Promise<void> {
+  /** Invalidate all session-related caches */
+  private async invalidateAllSessionCaches(): Promise<void> {
     if (!this.cache) return;
-    // Invalidate list-by-class caches
-    if (classId) {
-      await this.cache.deleteByPrefix(`session:listByClass:classId_${classId}`);
-    }
-    // Invalidate teacher-based lists (e.g., dashboard)
-    await this.cache.deleteByPrefix(
-      `session:listByTeacher:teacherId_${teacherId}`
-    );
-  }
-
-  /** Invalidate caches for a specific session */
-  private async invalidateSessionCache(
-    sessionId: string,
-    teacherId: string
-  ): Promise<void> {
-    if (!this.cache) return;
-    // Invalidate session by ID cache
-    await this.cache.deleteByPrefix(`session:getById:sessionId_${sessionId}`);
-    // Invalidate upcoming sessions cache for this teacher
-    await this.cache.deleteByPrefix(`session:listUpcoming:teacherId_${teacherId}`);
+    await this.cache.deleteByPrefix('session');
   }
 }

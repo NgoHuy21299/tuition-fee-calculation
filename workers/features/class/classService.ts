@@ -63,14 +63,10 @@ export class ClassService {
     return result;
   }
 
-  /**
-   * Invalidate all list caches for a teacher
-   */
-  private async invalidateListCache(teacherId: string): Promise<void> {
-    if (this.cache) {
-      // Invalidate all list cache entries for this teacher
-      await this.cache.deleteByPrefix(`class:list:teacherId_${teacherId}`);
-    }
+  /** Invalidate all class-related caches */
+  private async invalidateAllClassCaches(): Promise<void> {
+    if (!this.cache) return;
+    await this.cache.deleteByPrefix('class');
   }
 
   async create(
@@ -94,8 +90,8 @@ export class ClassService {
         404
       );
     
-    // Invalidate list cache
-    await this.invalidateListCache(teacherId);
+    // Invalidate all class-related caches
+    await this.invalidateAllClassCaches();
     
     return mapClassRowToDTO(created);
   }
@@ -131,8 +127,8 @@ export class ClassService {
         404
       );
     
-    // Invalidate list cache
-    await this.invalidateListCache(teacherId);
+    // Invalidate all class-related caches
+    await this.invalidateAllClassCaches();
     
     return mapClassRowToDTO(updated);
   }
@@ -149,7 +145,7 @@ export class ClassService {
       throw new AppError("CLASS_HAS_SESSIONS", "Class has sessions", 409);
     await this.repo.delete(id, teacherId);
     
-    // Invalidate list cache
-    await this.invalidateListCache(teacherId);
+    // Invalidate all class-related caches
+    await this.invalidateAllClassCaches();
   }
 }

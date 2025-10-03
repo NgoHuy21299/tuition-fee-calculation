@@ -142,9 +142,8 @@ export class StudentService {
       );
     const dto = mapStudentRowToDTO(created);
 
-    // Invalidate caches
-    await this.invalidateListCache(teacherId);
-    await this.invalidateDetailCache(created.id, teacherId);
+    // Invalidate all student-related caches
+    await this.invalidateAllStudentCaches();
 
     return dto;
   }
@@ -235,9 +234,8 @@ export class StudentService {
       );
     const dto = mapStudentRowToDTO(updated);
 
-    // Invalidate caches
-    await this.invalidateListCache(teacherId);
-    await this.invalidateDetailCache(id, teacherId);
+    // Invalidate all student-related caches
+    await this.invalidateAllStudentCaches();
 
     return dto;
   }
@@ -274,20 +272,13 @@ export class StudentService {
 
     await this.repo.delete(id, teacherId);
 
-    // Invalidate caches
-    await this.invalidateListCache(teacherId);
-    await this.invalidateDetailCache(id, teacherId);
+    // Invalidate all student-related caches
+    await this.invalidateAllStudentCaches();
   }
 
-  /** Invalidate all list caches for a teacher */
-  private async invalidateListCache(teacherId: string): Promise<void> {
+  /** Invalidate all student-related caches */
+  private async invalidateAllStudentCaches(): Promise<void> {
     if (!this.cache) return;
-    await this.cache.deleteByPrefix(`student:list:teacherId_${teacherId}`);
-  }
-
-  /** Invalidate detail cache for a student */
-  private async invalidateDetailCache(id: string, teacherId: string): Promise<void> {
-    if (!this.cache) return;
-    await this.cache.deleteByPrefix(`student:detail:id_${id}_teacherId_${teacherId}`);
+    await this.cache.deleteByPrefix('student');
   }
 }

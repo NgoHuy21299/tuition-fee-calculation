@@ -215,13 +215,8 @@ export class AttendanceService {
     const successCount = results.filter((r) => r.success).length;
     const failureCount = results.length - successCount;
 
-    // Invalidate caches
-    await this.invalidateSessionAttendanceCache(sessionId, teacherId);
-    for (const r of results) {
-      if (r.success) {
-        await this.invalidateStudentHistoryCache(r.studentId, teacherId);
-      }
-    }
+    // Invalidate all attendance-related caches
+    await this.invalidateAllAttendanceCaches();
 
     return {
       success: failureCount === 0,
@@ -316,12 +311,8 @@ export class AttendanceService {
       session
     );
 
-    // Invalidate caches
-    await this.invalidateSessionAttendanceCache(existing.sessionId, teacherId);
-    await this.invalidateStudentHistoryCache(
-      updatedRecord.studentId,
-      teacherId
-    );
+    // Invalidate all attendance-related caches
+    await this.invalidateAllAttendanceCaches();
 
     return {
       ...updatedRecord,
@@ -378,9 +369,8 @@ export class AttendanceService {
         500
       );
     }
-    // Invalidate caches
-    await this.invalidateSessionAttendanceCache(existing.sessionId, teacherId);
-    await this.invalidateStudentHistoryCache(existing.studentId, teacherId);
+    // Invalidate all attendance-related caches
+    await this.invalidateAllAttendanceCaches();
   }
 
   /**
@@ -748,26 +738,9 @@ export class AttendanceService {
     }
   }
 
-  private async invalidateSessionAttendanceCache(
-    sessionId: string,
-    teacherId: string
-  ): Promise<void> {
+  /** Invalidate all attendance-related caches */
+  private async invalidateAllAttendanceCaches(): Promise<void> {
     if (!this.cache) return;
-    await this.cache.deleteByPrefix(
-      `attendance:sessionList:sessionId_${sessionId}_teacherId_${teacherId}`
-    );
-    await this.cache.deleteByPrefix(
-      `attendance:sessionFees:sessionId_${sessionId}_teacherId_${teacherId}`
-    );
-  }
-
-  private async invalidateStudentHistoryCache(
-    studentId: string,
-    teacherId: string
-  ): Promise<void> {
-    if (!this.cache) return;
-    await this.cache.deleteByPrefix(
-      `attendance:studentHistory:studentId_${studentId}_teacherId_${teacherId}`
-    );
+    await this.cache.deleteByPrefix('attendance');
   }
 }

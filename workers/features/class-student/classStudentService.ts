@@ -98,7 +98,7 @@ export class ClassStudentService {
           404
         );
       const dto = mapClassStudentRowToDTO(updated);
-      await this.invalidateListCache(classId);
+      await this.invalidateAllClassStudentCaches();
       return dto;
     } else {
       // Fresh add
@@ -118,7 +118,7 @@ export class ClassStudentService {
           404
         );
       const dto = mapClassStudentRowToDTO(created);
-      await this.invalidateListCache(classId);
+      await this.invalidateAllClassStudentCaches();
       return dto;
     }
   }
@@ -139,11 +139,12 @@ export class ClassStudentService {
     const leftAt = input.leftAt ?? new Date().toISOString();
     await this.repo.leave({ classStudentId, leftAt });
 
-    await this.invalidateListCache(classId);
+    await this.invalidateAllClassStudentCaches();
   }
 
-  private async invalidateListCache(classId: string): Promise<void> {
+  /** Invalidate all class-student-related caches */
+  private async invalidateAllClassStudentCaches(): Promise<void> {
     if (!this.cache) return;
-    await this.cache.deleteByPrefix(`class-student:list:classId_${classId}`);
+    await this.cache.deleteByPrefix('class-student');
   }
 }
