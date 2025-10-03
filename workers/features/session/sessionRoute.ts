@@ -17,7 +17,6 @@ import type { InferOutput } from 'valibot';
 export function createSessionRouter() {
     const router = new Hono<{ Bindings: Env; Variables: { user: JwtPayload; teacherId: string } }>();
     /**
-     * List all sessions for the teacher (for teacher's session management page)
      * GET /api/sessions
      */
     router.get('/', async (c: Context) => {
@@ -25,9 +24,18 @@ export function createSessionRouter() {
             const teacherId = getTeacherId(c);
             const startTimeBegin = c.req.query('startTimeBegin');
             const startTimeEnd = c.req.query('startTimeEnd');
-            
+            const includeCancelledParam = c.req.query('isIncludeCancelled');
+
             const service = new SessionService({ db: c.env.DB });
-            const result = await service.listByTeacher(teacherId, startTimeBegin, startTimeEnd);
+            const result = await service.listByTeacher(teacherId, {
+                startTimeBegin: startTimeBegin ?? undefined,
+                startTimeEnd: startTimeEnd ?? undefined,
+                isIncludeCancelled:
+                    includeCancelledParam === undefined
+                        ? undefined
+                        : includeCancelledParam === 'true',
+            });
+
             return c.json(result, 200 as 200);
         } catch (err) {
             const e = toAppError(err, { code: "UNKNOWN" });

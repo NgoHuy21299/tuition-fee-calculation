@@ -65,7 +65,7 @@ export class SessionService {
   /**
    * List all sessions for the current teacher (for teacher's session management page)
    */
-  static async getAllSessions(options?: { startTimeBegin?: string; startTimeEnd?: string }): Promise<SessionDto[]> {
+  static async getAllSessions(options?: { startTimeBegin?: string; startTimeEnd?: string; isIncludeCancelled?: boolean }): Promise<SessionDto[]> {
     const params = new URLSearchParams();
     if (options?.startTimeBegin) {
       params.append('startTimeBegin', options.startTimeBegin);
@@ -73,9 +73,12 @@ export class SessionService {
     if (options?.startTimeEnd) {
       params.append('startTimeEnd', options.startTimeEnd);
     }
+    if (options?.isIncludeCancelled !== undefined) {
+      params.append('isIncludeCancelled', String(options.isIncludeCancelled));
+    }
     const queryString = params.toString();
     const url = queryString ? `${this.baseUrl}?${queryString}` : this.baseUrl;
-    
+
     const response = await apiClient.get(url);
     return response.data;
   }
@@ -179,7 +182,7 @@ export class SessionService {
 
     const queryString = params.toString();
     const url = queryString ? `${this.baseUrl}/upcoming?${queryString}` : `${this.baseUrl}/upcoming`;
-    
+
     const response = await apiClient.get(url);
     return response.data;
   }

@@ -86,23 +86,23 @@ export default function DashboardOverview() {
   const MIN_RECALC_SPINNER_MS = 500;
   const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+  const loadSessions = useCallback(async () => {
+    try {
+      setIsLoadingSessions(true);
+      const data = await SessionService.getAllSessions({ isIncludeCancelled: true });
+      // Exclude canceled sessions from the overview calendar
+      setSessions(data.filter((s) => s.status !== "canceled"));
+    } catch (error) {
+      console.error("Failed to load sessions:", error);
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  }, []);
+
   // Load sessions for calendar
   useEffect(() => {
-    const loadSessions = async () => {
-      try {
-        setIsLoadingSessions(true);
-        const data = await SessionService.getAllSessions();
-        // Exclude canceled sessions from the overview calendar
-        setSessions(data.filter((s) => s.status !== "canceled"));
-      } catch (error) {
-        console.error("Failed to load sessions:", error);
-      } finally {
-        setIsLoadingSessions(false);
-      }
-    };
-
     loadSessions();
-  }, []);
+  }, [loadSessions]);
 
   // Load stats (classes, students, monthly revenue)
   useEffect(() => {
@@ -287,9 +287,8 @@ export default function DashboardOverview() {
     return () => window.removeEventListener("keydown", onKey);
   }, [showRevenue]);
   const handleSessionFormSuccess = useCallback(() => {
-    // Reload sessions
-    SessionService.getAllSessions().then((data) => setSessions(data));
-  }, []);
+    loadSessions();
+  }, [loadSessions]);
 
   // Custom DateCellWrapper to add "Create Session" button
   const DateCellWrapper = useCallback(

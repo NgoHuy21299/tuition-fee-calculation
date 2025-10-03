@@ -479,18 +479,23 @@ export class SessionService {
    */
   async listByTeacher(
     teacherId: string,
-    startTimeBegin?: string,
-    startTimeEnd?: string
+    options: {
+      startTimeBegin?: string;
+      startTimeEnd?: string;
+      isIncludeCancelled?: boolean;
+    } = {}
   ): Promise<SessionDto[]> {
-    let statusExclude: string[] = [];
-    if (!!startTimeBegin && !!startTimeEnd) {
+    const statusExclude: string[] = [];
+    if (options.isIncludeCancelled === true) {
+      statusExclude.push(SESSION_STATUS.CANCELED);
+    } else if (!!options.startTimeBegin && !!options.startTimeEnd) {
       statusExclude.push(SESSION_STATUS.CANCELED);
     }
 
     const sessions = await this.sessionRepo.listByTeacher({
       teacherId,
-      startTimeBegin,
-      startTimeEnd,
+      startTimeBegin: options.startTimeBegin,
+      startTimeEnd: options.startTimeEnd,
       statusExclude,
     });
 
