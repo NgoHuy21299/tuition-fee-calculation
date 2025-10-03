@@ -482,11 +482,11 @@ export class SessionService {
     options: {
       startTimeBegin?: string;
       startTimeEnd?: string;
-      isIncludeCancelled?: boolean;
+      isExcludeCancelled?: boolean;
     } = {}
   ): Promise<SessionDto[]> {
     const statusExclude: string[] = [];
-    if (options.isIncludeCancelled === true) {
+    if (options.isExcludeCancelled === true) {
       statusExclude.push(SESSION_STATUS.CANCELED);
     } else if (!!options.startTimeBegin && !!options.startTimeEnd) {
       statusExclude.push(SESSION_STATUS.CANCELED);

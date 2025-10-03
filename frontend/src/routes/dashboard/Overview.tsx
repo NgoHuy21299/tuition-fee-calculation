@@ -89,7 +89,7 @@ export default function DashboardOverview() {
   const loadSessions = useCallback(async () => {
     try {
       setIsLoadingSessions(true);
-      const data = await SessionService.getAllSessions({ isIncludeCancelled: true });
+      const data = await SessionService.getAllSessions({ isExcludeCancelled: true });
       // Exclude canceled sessions from the overview calendar
       setSessions(data.filter((s) => s.status !== "canceled"));
     } catch (error) {
