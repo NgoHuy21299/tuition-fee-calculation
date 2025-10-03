@@ -409,18 +409,6 @@ export class SessionService {
       throw new AppError("SESSION_NOT_FOUND", "Session not found", 404);
     }
 
-    // Business rule: Cannot cancel if session has any non-absent attendance
-    // Allow cancel when all attendance records (if any) are 'absent'
-    const hasNonAbsent =
-      await this.attendanceRepo.hasNonAbsentAttendanceForSession(sessionId);
-    if (hasNonAbsent) {
-      throw new AppError(
-        "SESSION_HAS_ATTENDANCE",
-        "Cannot cancel session with attendance records",
-        400
-      );
-    }
-
     // Business rule: Can only cancel scheduled sessions
     if (existing.status !== "scheduled") {
       throw new AppError(
@@ -458,17 +446,6 @@ export class SessionService {
       throw new AppError(
         "SESSION_HAS_ATTENDANCE",
         "Can only delete canceled sessions",
-        400
-      );
-    }
-
-    // Additional check: Cannot delete if there are any non-absent attendance records
-    const hasNonAbsent =
-      await this.attendanceRepo.hasNonAbsentAttendanceForSession(sessionId);
-    if (hasNonAbsent) {
-      throw new AppError(
-        "SESSION_HAS_ATTENDANCE",
-        "Cannot delete session with attendance records",
         400
       );
     }
@@ -595,12 +572,12 @@ export class SessionService {
         return; // No students to create attendance for
       }
 
-      // Create attendance records for all current students with default status 'absent'
+      // Create attendance records for all current students with default status 'present'
       const attendanceRecords = currentStudents.map((cs) => ({
         id: crypto.randomUUID(),
         sessionId,
         studentId: cs.studentId,
-        status: "absent" as const, // Default status
+        status: "present" as const, // Default status
         note: null,
         markedBy: null, // No one has marked it yet
         feeOverride: null, // Use default fee calculation
@@ -685,7 +662,7 @@ export class SessionService {
       id: crypto.randomUUID(),
       sessionId,
       studentId,
-      status: "absent" as const, // Default status
+      status: "present" as const, // Default status
       note: null,
       markedBy: null,
       feeOverride: null,

@@ -456,7 +456,12 @@ export class AttendanceService {
       throw new AppError("SESSION_NOT_FOUND", "Session not found", 404);
     }
 
-    // Get attendance records
+    // Only include fees if the session is completed
+    if (session.status !== "completed") {
+      return { sessionId, totalFees: 0, attendanceFees: [] };
+    }
+
+    // Get attendance records and filter to present only for fee calculation
     const attendanceRecords = await this.attendanceRepo.findBySession({
       sessionId,
       teacherId,
@@ -466,6 +471,7 @@ export class AttendanceService {
     let totalFees = 0;
 
     for (const record of attendanceRecords) {
+      if (record.status === "absent") continue;
       const calculatedFee = await this.calculateAttendanceFee(record, session);
       const feeSource = await this.getFeeSource(record, session);
 
@@ -535,7 +541,8 @@ export class AttendanceService {
           id: record.sessionId,
           teacherId,
         });
-        if (session) {
+        // Only count fees for completed sessions and present attendance
+        if (session && session.status === "completed" && ["present", "late"].includes(record.status)) {
           const fee = await this.calculateAttendanceFee(record, session);
           if (fee !== null) totalFees += fee;
         }
