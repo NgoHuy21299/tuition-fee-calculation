@@ -44,11 +44,8 @@ export class ClassService {
       
       const cached = await this.cache.get<{ items: ClassDTO[]; total: number }>(cacheKey);
       if (cached) {
-        console.log(`[ClassService] Cache hit for key: ${cacheKey}`);
         return cached;
       }
-      
-      console.log(`[ClassService] Cache miss for key: ${cacheKey}`);
     }
     
     // Fetch from database
