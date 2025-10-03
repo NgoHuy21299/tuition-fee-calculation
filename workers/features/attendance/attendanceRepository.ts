@@ -1,5 +1,6 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import { selectOne, selectAll } from "../../helpers/queryHelpers";
+import type { AttendanceStatus } from "./attendanceConst";
 
 export type AttendanceRepoDeps = { db: D1Database };
 
@@ -8,7 +9,7 @@ export type AttendanceRow = {
   id: string;
   sessionId: string;
   studentId: string;
-  status: "present" | "absent" | "late";
+  status: AttendanceStatus;
   note: string | null;
   markedBy: string | null;
   markedAt: string;
@@ -19,14 +20,14 @@ export interface CreateAttendanceRow {
   id: string;
   sessionId: string;
   studentId: string;
-  status: "present" | "absent" | "late";
+  status: AttendanceStatus;
   note: string | null;
   markedBy: string | null;
   feeOverride: number | null;
 }
 
 export interface UpdateAttendanceRow {
-  status?: "present" | "absent" | "late";
+  status?: AttendanceStatus;
   note?: string | null;
   feeOverride?: number | null;
   markedBy?: string | null;

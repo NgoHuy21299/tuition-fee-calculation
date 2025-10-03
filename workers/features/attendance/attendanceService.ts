@@ -22,6 +22,8 @@ import type {
   AttendanceQueryInput,
 } from "./attendanceSchemas";
 import { AppError } from "../../errors";
+import { SESSION_STATUS } from "../session/sessionConst";
+import { ATTENDANCE_STATUS } from "./attendanceConst";
 
 /**
  * Attendance business logic layer
@@ -125,7 +127,7 @@ export class AttendanceService {
     }
 
     // Validate session is not completed (business rule)
-    if (session.status === "completed") {
+    if (session.status === SESSION_STATUS.COMPLETED) {
       throw new AppError(
         "ATTENDANCE_SESSION_COMPLETED",
         "Cannot modify attendance for completed sessions",
@@ -236,7 +238,7 @@ export class AttendanceService {
     }
 
     // Validate session is not completed
-    if (session.status === "completed") {
+    if (session.status === SESSION_STATUS.COMPLETED) {
       throw new AppError(
         "ATTENDANCE_SESSION_COMPLETED",
         "Cannot modify attendance for completed sessions",
@@ -327,7 +329,7 @@ export class AttendanceService {
     }
 
     // Validate session is not completed
-    if (session.status === "completed") {
+    if (session.status === SESSION_STATUS.COMPLETED) {
       throw new AppError(
         "ATTENDANCE_SESSION_COMPLETED",
         "Cannot modify attendance for completed sessions",
@@ -457,7 +459,7 @@ export class AttendanceService {
     }
 
     // Only include fees if the session is completed
-    if (session.status !== "completed") {
+    if (session.status !== SESSION_STATUS.COMPLETED) {
       return { sessionId, totalFees: 0, attendanceFees: [] };
     }
 
@@ -471,7 +473,7 @@ export class AttendanceService {
     let totalFees = 0;
 
     for (const record of attendanceRecords) {
-      if (record.status === "absent") continue;
+      if (record.status === ATTENDANCE_STATUS.ABSENT) continue;
       const calculatedFee = await this.calculateAttendanceFee(record, session);
       const feeSource = await this.getFeeSource(record, session);
 
@@ -542,7 +544,7 @@ export class AttendanceService {
           teacherId,
         });
         // Only count fees for completed sessions and present attendance
-        if (session && session.status === "completed" && ["present", "late"].includes(record.status)) {
+        if (session && session.status === SESSION_STATUS.COMPLETED && (record.status === ATTENDANCE_STATUS.PRESENT || record.status === ATTENDANCE_STATUS.LATE)) {
           const fee = await this.calculateAttendanceFee(record, session);
           if (fee !== null) totalFees += fee;
         }

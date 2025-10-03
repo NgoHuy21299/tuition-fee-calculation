@@ -15,6 +15,8 @@ import type {
   UpdateSessionInput,
 } from "./sessionSchemas";
 import { AppError } from "../../errors";
+import { SESSION_STATUS, SESSION_TYPE } from "./sessionConst";
+import { ATTENDANCE_STATUS } from "../attendance/attendanceConst";
 
 /**
  * Session business logic layer
@@ -85,10 +87,10 @@ export class SessionService {
       teacherId,
       startTime: input.startTime,
       durationMin: input.durationMin,
-      status: "scheduled",
+      status: SESSION_STATUS.SCHEDULED,
       notes: input.notes ?? null,
       feePerSession: input.feePerSession ?? classExists?.defaultFeePerSession ?? null,
-      type: input.classId ? "class" : "ad_hoc",
+      type: input.classId ? SESSION_TYPE.CLASS : SESSION_TYPE.AD_HOC,
       seriesId: null,
     };
 
@@ -169,10 +171,10 @@ export class SessionService {
       teacherId,
       startTime,
       durationMin: input.durationMin,
-      status: "scheduled",
+      status: SESSION_STATUS.SCHEDULED,
       notes: input.notes ?? null,
       feePerSession: input.feePerSession ?? null,
-      type: input.classId ? "class" : "ad_hoc",
+      type: input.classId ? SESSION_TYPE.CLASS : SESSION_TYPE.AD_HOC,
       seriesId,
     }));
 
@@ -311,14 +313,14 @@ export class SessionService {
     }
 
     // Business rule: Can only complete scheduled sessions
-    if (existing.status === "canceled") {
+    if (existing.status === SESSION_STATUS.CANCELED) {
       throw new AppError(
         "VALIDATION_ERROR",
         "Cannot complete a canceled session",
         400
       );
     }
-    if (existing.status === "completed") {
+    if (existing.status === SESSION_STATUS.COMPLETED) {
       // Idempotent behaviour: return the existing session without changes
       return this.mapToDto(existing);
     }
@@ -331,7 +333,7 @@ export class SessionService {
 
     const updated = await this.sessionRepo.update({
       id: sessionId,
-      patch: { status: "completed", notes: newNotes },
+      patch: { status: SESSION_STATUS.COMPLETED, notes: newNotes },
       teacherId,
     });
 
@@ -353,7 +355,7 @@ export class SessionService {
     if (!existing) {
       throw new AppError("SESSION_NOT_FOUND", "Session not found", 404);
     }
-    if (existing.status === "canceled") {
+    if (existing.status === SESSION_STATUS.CANCELED) {
       throw new AppError(
         "VALIDATION_ERROR",
         "Cannot unlock a canceled session",
@@ -373,7 +375,7 @@ export class SessionService {
 
     const updated = await this.sessionRepo.update({
       id: sessionId,
-      patch: { status: "scheduled", notes: newNotes },
+      patch: { status: SESSION_STATUS.SCHEDULED, notes: newNotes },
       teacherId,
     });
 
@@ -410,7 +412,7 @@ export class SessionService {
     }
 
     // Business rule: Can only cancel scheduled sessions
-    if (existing.status !== "scheduled") {
+    if (existing.status !== SESSION_STATUS.SCHEDULED) {
       throw new AppError(
         "VALIDATION_ERROR",
         "Can only cancel scheduled sessions",
@@ -421,7 +423,7 @@ export class SessionService {
     // Update status to canceled
     const updated = await this.sessionRepo.update({
       id: sessionId,
-      patch: { status: "canceled" },
+      patch: { status: SESSION_STATUS.CANCELED },
       teacherId,
     });
 
@@ -442,7 +444,7 @@ export class SessionService {
     }
 
     // Business rule: Can only delete cancelled sessions
-    if (existing.status !== "canceled") {
+    if (existing.status !== SESSION_STATUS.CANCELED) {
       throw new AppError(
         "SESSION_HAS_ATTENDANCE",
         "Can only delete canceled sessions",
@@ -482,7 +484,7 @@ export class SessionService {
   ): Promise<SessionDto[]> {
     let statusExclude: string[] = [];
     if (!!startTimeBegin && !!startTimeEnd) {
-      statusExclude.push('canceled');
+      statusExclude.push(SESSION_STATUS.CANCELED);
     }
 
     const sessions = await this.sessionRepo.listByTeacher({
@@ -577,7 +579,7 @@ export class SessionService {
         id: crypto.randomUUID(),
         sessionId,
         studentId: cs.studentId,
-        status: "present" as const, // Default status
+        status: ATTENDANCE_STATUS.PRESENT, // Default status
         note: null,
         markedBy: null, // No one has marked it yet
         feeOverride: null, // Use default fee calculation
@@ -648,10 +650,10 @@ export class SessionService {
       teacherId,
       startTime: input.startTime,
       durationMin: input.durationMin,
-      status: input.status ?? "scheduled",
+      status: input.status ?? SESSION_STATUS.SCHEDULED,
       notes: input.notes ?? null,
       feePerSession: input.feePerSession,
-      type: "ad_hoc",
+      type: SESSION_TYPE.AD_HOC,
       seriesId: null,
     };
 
@@ -662,7 +664,7 @@ export class SessionService {
       id: crypto.randomUUID(),
       sessionId,
       studentId,
-      status: "present" as const, // Default status
+      status: ATTENDANCE_STATUS.PRESENT, // Default status
       note: null,
       markedBy: null,
       feeOverride: null,

@@ -1,5 +1,6 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import { selectAll, selectOne, execute } from "../../helpers/queryHelpers";
+import type { SessionStatus, SessionType } from "./sessionConst";
 
 export interface SessionRow {
   id: string;
@@ -7,10 +8,10 @@ export interface SessionRow {
   teacherId: string;
   startTime: string;
   durationMin: number;
-  status: 'scheduled' | 'completed' | 'canceled';
+  status: SessionStatus;
   notes: string | null;
   feePerSession: number | null;
-  type: 'class' | 'ad_hoc';
+  type: SessionType;
   seriesId: string | null;
   createdAt: string;
 }
@@ -21,16 +22,15 @@ export interface CreateSessionRow {
   teacherId: string;
   startTime: string;
   durationMin: number;
-  status: 'scheduled' | 'completed' | 'canceled';
+  status: SessionStatus;
   notes: string | null;
   feePerSession: number | null;
-  type: 'class' | 'ad_hoc';
+  type: SessionType;
   seriesId: string | null;
 }
 
 export class SessionRepository {
   constructor(private deps: { db: D1Database }) {}
-
   /**
    * List sessions by class for a teacher
    */
