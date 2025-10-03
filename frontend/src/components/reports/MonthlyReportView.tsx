@@ -5,6 +5,8 @@ import { Button } from "../ui/button";
 import { ChevronDown, ChevronRight, Users, Clock, DollarSign } from "lucide-react";
 import { useState } from "react";
 import type { MonthlyReport } from "../../services/reportsService";
+import type { AttendanceStatus } from "../../constants";
+import { ATTENDANCE_STATUS } from "../../constants";
 
 interface MonthlyReportViewProps {
   report: MonthlyReport;
@@ -35,8 +37,8 @@ export default function MonthlyReportView({ report, includeDetails }: MonthlyRep
     return new Date(dateStr).toLocaleDateString('vi-VN');
   };
 
-  const getStatusBadge = (status: 'present' | 'late') => {
-    return status === 'present' ? (
+  const getStatusBadge = (status: AttendanceStatus) => {
+    return status === ATTENDANCE_STATUS.PRESENT ? (
       <Badge variant="default" className="bg-green-100 text-green-800">Có mặt</Badge>
     ) : (
       <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Muộn</Badge>

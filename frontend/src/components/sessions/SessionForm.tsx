@@ -3,16 +3,16 @@ import { useForm } from 'react-hook-form';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { 
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
 } from '../ui/dialog';
-import { 
+import {
   SessionService,
-  type CreateSessionRequest, 
+  type CreateSessionRequest,
   type UpdateSessionRequest,
   type SessionDto,
 } from '../../services/sessionService';
@@ -38,11 +38,11 @@ type FormData = {
   classId?: string;
 };
 
-export function SessionForm({ 
-  open, 
-  onClose, 
-  onSuccess, 
-  classId, 
+export function SessionForm({
+  open,
+  onClose,
+  onSuccess,
+  classId,
   editingSession,
   defaultFeePerSession,
   initialDate
@@ -103,32 +103,32 @@ export function SessionForm({
         setValue('classId', editingSession.classId || '');
       } else {
         // Create mode - use initialDate if provided
-        const startTime = initialDate 
+        const startTime = initialDate
           ? formatDateTimeLocal(initialDate.toISOString())
           : getCurrentDateTimeLocal();
         setValue('startTime', startTime);
         setValue('durationMin', 90); // Default to 90 minutes
         setValue('feePerSession', defaultFeePerSession?.toString() || '');
         setValue('notes', '');
-          // Do not set classId here if provided: wait until classes are loaded so
-          // the <select> has the matching <option> and the selection is visible.
+        // Do not set classId here if provided: wait until classes are loaded so
+        // the <select> has the matching <option> and the selection is visible.
       }
       setSubmitError(null);
     }
   }, [open, editingSession, defaultFeePerSession, setValue, classId, initialDate]);
 
-      // When creating from a specific class (classId prop), ensure we set the
-      // form value after the classes list contains that class. This avoids the
-      // situation where the select has no matching <option> yet and the browser
-      // doesn't display the selected value on first open.
-      useEffect(() => {
-        if (open && !editingSession && classId && classes.length > 0) {
-          const found = classes.find((c) => c.id === classId);
-          if (found) {
-            setValue('classId', classId);
-          }
-        }
-      }, [open, editingSession, classId, classes, setValue]);
+  // When creating from a specific class (classId prop), ensure we set the
+  // form value after the classes list contains that class. This avoids the
+  // situation where the select has no matching <option> yet and the browser
+  // doesn't display the selected value on first open.
+  useEffect(() => {
+    if (open && !editingSession && classId && classes.length > 0) {
+      const found = classes.find((c) => c.id === classId);
+      if (found) {
+        setValue('classId', classId);
+      }
+    }
+  }, [open, editingSession, classId, classes, setValue]);
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
@@ -160,8 +160,8 @@ export function SessionForm({
       onSuccess();
       onClose();
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
+      const errorMessage = error instanceof Error
+        ? error.message
         : 'Có lỗi xảy ra khi lưu buổi học';
       setSubmitError(errorMessage);
     } finally {
@@ -204,8 +204,8 @@ export function SessionForm({
               <select
                 id="classId"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                {...register('classId', { 
-                  required: 'Vui lòng chọn lớp học' 
+                {...register('classId', {
+                  required: 'Vui lòng chọn lớp học'
                 })}
                 disabled={isSubmitting || !!classId}
               >
@@ -278,7 +278,7 @@ export function SessionForm({
           {/* Fee Per Session */}
           <div className="space-y-2">
             <Label htmlFor="feePerSession">
-              Học phí buổi học 
+              Học phí buổi học
               {defaultFeePerSession && (
                 <span className="text-sm text-muted-foreground ml-1">
                   (Mặc định: {new Intl.NumberFormat('vi-VN').format(defaultFeePerSession)} VNĐ)

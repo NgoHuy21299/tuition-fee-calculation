@@ -1,5 +1,6 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import { selectOne, selectAll } from "../../helpers/queryHelpers";
+import type { AttendanceStatus } from "./attendanceConst";
 
 export type AttendanceRepoDeps = { db: D1Database };
 
@@ -8,7 +9,7 @@ export type AttendanceRow = {
   id: string;
   sessionId: string;
   studentId: string;
-  status: "present" | "absent" | "late";
+  status: AttendanceStatus;
   note: string | null;
   markedBy: string | null;
   markedAt: string;
@@ -19,14 +20,14 @@ export interface CreateAttendanceRow {
   id: string;
   sessionId: string;
   studentId: string;
-  status: "present" | "absent" | "late";
+  status: AttendanceStatus;
   note: string | null;
   markedBy: string | null;
   feeOverride: number | null;
 }
 
 export interface UpdateAttendanceRow {
-  status?: "present" | "absent" | "late";
+  status?: AttendanceStatus;
   note?: string | null;
   feeOverride?: number | null;
   markedBy?: string | null;
@@ -157,6 +158,7 @@ export class AttendanceRepository {
       INNER JOIN Session s ON a.sessionId = s.id
       WHERE a.sessionId IN (${placeholders})
         AND s.teacherId = ?
+        AND s.status = 'completed'
         AND a.status IN ('present', 'late')`;
 
     return await selectAll<AttendanceRow>(this.deps.db, sql, [
@@ -397,7 +399,7 @@ export class AttendanceRepository {
         SUM(CASE WHEN a.status = 'late' THEN 1 ELSE 0 END) as lateCount
       FROM Attendance a
       INNER JOIN Session s ON a.sessionId = s.id
-      WHERE s.teacherId = ?
+      WHERE s.teacherId = ? AND s.status = 'completed'
     `;
 
     const params: any[] = [teacherId];

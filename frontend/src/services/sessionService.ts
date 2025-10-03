@@ -1,4 +1,5 @@
 import apiClient from '../api/client';
+import type { SessionStatus, SessionType } from '../constants';
 
 // Types matching backend DTOs
 export interface SessionDto {
@@ -7,10 +8,10 @@ export interface SessionDto {
   teacherId: string;
   startTime: string;
   durationMin: number;
-  status: 'scheduled' | 'completed' | 'canceled';
+  status: SessionStatus;
   notes: string | null;
   feePerSession: number | null;
-  type: 'class' | 'ad_hoc';
+  type: SessionType;
   seriesId: string | null;
   createdAt: string;
   className?: string | null;
@@ -22,8 +23,8 @@ export interface CreateSessionRequest {
   durationMin: number;
   feePerSession?: number | null;
   notes?: string | null;
-  status?: 'scheduled' | 'completed' | 'canceled';
-  type?: 'class' | 'ad_hoc';
+  status?: SessionStatus;
+  type?: SessionType;
 }
 
 export interface CreateSessionSeriesRequest {
@@ -32,7 +33,7 @@ export interface CreateSessionSeriesRequest {
   durationMin: number;
   feePerSession?: number | null;
   notes?: string | null;
-  type?: 'class' | 'ad_hoc';
+  type?: SessionType;
   recurrence: {
     daysOfWeek: number[]; // 0=Sunday, 1=Monday, etc.
     endDate: string;
@@ -46,8 +47,8 @@ export interface CreatePrivateSessionRequest {
   durationMin: number;
   feePerSession: number;
   notes?: string | null;
-  status?: 'scheduled' | 'completed' | 'canceled';
-  type?: 'class' | 'ad_hoc';
+  status?: SessionStatus;
+  type?: SessionType;
 }
 
 export interface UpdateSessionRequest {
@@ -55,7 +56,7 @@ export interface UpdateSessionRequest {
   durationMin?: number;
   feePerSession?: number | null;
   notes?: string | null;
-  status?: 'scheduled' | 'completed' | 'canceled';
+  status?: SessionStatus;
 }
 
 export class SessionService {
@@ -64,7 +65,7 @@ export class SessionService {
   /**
    * List all sessions for the current teacher (for teacher's session management page)
    */
-  static async getAllSessions(options?: { startTimeBegin?: string; startTimeEnd?: string }): Promise<SessionDto[]> {
+  static async getAllSessions(options?: { startTimeBegin?: string; startTimeEnd?: string; isExcludeCancelled?: boolean }): Promise<SessionDto[]> {
     const params = new URLSearchParams();
     if (options?.startTimeBegin) {
       params.append('startTimeBegin', options.startTimeBegin);
@@ -72,9 +73,12 @@ export class SessionService {
     if (options?.startTimeEnd) {
       params.append('startTimeEnd', options.startTimeEnd);
     }
+    if (options?.isExcludeCancelled !== undefined) {
+      params.append('isExcludeCancelled', String(options.isExcludeCancelled));
+    }
     const queryString = params.toString();
     const url = queryString ? `${this.baseUrl}?${queryString}` : this.baseUrl;
-    
+
     const response = await apiClient.get(url);
     return response.data;
   }
@@ -178,7 +182,7 @@ export class SessionService {
 
     const queryString = params.toString();
     const url = queryString ? `${this.baseUrl}/upcoming?${queryString}` : `${this.baseUrl}/upcoming`;
-    
+
     const response = await apiClient.get(url);
     return response.data;
   }

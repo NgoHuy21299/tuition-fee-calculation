@@ -19,6 +19,7 @@ import type {
   BulkAttendanceResult 
 } from '../../services/attendanceService';
 import type { SessionDto } from '../../services/sessionService';
+import { ATTENDANCE_STATUS, SESSION_STATUS, type AttendanceStatus } from '../../constants';
 import { useToast } from '../commons/Toast';
 
 interface AttendanceFormProps {
@@ -30,11 +31,13 @@ interface AttendanceFormProps {
   isSaving?: boolean;
   onComplete?: () => Promise<void>;
   onUnlock?: (reason: string) => Promise<void>;
+  onCancelSession?: () => Promise<void> | void;
+  isCancelling?: boolean;
 }
 
 interface AttendanceChanges {
   [studentId: string]: {
-    status?: 'present' | 'absent' | 'late';
+    status?: AttendanceStatus;
     note?: string;
     // feeOverride removed
   };
@@ -49,6 +52,8 @@ export function AttendanceForm({
   isSaving = false,
   onComplete,
   onUnlock,
+  onCancelSession,
+  isCancelling = false,
 }: AttendanceFormProps) {
   const [changes, setChanges] = useState<AttendanceChanges>({});
   const [isEditing, setIsEditing] = useState(false);
@@ -60,9 +65,9 @@ export function AttendanceForm({
   // Calculate statistics
   const stats = {
     total: attendanceList.length,
-    present: attendanceList.filter(a => getEffectiveStatus(a.studentId, a.status) === 'present').length,
-    absent: attendanceList.filter(a => getEffectiveStatus(a.studentId, a.status) === 'absent').length,
-    late: attendanceList.filter(a => getEffectiveStatus(a.studentId, a.status) === 'late').length,
+    present: attendanceList.filter(a => getEffectiveStatus(a.studentId, a.status) === ATTENDANCE_STATUS.PRESENT).length,
+    absent: attendanceList.filter(a => getEffectiveStatus(a.studentId, a.status) === ATTENDANCE_STATUS.ABSENT).length,
+    late: attendanceList.filter(a => getEffectiveStatus(a.studentId, a.status) === ATTENDANCE_STATUS.LATE).length,
   };
 
   const handleUnlock = async () => {
@@ -92,9 +97,9 @@ export function AttendanceForm({
 
   // Removed effective fee helper
 
-  const handleStatusChange = (studentId: string, status: 'present' | 'absent' | 'late') => {
+  const handleStatusChange = (studentId: string, status: AttendanceStatus) => {
     // Avoid redundant updates and toasts if status hasn't effectively changed
-    const original = attendanceList.find(a => a.studentId === studentId)?.status ?? 'absent';
+    const original = attendanceList.find(a => a.studentId === studentId)?.status ?? ATTENDANCE_STATUS.ABSENT;
     const currentEffective = getEffectiveStatus(studentId, original as AttendanceDto['status']);
     if (currentEffective === status) {
       return;
@@ -109,7 +114,7 @@ export function AttendanceForm({
     }));
 
     const student = attendanceList.find(a => a.studentId === studentId);
-    const statusLabel = status === 'present' ? 'Có mặt' : status === 'absent' ? 'Vắng mặt' : 'Muộn';
+    const statusLabel = status === ATTENDANCE_STATUS.PRESENT ? 'Có mặt' : status === ATTENDANCE_STATUS.ABSENT ? 'Vắng mặt' : 'Muộn';
     // Show a lightweight toast indicating the local change (not yet saved)
     toast({
       variant: 'success',
@@ -133,7 +138,7 @@ export function AttendanceForm({
 
   const handleBulkAction = (action: 'all-present' | 'all-absent') => {
     const bulkChanges: AttendanceChanges = {};
-    const targetStatus = action === 'all-present' ? 'present' : 'absent';
+    const targetStatus = action === 'all-present' ? ATTENDANCE_STATUS.PRESENT : ATTENDANCE_STATUS.ABSENT;
     
     attendanceList.forEach(attendance => {
       bulkChanges[attendance.studentId] = {
@@ -150,7 +155,7 @@ export function AttendanceForm({
 
     const attendanceRecords = Object.entries(changes).map(([studentId, change]) => ({
       studentId,
-      status: change.status || attendanceList.find(a => a.studentId === studentId)?.status || 'absent',
+      status: change.status || attendanceList.find(a => a.studentId === studentId)?.status || ATTENDANCE_STATUS.ABSENT,
       note: change.note
     }));
 
@@ -222,6 +227,18 @@ export function AttendanceForm({
             </div>
             
             <div className="flex gap-2">
+              {/* Cancel session button — placed left of refresh (if provided) */}
+              {onCancelSession && session.status !== SESSION_STATUS.CANCELED && (
+                <Button
+                  size="sm"
+                  variant="danger"
+                  onClick={() => void onCancelSession()}
+                  disabled={isCancelling}
+                >
+                  {isCancelling ? 'Đang hủy...' : 'Hủy buổi học'}
+                </Button>
+              )}
+
               <Button
                 size="sm"
                 variant="outline"
@@ -233,7 +250,7 @@ export function AttendanceForm({
               </Button>
 
               {/* Complete session button: show only when session is scheduled */}
-              {session.status === 'scheduled' && (
+              {session.status === SESSION_STATUS.SCHEDULED && (
                 <Button
                   size="sm"
                   variant="success"
@@ -247,7 +264,7 @@ export function AttendanceForm({
               )}
 
               {/* Unlock session button for completed sessions */}
-              {session.status === 'completed' && (
+              {session.status === SESSION_STATUS.COMPLETED && (
                 <Button
                   size="sm"
                   variant="warning"
@@ -260,7 +277,7 @@ export function AttendanceForm({
                 </Button>
               )}
               
-              {session.status === 'scheduled' && (!isEditing ? (
+              {session.status === SESSION_STATUS.SCHEDULED && (!isEditing ? (
                 <Button
                   size="sm"
                   onClick={() => setIsEditing(true)}
@@ -309,7 +326,7 @@ export function AttendanceForm({
           </div>
 
           {/* Bulk Actions */}
-          {isEditing && session.status === 'scheduled' && (
+          {isEditing && session.status === SESSION_STATUS.SCHEDULED && (
             <div className="flex gap-2 mb-4">
               <Button
                 size="sm"

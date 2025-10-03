@@ -1,5 +1,6 @@
 import client from "../api/client";
 import { toQueryString } from "../utils/paramUtils";
+import type { AttendanceStatus } from '../constants';
 
 // Types matching backend MonthlyReport interface
 export interface MonthlyReportSummary {
@@ -11,7 +12,7 @@ export interface MonthlyReportSummary {
 export interface StudentAttendanceDetail {
   sessionId: string;
   date: string; // ISO date string
-  status: 'present' | 'late';
+  status: AttendanceStatus;
   calculatedFee: number;
   feeBreakdown: {
     baseFee: number;

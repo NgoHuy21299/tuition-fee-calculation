@@ -84,8 +84,7 @@
   background-color: oklch(var(--accent));
 }
 
-.rbc-date-cell.rbc-now>a,
-.rbc-current {
+.rbc-date-cell.rbc-now.rbc-current {
   color: rgb(63, 230, 71);
 }
 

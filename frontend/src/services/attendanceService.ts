@@ -1,11 +1,12 @@
 import apiClient from '../api/client';
+import type { AttendanceStatus } from '../constants';
 
 // Types matching backend DTOs
 export interface AttendanceDto {
   id: string;
   sessionId: string;
   studentId: string;
-  status: 'present' | 'absent' | 'late';
+  status: AttendanceStatus;
   note: string | null;
   markedBy: string | null;
   markedByName?: string | null;
@@ -27,13 +28,13 @@ export interface AttendanceWithSessionDto extends AttendanceDto {
 export interface CreateAttendanceRequest {
   sessionId: string;
   studentId: string;
-  status: 'present' | 'absent' | 'late';
+  status: AttendanceStatus;
   note?: string | null;
   feeOverride?: number | null;
 }
 
 export interface UpdateAttendanceRequest {
-  status?: 'present' | 'absent' | 'late';
+  status?: AttendanceStatus;
   note?: string | null;
   feeOverride?: number | null;
 }
@@ -41,7 +42,7 @@ export interface UpdateAttendanceRequest {
 export interface BulkAttendanceRequest {
   attendanceRecords: Array<{
     studentId: string;
-    status: 'present' | 'absent' | 'late';
+    status: AttendanceStatus;
     note?: string | null;
     feeOverride?: number | null;
   }>;
@@ -75,7 +76,7 @@ export interface SessionFeesResponse {
   attendanceFees: Array<{
     studentId: string;
     studentName: string;
-    status: 'present' | 'absent' | 'late';
+    status: AttendanceStatus;
     fee: number;
     feeSource: 'attendance_override' | 'student_override' | 'session_default';
   }>;

@@ -28,6 +28,7 @@ import { classService } from "../../services/classService";
 import { studentService } from "../../services/studentService";
 import { reportsService } from "../../services/reportsService";
 import { SessionForm } from "../../components/sessions/SessionForm";
+import type { ClassDTO } from "../../services/classService";
 import type { SessionDto } from "../../services/sessionService";
 import { useNavigate } from "react-router-dom";
 import { PrivateSessionForm } from "../../components/sessions";
@@ -68,7 +69,9 @@ export default function DashboardOverview() {
   const navigate = useNavigate();
   const [sessions, setSessions] = useState<SessionDto[]>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
-  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [isLoadingCounts, setIsLoadingCounts] = useState(true);
+  const [isLoadingRevenue, setIsLoadingRevenue] = useState(true);
+  const [classes, setClasses] = useState<ClassDTO[] | null>(null);
   const [totalClasses, setTotalClasses] = useState(0);
   const [totalStudents, setTotalStudents] = useState(0);
   const [monthlyRevenue, setMonthlyRevenue] = useState(0);
@@ -86,70 +89,93 @@ export default function DashboardOverview() {
   const MIN_RECALC_SPINNER_MS = 500;
   const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+  const loadSessions = useCallback(async () => {
+    try {
+      setIsLoadingSessions(true);
+      const data = await SessionService.getAllSessions({ isExcludeCancelled: true });
+      // Exclude canceled sessions from the overview calendar
+      setSessions(data.filter((s) => s.status !== "canceled"));
+    } catch (error) {
+      console.error("Failed to load sessions:", error);
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  }, []);
+
   // Load sessions for calendar
   useEffect(() => {
-    const loadSessions = async () => {
-      try {
-        setIsLoadingSessions(true);
-        const data = await SessionService.getAllSessions();
-        // Exclude canceled sessions from the overview calendar
-        setSessions(data.filter((s) => s.status !== "canceled"));
-      } catch (error) {
-        console.error("Failed to load sessions:", error);
-      } finally {
-        setIsLoadingSessions(false);
-      }
-    };
-
     loadSessions();
+  }, [loadSessions]);
+
+  // Load counts (classes and students) independently
+  useEffect(() => {
+    let isMounted = true;
+    const loadCounts = async () => {
+      setIsLoadingCounts(true);
+      const [classesRes, studentsRes] = await Promise.allSettled([
+        classService.listClasses({ isGetAll: false }),
+        studentService.listStudents(),
+      ]);
+
+      if (!isMounted) return;
+
+      if (classesRes.status === "fulfilled") {
+        setClasses(classesRes.value.items);
+        setTotalClasses(classesRes.value.items.length);
+      } else {
+        console.error("Failed to load classes count:", classesRes.reason);
+      }
+
+      if (studentsRes.status === "fulfilled") {
+        setTotalStudents(studentsRes.value.total);
+      } else {
+        console.error("Failed to load students count:", studentsRes.reason);
+      }
+
+      setIsLoadingCounts(false);
+    };
+    loadCounts();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  // Load stats (classes, students, monthly revenue)
+  // Load revenue independently, reusing classes state to avoid duplicate class fetches
   useEffect(() => {
-    const loadStats = async () => {
+    let isMounted = true;
+    const loadRevenue = async () => {
+      if (!classes) return; // wait until classes are loaded (or empty array)
       try {
-        setIsLoadingStats(true);
-
-        // Load total classes
-        const classesResponse = await classService.listClasses({
-          isGetAll: false,
-        });
-        setTotalClasses(classesResponse.items.length);
-
-        // Load total students
-        const studentsResponse = await studentService.listStudents();
-        setTotalStudents(studentsResponse.total);
-
-        // Load monthly revenue for current month
+        setIsLoadingRevenue(true);
         const currentMonth = moment().format("YYYY-MM");
-        let totalRevenue = 0;
-
-        // Fetch reports for all classes
-        for (const cls of classesResponse.items) {
-          try {
-            const report = await reportsService.getMonthlyReport(
-              cls.id,
-              currentMonth,
-              false,
-              false
-            );
-            totalRevenue += report.summary.totalFees;
-          } catch {
-            // If no data for this class, continue
-            continue;
-          }
+        if (classes.length === 0) {
+          setMonthlyRevenue(0);
+          return;
         }
-
-        setMonthlyRevenue(totalRevenue);
+        const results = await Promise.allSettled(
+          classes.map((cls: ClassDTO) =>
+            reportsService.getMonthlyReport(cls.id, currentMonth, false, false)
+          )
+        );
+        if (!isMounted) return;
+        const sum = results.reduce((acc, r) => {
+          if (r.status === "fulfilled") {
+            return acc + (r.value?.summary?.totalFees ?? 0);
+          }
+          return acc;
+        }, 0);
+        setMonthlyRevenue(sum);
       } catch (error) {
-        console.error("Failed to load stats:", error);
+        console.error("Failed to load revenue:", error);
       } finally {
-        setIsLoadingStats(false);
+        if (isMounted) setIsLoadingRevenue(false);
       }
     };
-
-    loadStats();
-  }, []);
+    loadRevenue();
+    return () => {
+      isMounted = false;
+    };
+  }, [classes]);
 
   // Transform sessions to calendar events
   const events = useMemo<CalendarEvent[]>(() => {
@@ -234,12 +260,12 @@ export default function DashboardOverview() {
     setIsRecalcRevenueLoading(true);
     const start = Date.now();
     try {
-      // Fetch classes (non-paginated list)
-      const classesResponse = await classService.listClasses({ isGetAll: false });
+      // Reuse classes in state if available; otherwise fetch
+      const classList = classes ?? (await classService.listClasses({ isGetAll: false })).items;
       const currentMonth = moment().format('YYYY-MM');
       let totalRevenue = 0;
 
-      for (const cls of classesResponse.items) {
+      for (const cls of classList) {
         try {
           const r = await reportsService.getMonthlyReport(cls.id, currentMonth, false, true);
           totalRevenue += r.summary.totalFees;
@@ -287,9 +313,8 @@ export default function DashboardOverview() {
     return () => window.removeEventListener("keydown", onKey);
   }, [showRevenue]);
   const handleSessionFormSuccess = useCallback(() => {
-    // Reload sessions
-    SessionService.getAllSessions().then((data) => setSessions(data));
-  }, []);
+    loadSessions();
+  }, [loadSessions]);
 
   // Custom DateCellWrapper to add "Create Session" button
   const DateCellWrapper = useCallback(
@@ -330,8 +355,9 @@ export default function DashboardOverview() {
         totalClasses={totalClasses}
         totalStudents={totalStudents}
         monthlyRevenue={monthlyRevenue}
-        isLoading={isLoadingStats}
-        renderRevenueCard={({ value }: { value: number }) => (
+        isLoadingCounts={isLoadingCounts}
+        isLoadingRevenue={isLoadingRevenue}
+        renderRevenueCard={({ value, isLoading }: { value: number; isLoading: boolean }) => (
             <Card
               className="relative cursor-pointer"
               onClick={() => {
@@ -387,7 +413,7 @@ export default function DashboardOverview() {
                   </div>
                   <div>
                       <p className="text-3xl font-bold">
-                        {isRecalcRevenueLoading ? (
+                        {isRecalcRevenueLoading || isLoading ? (
                           <LoadingSpinner size={20} padding={4} />
                         ) : showRevenue ? (
                           <span>{value.toLocaleString("vi-VN")}₫</span>

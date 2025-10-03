@@ -6,35 +6,21 @@ interface OverviewStatsProps {
   totalClasses: number;
   totalStudents: number;
   monthlyRevenue: number;
-  isLoading: boolean;
+  // Split loading flags so each card can load independently
+  isLoadingCounts: boolean;
+  isLoadingRevenue: boolean;
   // Optional render prop to customize the entire revenue card
-  renderRevenueCard?: (args: { value: number }) => React.ReactNode;
+  renderRevenueCard?: (args: { value: number; isLoading: boolean }) => React.ReactNode;
 }
 
 export default function OverviewStats({
   totalClasses,
   totalStudents,
   monthlyRevenue,
-  isLoading,
+  isLoadingCounts,
+  isLoadingRevenue,
   renderRevenueCard,
 }: OverviewStatsProps) {
-  if (isLoading) {
-    return (
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardContent className="flex items-center justify-center h-32">
-            <LoadingSpinner />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="flex items-center justify-center h-32">
-            <LoadingSpinner />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {/* Classes and Students Card */}
@@ -45,6 +31,12 @@ export default function OverviewStats({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
+          {isLoadingCounts ? (
+            <div className="flex items-center justify-center h-24">
+              <LoadingSpinner />
+            </div>
+          ) : (
+            <>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="p-3 bg-blue-100 rounded-lg">
@@ -67,12 +59,14 @@ export default function OverviewStats({
               </div>
             </div>
           </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
       {/* Monthly Revenue Card (can be fully replaced via render prop) */}
       {renderRevenueCard ? (
-        renderRevenueCard({ value: monthlyRevenue })
+        renderRevenueCard({ value: monthlyRevenue, isLoading: isLoadingRevenue })
       ) : (
         <Card>
           <CardHeader className="pb-3">
@@ -87,7 +81,11 @@ export default function OverviewStats({
               </div>
               <div>
                 <p className="text-3xl font-bold">
-                  {monthlyRevenue.toLocaleString("vi-VN")}
+                  {isLoadingRevenue ? (
+                    <LoadingSpinner size={20} padding={4} />
+                  ) : (
+                    monthlyRevenue.toLocaleString("vi-VN")
+                  )}
                 </p>
                 <p className="text-sm text-gray-500">Tính đến thời điểm hiện tại</p>
               </div>

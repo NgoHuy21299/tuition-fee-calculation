@@ -15,6 +15,7 @@ import { PrivateSessionService, type CreatePrivateSessionRequest } from '../../s
 import MultipleSelector, { type Option } from '../ui/multiple-selector';
 import { formatDateTimeLocal, parseDateTimeLocal, getCurrentDateTimeLocal, getPresetTime1, getPresetTime2 } from '../../utils/dateHelpers';
 import { DateTimePicker } from '../ui/datetime-picker';
+import { SESSION_STATUS, SESSION_TYPE } from '../../constants';
 
 interface PrivateSessionFormProps {
   open: boolean;
@@ -112,8 +113,8 @@ export function PrivateSessionForm({
         durationMin: data.durationMin,
         feePerSession: parseInt(data.feePerSession, 10),
         notes: data.notes || null,
-        type: 'ad_hoc',
-        status: 'scheduled',
+        type: SESSION_TYPE.AD_HOC,
+        status: SESSION_STATUS.SCHEDULED,
       };
 
       // Create a single private session for all selected students
