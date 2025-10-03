@@ -164,9 +164,9 @@ export default function MonthlyReportView({ report, includeDetails }: MonthlyRep
                                 <div className="flex items-center gap-4">
                                   <span className="font-medium text-slate-100">{formatCurrency(detail.calculatedFee)}</span>
                                   <div className="text-xs text-slate-400">
-                                    {detail.feeBreakdown.attendanceOverride !== undefined ? (
+                                    {detail.feeBreakdown.attendanceOverride ? (
                                       <span>Override riêng</span>
-                                    ) : detail.feeBreakdown.classOverride !== undefined ? (
+                                    ) : detail.feeBreakdown.classOverride ? (
                                       <span>Phí lớp riêng</span>
                                     ) : (
                                       <span>Phí buổi học</span>

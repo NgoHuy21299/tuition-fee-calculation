@@ -171,7 +171,7 @@ export class CacheService {
     params: Record<string, unknown>
   ): string {
     const sortedParams = Object.entries(params)
-      .filter(([_, value]) => value !== undefined && value !== null)
+      .filter(([_, value]) => !!value)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, value]) => `${key}_${String(value)}`)
       .join("_");

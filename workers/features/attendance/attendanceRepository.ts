@@ -284,22 +284,22 @@ export class AttendanceRepository {
     const setParts: string[] = [];
     const params: any[] = [];
 
-    if (updates.status !== undefined) {
+    if (updates.status) {
       setParts.push("status = ?");
       params.push(updates.status);
     }
 
-    if (updates.note !== undefined) {
+    if (updates.note) {
       setParts.push("note = ?");
       params.push(updates.note);
     }
 
-    if (updates.feeOverride !== undefined) {
+    if (updates.feeOverride) {
       setParts.push("feeOverride = ?");
       params.push(updates.feeOverride);
     }
 
-    if (updates.markedBy !== undefined) {
+    if (updates.markedBy) {
       setParts.push("markedBy = ?");
       params.push(updates.markedBy);
     }

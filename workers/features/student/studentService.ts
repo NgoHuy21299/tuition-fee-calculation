@@ -154,7 +154,7 @@ export class StudentService {
     patch: UpdateStudentInput
   ): Promise<StudentDTO> {
     // Handle parents update (optional)
-    if (patch.parents !== undefined) {
+    if (patch.parents) {
       // 1. Lấy ra các parents của student hiện tại
       const currentParents = await this.parentRepo.getByStudentId(id);
       

@@ -73,7 +73,7 @@ export class SessionService {
     if (options?.startTimeEnd) {
       params.append('startTimeEnd', options.startTimeEnd);
     }
-    if (options?.isExcludeCancelled !== undefined) {
+    if (options?.isExcludeCancelled) {
       params.append('isExcludeCancelled', String(options.isExcludeCancelled));
     }
     const queryString = params.toString();

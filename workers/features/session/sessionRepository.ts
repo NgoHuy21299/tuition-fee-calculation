@@ -205,23 +205,23 @@ export class SessionRepository {
     const values: any[] = [];
 
     // Build dynamic update query
-    if (patch.startTime !== undefined) {
+    if (patch.startTime) {
       updateFields.push("startTime = ?");
       values.push(patch.startTime);
     }
-    if (patch.durationMin !== undefined) {
+    if (patch.durationMin) {
       updateFields.push("durationMin = ?");
       values.push(patch.durationMin);
     }
-    if (patch.feePerSession !== undefined) {
+    if (patch.feePerSession) {
       updateFields.push("feePerSession = ?");
       values.push(patch.feePerSession);
     }
-    if (patch.notes !== undefined) {
+    if (patch.notes) {
       updateFields.push("notes = ?");
       values.push(patch.notes);
     }
-    if (patch.status !== undefined) {
+    if (patch.status) {
       updateFields.push("status = ?");
       values.push(patch.status);
     }

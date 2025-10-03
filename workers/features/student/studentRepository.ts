@@ -234,19 +234,19 @@ export class StudentRepository {
     const sets: string[] = [];
     const binds: unknown[] = [];
 
-    if (patch.name !== undefined) {
+    if (patch.name) {
       sets.push("name = ?");
       binds.push(patch.name);
     }
-    if (patch.phone !== undefined) {
+    if (patch.phone) {
       sets.push(`phone = ?`);
       binds.push(patch.phone);
     }
-    if (patch.email !== undefined) {
+    if (patch.email) {
       sets.push(`email = ?`);
       binds.push(patch.email);
     }
-    if (patch.note !== undefined) {
+    if (patch.note) {
       sets.push("note = ?");
       binds.push(patch.note);
     }

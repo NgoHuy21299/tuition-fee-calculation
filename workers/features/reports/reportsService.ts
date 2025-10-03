@@ -262,17 +262,17 @@ export class ReportsService {
     const { attendance, session, membership } = params;
 
     // Priority 1: Attendance fee override
-    if (attendance.feeOverride !== null && attendance.feeOverride !== undefined) {
+    if (attendance.feeOverride) {
       return { amount: attendance.feeOverride, source: 'attendance' };
     }
 
     // Priority 2: Class student unit price override
-    if (membership?.unitPriceOverride !== null && membership?.unitPriceOverride !== undefined) {
+    if (membership?.unitPriceOverride) {
       return { amount: membership.unitPriceOverride, source: 'class' };
     }
 
     // Priority 3: Session fee per session
-    if (session.feePerSession !== null && session.feePerSession !== undefined) {
+    if (session.feePerSession) {
       return { amount: session.feePerSession, source: 'session' };
     }
 

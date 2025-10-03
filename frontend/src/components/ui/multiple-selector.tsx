@@ -448,7 +448,7 @@ const MultipleSelector = React.forwardRef<
           commandProps?.className
         )}
         shouldFilter={
-          commandProps?.shouldFilter !== undefined
+          commandProps?.shouldFilter
             ? commandProps.shouldFilter
             : !onSearch
         } // When onSearch is provided, we don't want to filter the options. You can still override it.

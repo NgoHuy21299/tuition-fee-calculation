@@ -126,23 +126,23 @@ export class ClassRepository {
     const sets: string[] = [];
     const binds: unknown[] = [];
 
-    if (patch.name !== undefined) {
+    if (patch.name) {
       sets.push("name = ?");
       binds.push(patch.name);
     }
-    if (patch.subject !== undefined) {
+    if (patch.subject) {
       sets.push("subject = ?");
       binds.push(patch.subject);
     }
-    if (patch.description !== undefined) {
+    if (patch.description) {
       sets.push("description = ?");
       binds.push(patch.description);
     }
-    if (patch.defaultFeePerSession !== undefined) {
+    if (patch.defaultFeePerSession) {
       sets.push("defaultFeePerSession = ?");
       binds.push(patch.defaultFeePerSession);
     }
-    if (patch.isActive !== undefined) {
+    if (patch.isActive) {
       sets.push("isActive = ?");
       binds.push(patch.isActive ? ACTIVE_FLAG.True : ACTIVE_FLAG.False);
     }

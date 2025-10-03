@@ -109,7 +109,7 @@ export class ClassStudentRepository {
   async reactivate(params: { id: string; unitPriceOverride?: number | null }): Promise<void> {
     const sets: string[] = ["leftAt = NULL"]; // clear leftAt to mark active
     const binds: unknown[] = [];
-    if (params.unitPriceOverride !== undefined) {
+    if (params.unitPriceOverride) {
       sets.push("unitPriceOverride = ?");
       binds.push(params.unitPriceOverride);
     }

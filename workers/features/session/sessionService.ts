@@ -260,7 +260,7 @@ export class SessionService {
         teacherId,
       });
       const cached = await this.cache.get<SessionDto | null>(cacheKey);
-      if (cached !== undefined) return cached;
+      if (cached) return cached;
     }
 
     const session = await this.sessionRepo.getById({
@@ -307,7 +307,7 @@ export class SessionService {
     }
 
     // If updating time, check for conflicts
-    if (input.startTime !== undefined || input.durationMin !== undefined) {
+    if (input.startTime || input.durationMin) {
       const newStartTime = input.startTime ?? existing.startTime;
       const newDuration = input.durationMin ?? existing.durationMin;
       const endTime = this.calculateEndTime(newStartTime, newDuration);

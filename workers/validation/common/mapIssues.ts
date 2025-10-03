@@ -25,7 +25,7 @@ function getFieldFromPath(path: unknown): ValidationField {
       if (typeof k === "string" || typeof k === "number") first = k;
     }
   }
-  const p0 = first !== undefined ? String(first) : "body";
+  const p0 = first ? String(first) : "body";
   // Narrow to known fields; fallback to 'body'
   const known: ValidationField[] = [
     // Class fields
