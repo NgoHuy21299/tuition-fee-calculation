@@ -30,6 +30,12 @@
       "database_id": "75740952-bb45-4f6e-bde9-b1ed863b45f1"
     }
   ],
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "88c7aa0cd2034bdab2a5c7835d984fdc"
+    }
+  ],
   /**
    * Environment Variables
    * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
