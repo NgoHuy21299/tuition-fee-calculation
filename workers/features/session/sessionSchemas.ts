@@ -16,6 +16,7 @@ import {
 } from 'valibot';
 import type { InferOutput } from 'valibot';
 import type { ValidationCode } from '../../validation/common/validationTypes';
+import { SESSION_STATUS, SESSION_TYPE, type SessionStatus, type SessionType } from './sessionConst';
 
 function Msg(code: ValidationCode) {
   return code;
@@ -23,14 +24,14 @@ function Msg(code: ValidationCode) {
 
 // Session status enum values
 const StatusSchema = union([
-  literal('scheduled'),
-  literal('completed'),
-  literal('canceled')
+  literal(SESSION_STATUS.SCHEDULED),
+  literal(SESSION_STATUS.COMPLETED),
+  literal(SESSION_STATUS.CANCELED)
 ], Msg("STATUS_INVALID"));
 
 const TypeSchema = union([
-  literal('class'),
-  literal('ad_hoc')
+  literal(SESSION_TYPE.CLASS),
+  literal(SESSION_TYPE.AD_HOC)
 ], Msg("TYPE_INVALID"));
 
 // Create single session schema
@@ -58,8 +59,8 @@ export const CreateSessionSchema = object({
       maxLength(2000, Msg("NOTES_TOO_LONG"))
     )
   )),
-  status: optional(StatusSchema, 'scheduled'),
-  type: optional(TypeSchema, 'class')
+  status: optional(StatusSchema, SESSION_STATUS.SCHEDULED),
+  type: optional(TypeSchema, SESSION_TYPE.CLASS)
 });
 
 // Create recurring session series schema
@@ -126,8 +127,8 @@ export const CreateSessionSeriesSchema = object({
       maxLength(2000, Msg("NOTES_TOO_LONG"))
     )
   )),
-  status: optional(StatusSchema, 'scheduled'),
-  type: optional(TypeSchema, 'class')
+  status: optional(StatusSchema, SESSION_STATUS.SCHEDULED),
+  type: optional(TypeSchema, SESSION_TYPE.CLASS)
 });
 
 // Update session schema
@@ -192,8 +193,8 @@ export const CreatePrivateSessionSchema = object({
       maxLength(2000, Msg("NOTES_TOO_LONG"))
     )
   )),
-  status: optional(StatusSchema, 'scheduled'),
-  type: optional(TypeSchema, 'ad_hoc')
+  status: optional(StatusSchema, SESSION_STATUS.SCHEDULED),
+  type: optional(TypeSchema, SESSION_TYPE.AD_HOC)
 });
 
 export type CreateSessionInput = InferOutput<typeof CreateSessionSchema>;
@@ -201,18 +202,16 @@ export type CreateSessionSeriesInput = InferOutput<typeof CreateSessionSeriesSch
 export type UpdateSessionInput = InferOutput<typeof UpdateSessionSchema>;
 export type UnlockSessionInput = InferOutput<typeof UnlockSessionSchema>;
 export type CreatePrivateSessionInput = InferOutput<typeof CreatePrivateSessionSchema>;
-
-// Session DTO
 export interface SessionDto {
   id: string;
   classId: string | null;
   teacherId: string;
   startTime: string;
   durationMin: number;
-  status: 'scheduled' | 'completed' | 'canceled';
+  status: SessionStatus;
   notes: string | null;
   feePerSession: number | null;
-  type: 'class' | 'ad_hoc';
+  type: SessionType;
   seriesId: string | null;
   createdAt: string;
   // Optional denormalized info for convenience

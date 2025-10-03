@@ -14,6 +14,7 @@ import {
 } from "valibot";
 import type { InferOutput } from "valibot";
 import type { ValidationCode } from "../../validation/common/validationTypes";
+import { ATTENDANCE_STATUS, type AttendanceStatus } from "./attendanceConst";
 
 function Msg(code: ValidationCode) {
   return code;
@@ -21,7 +22,11 @@ function Msg(code: ValidationCode) {
 
 // Attendance status enum values
 const AttendanceStatusSchema = union(
-  [literal("present"), literal("absent"), literal("late")],
+  [
+    literal(ATTENDANCE_STATUS.PRESENT),
+    literal(ATTENDANCE_STATUS.ABSENT),
+    literal(ATTENDANCE_STATUS.LATE),
+  ],
   Msg("ATTENDANCE_STATUS_INVALID")
 );
 
@@ -137,7 +142,7 @@ export interface AttendanceDto {
   id: string;
   sessionId: string;
   studentId: string;
-  status: "present" | "absent" | "late";
+  status: AttendanceStatus;
   note: string | null;
   markedBy: string | null;
   markedByName?: string | null;

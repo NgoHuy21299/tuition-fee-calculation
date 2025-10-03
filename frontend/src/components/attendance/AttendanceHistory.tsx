@@ -28,6 +28,7 @@ import type {
   AttendanceStats,
   AttendanceQueryParams 
 } from '../../services/attendanceService';
+import { ATTENDANCE_STATUS } from '../../constants';
 
 interface AttendanceHistoryProps {
   studentId: string;
@@ -35,17 +36,17 @@ interface AttendanceHistoryProps {
 }
 
 const statusConfig = {
-  present: {
+  [ATTENDANCE_STATUS.PRESENT]: {
     label: 'Có mặt',
     icon: Check,
     color: 'bg-green-100 text-green-800 border-green-200',
   },
-  absent: {
+  [ATTENDANCE_STATUS.ABSENT]: {
     label: 'Vắng mặt', 
     icon: X,
     color: 'bg-red-100 text-red-800 border-red-200',
   },
-  late: {
+  [ATTENDANCE_STATUS.LATE]: {
     label: 'Muộn',
     icon: AlertCircle,
     color: 'bg-yellow-100 text-yellow-800 border-yellow-200',

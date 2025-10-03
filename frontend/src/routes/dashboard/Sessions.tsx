@@ -9,6 +9,7 @@ import { Button } from '../../components/ui/button';
 import { useToast } from '../../components/commons/Toast';
 import { formatDate, formatTime, formatDuration } from '../../utils/dateHelpers';
 import { Card } from '../../components/ui/card';
+import { SESSION_STATUS, SESSION_TYPE } from '../../constants';
 
 export default function SessionsPage() {
   const [showSessionForm, setShowSessionForm] = useState(false);
@@ -141,8 +142,8 @@ export default function SessionsPage() {
         feePerSession: it.feePerSession,
         // Explicitly drop notes when creating from last week's preview
         notes: null,
-        status: 'scheduled',
-        type: it.type === 'class' || it.type === 'ad_hoc' ? it.type : 'ad_hoc',
+        status: SESSION_STATUS.SCHEDULED,
+        type: it.type === SESSION_TYPE.CLASS || it.type === SESSION_TYPE.AD_HOC ? it.type : SESSION_TYPE.AD_HOC,
       }));
 
       for (const p of payloads) {

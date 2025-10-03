@@ -1,4 +1,5 @@
 import apiClient from '../api/client';
+import type { SessionType } from '../constants';
 import type { SessionDto } from './sessionService';
 
 export interface CreatePrivateSessionRequest {
@@ -8,7 +9,7 @@ export interface CreatePrivateSessionRequest {
   feePerSession: number;
   notes?: string | null;
   status?: 'scheduled' | 'completed' | 'canceled';
-  type?: 'class' | 'ad_hoc';
+  type?: SessionType;
 }
 
 export class PrivateSessionService {

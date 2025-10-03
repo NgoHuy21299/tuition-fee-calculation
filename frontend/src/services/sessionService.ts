@@ -1,4 +1,5 @@
 import apiClient from '../api/client';
+import type { SessionStatus, SessionType } from '../constants';
 
 // Types matching backend DTOs
 export interface SessionDto {
@@ -7,10 +8,10 @@ export interface SessionDto {
   teacherId: string;
   startTime: string;
   durationMin: number;
-  status: 'scheduled' | 'completed' | 'canceled';
+  status: SessionStatus;
   notes: string | null;
   feePerSession: number | null;
-  type: 'class' | 'ad_hoc';
+  type: SessionType;
   seriesId: string | null;
   createdAt: string;
   className?: string | null;
@@ -22,8 +23,8 @@ export interface CreateSessionRequest {
   durationMin: number;
   feePerSession?: number | null;
   notes?: string | null;
-  status?: 'scheduled' | 'completed' | 'canceled';
-  type?: 'class' | 'ad_hoc';
+  status?: SessionStatus;
+  type?: SessionType;
 }
 
 export interface CreateSessionSeriesRequest {
@@ -32,7 +33,7 @@ export interface CreateSessionSeriesRequest {
   durationMin: number;
   feePerSession?: number | null;
   notes?: string | null;
-  type?: 'class' | 'ad_hoc';
+  type?: SessionType;
   recurrence: {
     daysOfWeek: number[]; // 0=Sunday, 1=Monday, etc.
     endDate: string;
@@ -46,8 +47,8 @@ export interface CreatePrivateSessionRequest {
   durationMin: number;
   feePerSession: number;
   notes?: string | null;
-  status?: 'scheduled' | 'completed' | 'canceled';
-  type?: 'class' | 'ad_hoc';
+  status?: SessionStatus;
+  type?: SessionType;
 }
 
 export interface UpdateSessionRequest {
@@ -55,7 +56,7 @@ export interface UpdateSessionRequest {
   durationMin?: number;
   feePerSession?: number | null;
   notes?: string | null;
-  status?: 'scheduled' | 'completed' | 'canceled';
+  status?: SessionStatus;
 }
 
 export class SessionService {
