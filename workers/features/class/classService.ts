@@ -11,23 +11,66 @@ import type {
 import { mapClassRowToDTO } from "./classTypes";
 import { AppError } from "../../errors";
 import type { CreateClassInput, UpdateClassInput } from "./classSchemas";
+import { CacheService } from "../../helpers/cacheService";
 
-export type ClassServiceDeps = { db: D1Database };
+export type ClassServiceDeps = { 
+  db: D1Database;
+  kv?: KVNamespace; // Optional for backward compatibility
+};
 
 export class ClassService {
   private readonly repo: ClassRepository;
+  private readonly cache?: CacheService;
+  
   constructor(deps: ClassServiceDeps) {
     this.repo = new ClassRepository({ db: deps.db });
+    this.cache = deps.kv ? new CacheService(deps.kv) : undefined;
   }
-
+  
   async listByTeacher(params: {
     teacherId: string;
     isActive?: boolean;
-    sort?: ClassSort;
     limit?: number;
   }): Promise<{ items: ClassDTO[]; total: number }> {
+    // Try to get from cache if available
+    if (this.cache) {
+      const cacheKey = CacheService.buildKey("class", "list", {
+        teacherId: params.teacherId,
+        isActive: params.isActive,
+        limit: params.limit,
+      });
+      
+      const cached = await this.cache.get<{ items: ClassDTO[]; total: number }>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+    }
+    
+    // Fetch from database
     const { items, total } = await this.repo.listByTeacher(params);
-    return { items: items.map(mapClassRowToDTO), total };
+    const result = { items: items.map(mapClassRowToDTO), total };
+    
+    // Store in cache if available (TTL: 5 minutes)
+    if (this.cache) {
+      const cacheKey = CacheService.buildKey("class", "list", {
+        teacherId: params.teacherId,
+        isActive: params.isActive,
+        limit: params.limit,
+      });
+      await this.cache.set(cacheKey, result, { ttl: 300 });
+    }
+    
+    return result;
+  }
+
+  /**
+   * Invalidate all list caches for a teacher
+   */
+  private async invalidateListCache(teacherId: string): Promise<void> {
+    if (this.cache) {
+      // Invalidate all list cache entries for this teacher
+      await this.cache.deleteByPrefix(`class:list:teacherId_${teacherId}`);
+    }
   }
 
   async create(
@@ -50,6 +93,10 @@ export class ClassService {
         "Class not found after create",
         404
       );
+    
+    // Invalidate list cache
+    await this.invalidateListCache(teacherId);
+    
     return mapClassRowToDTO(created);
   }
 
@@ -83,6 +130,10 @@ export class ClassService {
         "Class not found after update",
         404
       );
+    
+    // Invalidate list cache
+    await this.invalidateListCache(teacherId);
+    
     return mapClassRowToDTO(updated);
   }
 
@@ -97,5 +148,8 @@ export class ClassService {
     if (hasSessions)
       throw new AppError("CLASS_HAS_SESSIONS", "Class has sessions", 409);
     await this.repo.delete(id, teacherId);
+    
+    // Invalidate list cache
+    await this.invalidateListCache(teacherId);
   }
 }

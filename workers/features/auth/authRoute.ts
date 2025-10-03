@@ -29,7 +29,7 @@ export function createAuthRouter() {
       );
     }
     
-    const auth = new AuthService({ db: c.env.DB });
+    const auth = new AuthService({ db: c.env.DB, kv: c.env.KV });
     const user = await auth.verifyCredentials(email, password);
     if (!user) {
       return c.json(
@@ -75,7 +75,7 @@ export function createAuthRouter() {
         401
       );
 
-    const auth = new AuthService({ db: c.env.DB });
+    const auth = new AuthService({ db: c.env.DB, kv: c.env.KV });
     try {
       await auth.changePassword(userId, oldPassword, newPassword);
       return new Response(null, { status: 204 });
@@ -106,7 +106,7 @@ export function createAuthRouter() {
       );
     }
     
-    const auth = new AuthService({ db: c.env.DB });
+    const auth = new AuthService({ db: c.env.DB, kv: c.env.KV });
     try {
       const created = await auth.createUser({ email, password, name });
 

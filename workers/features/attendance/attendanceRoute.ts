@@ -30,7 +30,7 @@ export function createAttendanceRouter() {
     try {
       const sessionId = c.req.param("sessionId");
       const teacherId = getTeacherId(c);
-      const service = new AttendanceService({ db: c.env.DB });
+      const service = new AttendanceService({ db: c.env.DB, kv: c.env.KV });
 
       const result = await service.getSessionAttendance({
         sessionId,
@@ -56,7 +56,7 @@ export function createAttendanceRouter() {
         const bulkData =
           getValidatedData<InferOutput<typeof BulkAttendanceSchema>>(c);
         const teacherId = getTeacherId(c);
-        const service = new AttendanceService({ db: c.env.DB });
+        const service = new AttendanceService({ db: c.env.DB, kv: c.env.KV });
 
         const result = await service.markAttendance({
           sessionId,
@@ -85,7 +85,7 @@ export function createAttendanceRouter() {
         const updateData =
           getValidatedData<InferOutput<typeof UpdateAttendanceSchema>>(c);
         const teacherId = getTeacherId(c);
-        const service = new AttendanceService({ db: c.env.DB });
+        const service = new AttendanceService({ db: c.env.DB, kv: c.env.KV });
 
         const result = await service.updateAttendance({
           id: attendanceId,
@@ -109,7 +109,7 @@ export function createAttendanceRouter() {
     try {
       const attendanceId = c.req.param("id");
       const teacherId = getTeacherId(c);
-      const service = new AttendanceService({ db: c.env.DB });
+      const service = new AttendanceService({ db: c.env.DB, kv: c.env.KV });
 
       await service.deleteAttendance({
         id: attendanceId,
@@ -138,7 +138,7 @@ export function createAttendanceRouter() {
         status: query.status as "present" | "absent" | "late" | undefined,
       };
       const teacherId = getTeacherId(c);
-      const service = new AttendanceService({ db: c.env.DB });
+      const service = new AttendanceService({ db: c.env.DB, kv: c.env.KV });
 
       const result = await service.getStudentAttendanceHistory({
         studentId,
@@ -161,7 +161,7 @@ export function createAttendanceRouter() {
     try {
       const sessionId = c.req.param("sessionId");
       const teacherId = getTeacherId(c);
-      const service = new AttendanceService({ db: c.env.DB });
+      const service = new AttendanceService({ db: c.env.DB, kv: c.env.KV });
 
       const result = await service.calculateSessionFees({
         sessionId,
@@ -186,7 +186,7 @@ export function createAttendanceRouter() {
         const attendanceData =
           getValidatedData<InferOutput<typeof CreateAttendanceSchema>>(c);
         const teacherId = getTeacherId(c);
-        const service = new AttendanceService({ db: c.env.DB });
+        const service = new AttendanceService({ db: c.env.DB, kv: c.env.KV });
 
         // Use bulk operation with single record for consistency
         const result = await service.markAttendance({

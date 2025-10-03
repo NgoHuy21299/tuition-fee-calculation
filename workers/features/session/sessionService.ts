@@ -7,6 +7,7 @@ import {
 import { ClassRepository, type ClassRow } from "../class/classRepository";
 import { AttendanceRepository } from "../attendance/attendanceRepository";
 import { ClassStudentRepository } from "../class-student/classStudentRepository";
+import { CacheService } from "../../helpers/cacheService";
 import type {
   SessionDto,
   CreateSessionInput,
@@ -33,12 +34,14 @@ export class SessionService {
   private classRepo: ClassRepository;
   private attendanceRepo: AttendanceRepository;
   private classStudentRepo: ClassStudentRepository;
+  private cache?: CacheService;
 
-  constructor(private deps: { db: D1Database }) {
+  constructor(private deps: { db: D1Database; kv?: KVNamespace }) {
     this.sessionRepo = new SessionRepository(deps);
     this.classRepo = new ClassRepository(deps);
     this.attendanceRepo = new AttendanceRepository(deps);
     this.classStudentRepo = new ClassStudentRepository(deps);
+    this.cache = deps.kv ? new CacheService(deps.kv) : undefined;
   }
 
   /**
@@ -51,10 +54,7 @@ export class SessionService {
     // Validate class ownership if provided
     let classExists: ClassRow | null = null;
     if (input.classId) {
-      classExists = await this.classRepo.getById(
-        input.classId,
-        teacherId
-      );
+      classExists = await this.classRepo.getById(input.classId, teacherId);
       if (!classExists) {
         throw new AppError("CLASS_NOT_FOUND", "Class not found", 404);
       }
@@ -89,7 +89,8 @@ export class SessionService {
       durationMin: input.durationMin,
       status: SESSION_STATUS.SCHEDULED,
       notes: input.notes ?? null,
-      feePerSession: input.feePerSession ?? classExists?.defaultFeePerSession ?? null,
+      feePerSession:
+        input.feePerSession ?? classExists?.defaultFeePerSession ?? null,
       type: input.classId ? SESSION_TYPE.CLASS : SESSION_TYPE.AD_HOC,
       seriesId: null,
     };
@@ -100,6 +101,9 @@ export class SessionService {
     if (input.classId) {
       await this.createInitialAttendanceRecords(sessionId, input.classId);
     }
+
+    // Invalidate caches related to this class/teacher
+    await this.invalidateClassCaches(input.classId ?? null, teacherId);
 
     return this.mapToDto(created);
   }
@@ -187,6 +191,9 @@ export class SessionService {
       }
     }
 
+    // Invalidate caches related to this class/teacher
+    await this.invalidateClassCaches(input.classId ?? null, teacherId);
+
     return created.map((row) => this.mapToDto(row));
   }
 
@@ -209,14 +216,33 @@ export class SessionService {
       statusExclude.push(`canceled`);
     }
 
+    // Try cache
+    let cacheKey: string | undefined;
+    if (this.cache) {
+      cacheKey = CacheService.buildKey("session", "listByClass", {
+        classId,
+        teacherId,
+        startTimeBegin: startTimeBegin ?? null,
+        startTimeEnd: startTimeEnd ?? null,
+        statusExclude: statusExclude.join("|"),
+      });
+      const cached = await this.cache.get<SessionDto[]>(cacheKey);
+      if (cached) return cached;
+    }
+
     const sessions = await this.sessionRepo.listByClass({
       classId,
       teacherId,
       startTimeBegin,
       startTimeEnd,
-      statusExclude
+      statusExclude,
     });
-    return sessions.map((row) => this.mapToDto(row));
+    const result = sessions.map((row) => this.mapToDto(row));
+
+    if (this.cache && cacheKey) {
+      await this.cache.set(cacheKey, result, { ttl: 300 });
+    }
+    return result;
   }
 
   /**
@@ -226,17 +252,41 @@ export class SessionService {
     sessionId: string,
     teacherId: string
   ): Promise<SessionDto | null> {
+    // Try cache
+    let cacheKey: string | undefined;
+    if (this.cache) {
+      cacheKey = CacheService.buildKey("session", "getById", {
+        sessionId,
+        teacherId,
+      });
+      const cached = await this.cache.get<SessionDto | null>(cacheKey);
+      if (cached !== undefined) return cached;
+    }
+
     const session = await this.sessionRepo.getById({
       id: sessionId,
       teacherId,
     });
-    if (!session) return null;
+    if (!session) {
+      if (this.cache && cacheKey) {
+        await this.cache.set(cacheKey, null, { ttl: 300 });
+      }
+      return null;
+    }
     const dto = this.mapToDto(session);
+    let result: SessionDto;
     if (session.classId) {
       const cls = await this.classRepo.getById(session.classId, teacherId);
-      return { ...dto, className: cls?.name ?? null };
+      result = { ...dto, className: cls?.name ?? null };
+    } else {
+      result = dto;
     }
-    return dto;
+
+    if (this.cache && cacheKey) {
+      await this.cache.set(cacheKey, result, { ttl: 300 });
+    }
+
+    return result;
   }
 
   /**
@@ -281,7 +331,10 @@ export class SessionService {
 
     // Populate feePerSession from class default if not set and session is linked to a class
     if (existing.classId && !existing.feePerSession) {
-      const classExists = await this.classRepo.getById(existing.classId, teacherId);
+      const classExists = await this.classRepo.getById(
+        existing.classId,
+        teacherId
+      );
       if (classExists?.defaultFeePerSession) {
         input.feePerSession = classExists.defaultFeePerSession;
       }
@@ -292,6 +345,9 @@ export class SessionService {
       patch: input,
       teacherId,
     });
+
+    // Invalidate caches
+    await this.invalidateClassCaches(existing.classId ?? null, teacherId);
 
     return updated ? this.mapToDto(updated) : null;
   }
@@ -337,6 +393,10 @@ export class SessionService {
       teacherId,
     });
 
+    // Invalidate caches
+    await this.invalidateClassCaches(existing.classId ?? null, teacherId);
+    await this.invalidateSessionCache(sessionId, teacherId);
+
     return updated ? this.mapToDto(updated) : null;
   }
 
@@ -378,6 +438,10 @@ export class SessionService {
       patch: { status: SESSION_STATUS.SCHEDULED, notes: newNotes },
       teacherId,
     });
+
+    // Invalidate caches
+    await this.invalidateClassCaches(existing.classId ?? null, teacherId);
+    await this.invalidateSessionCache(sessionId, teacherId);
 
     return updated ? this.mapToDto(updated) : null;
   }
@@ -427,6 +491,10 @@ export class SessionService {
       teacherId,
     });
 
+    // Invalidate caches
+    await this.invalidateClassCaches(existing.classId ?? null, teacherId);
+    await this.invalidateSessionCache(sessionId, teacherId);
+
     return updated ? this.mapToDto(updated) : null;
   }
 
@@ -453,6 +521,10 @@ export class SessionService {
     }
 
     await this.sessionRepo.delete({ id: sessionId, teacherId });
+
+    // Invalidate caches
+    await this.invalidateClassCaches(existing.classId ?? null, teacherId);
+    await this.invalidateSessionCache(sessionId, teacherId);
   }
 
   /**
@@ -465,13 +537,31 @@ export class SessionService {
     const from = options.from ?? new Date().toISOString();
     const limit = options.limit ?? 50;
 
+    // Try cache
+    let cacheKey: string | undefined;
+    if (this.cache) {
+      cacheKey = CacheService.buildKey("session", "listUpcoming", {
+        teacherId,
+        from,
+        limit,
+      });
+      const cached = await this.cache.get<SessionDto[]>(cacheKey);
+      if (cached) return cached;
+    }
+
     const sessions = await this.sessionRepo.listUpcoming({
       teacherId,
       from,
       limit,
     });
 
-    return sessions.map((row) => this.mapToDto(row));
+    const result = sessions.map((row) => this.mapToDto(row));
+
+    if (this.cache && cacheKey) {
+      await this.cache.set(cacheKey, result, { ttl: 300 });
+    }
+
+    return result;
   }
 
   /**
@@ -492,6 +582,19 @@ export class SessionService {
       statusExclude.push(SESSION_STATUS.CANCELED);
     }
 
+    // Try cache
+    let cacheKey: string | undefined;
+    if (this.cache) {
+      cacheKey = CacheService.buildKey("session", "listByTeacher", {
+        teacherId,
+        startTimeBegin: options.startTimeBegin ?? null,
+        startTimeEnd: options.startTimeEnd ?? null,
+        isExcludeCancelled: options.isExcludeCancelled ?? null,
+      });
+      const cached = await this.cache.get<SessionDto[]>(cacheKey);
+      if (cached) return cached;
+    }
+
     const sessions = await this.sessionRepo.listByTeacher({
       teacherId,
       startTimeBegin: options.startTimeBegin,
@@ -499,7 +602,13 @@ export class SessionService {
       statusExclude,
     });
 
-    return sessions.map((row) => this.mapToDtoWithClassName(row));
+    const result = sessions.map((row) => this.mapToDtoWithClassName(row));
+
+    if (this.cache && cacheKey) {
+      await this.cache.set(cacheKey, result, { ttl: 300 });
+    }
+
+    return result;
   }
 
   /**
@@ -678,13 +787,18 @@ export class SessionService {
     // Bulk insert attendance records
     await this.attendanceRepo.bulkUpsert(attendanceRecords);
 
+    // Invalidate caches
+    await this.invalidateClassCaches(null, teacherId);
+
     return this.mapToDto(created);
   }
 
   /**
    * Map database row with className to DTO
    */
-  private mapToDtoWithClassName(row: SessionRow & { className: string | null }): SessionDto {
+  private mapToDtoWithClassName(
+    row: SessionRow & { className: string | null }
+  ): SessionDto {
     return {
       id: row.id,
       classId: row.classId,
@@ -699,5 +813,33 @@ export class SessionService {
       createdAt: row.createdAt,
       className: row.className,
     };
+  }
+
+  /** Invalidate caches related to a class and teacher */
+  private async invalidateClassCaches(
+    classId: string | null,
+    teacherId: string
+  ): Promise<void> {
+    if (!this.cache) return;
+    // Invalidate list-by-class caches
+    if (classId) {
+      await this.cache.deleteByPrefix(`session:listByClass:classId_${classId}`);
+    }
+    // Invalidate teacher-based lists (e.g., dashboard)
+    await this.cache.deleteByPrefix(
+      `session:listByTeacher:teacherId_${teacherId}`
+    );
+  }
+
+  /** Invalidate caches for a specific session */
+  private async invalidateSessionCache(
+    sessionId: string,
+    teacherId: string
+  ): Promise<void> {
+    if (!this.cache) return;
+    // Invalidate session by ID cache
+    await this.cache.deleteByPrefix(`session:getById:sessionId_${sessionId}`);
+    // Invalidate upcoming sessions cache for this teacher
+    await this.cache.deleteByPrefix(`session:listUpcoming:teacherId_${teacherId}`);
   }
 }

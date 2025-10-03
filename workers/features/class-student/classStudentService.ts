@@ -7,16 +7,19 @@ import type {
   LeaveClassStudentInput,
 } from "./classStudentSchemas";
 import { ClassRepository } from "../class/classRepository";
+import { CacheService } from "../../helpers/cacheService";
 
-export type ClassStudentServiceDeps = { db: D1Database };
+export type ClassStudentServiceDeps = { db: D1Database; kv?: KVNamespace };
 
 export class ClassStudentService {
   private readonly repo: ClassStudentRepository;
   private readonly classRepo: ClassRepository;
+  private readonly cache?: CacheService;
 
   constructor(private readonly deps: ClassStudentServiceDeps) {
     this.repo = new ClassStudentRepository({ db: deps.db });
     this.classRepo = new ClassRepository({ db: deps.db });
+    this.cache = deps.kv ? new CacheService(deps.kv) : undefined;
   }
 
   /**
@@ -34,8 +37,23 @@ export class ClassStudentService {
       if (!exists)
         throw new AppError("RESOURCE_NOT_FOUND", "Class not found", 404);
     }
+    // Try cache
+    let cacheKey: string | undefined;
+    if (this.cache) {
+      cacheKey = CacheService.buildKey("class-student", "list", {
+        classId: params.classId ?? "all",
+      });
+      const cached = await this.cache.get<{ items: ClassStudentDTO[]; total: number }>(cacheKey);
+      if (cached) return cached;
+    }
+
     const rows = await this.repo.listByClass({ classId: params.classId });
-    return { items: rows.map(mapClassStudentRowToDTO), total: rows.length };
+    const result = { items: rows.map(mapClassStudentRowToDTO), total: rows.length };
+
+    if (this.cache && cacheKey) {
+      await this.cache.set(cacheKey, result, { ttl: 300 });
+    }
+    return result;
   }
 
   /**
@@ -79,7 +97,9 @@ export class ClassStudentService {
           "Membership not found after reactivate",
           404
         );
-      return mapClassStudentRowToDTO(updated);
+      const dto = mapClassStudentRowToDTO(updated);
+      await this.invalidateListCache(classId);
+      return dto;
     } else {
       // Fresh add
       await this.repo.add({
@@ -97,7 +117,9 @@ export class ClassStudentService {
           "Membership not found after add",
           404
         );
-      return mapClassStudentRowToDTO(created);
+      const dto = mapClassStudentRowToDTO(created);
+      await this.invalidateListCache(classId);
+      return dto;
     }
   }
 
@@ -116,5 +138,12 @@ export class ClassStudentService {
 
     const leftAt = input.leftAt ?? new Date().toISOString();
     await this.repo.leave({ classStudentId, leftAt });
+
+    await this.invalidateListCache(classId);
+  }
+
+  private async invalidateListCache(classId: string): Promise<void> {
+    if (!this.cache) return;
+    await this.cache.deleteByPrefix(`class-student:list:classId_${classId}`);
   }
 }

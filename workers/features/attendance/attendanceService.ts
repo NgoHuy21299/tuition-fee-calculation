@@ -11,6 +11,7 @@ import type { SessionRow } from "../session/sessionRepository";
 import { StudentRepository } from "../student/studentRepository";
 import { ClassRepository } from "../class/classRepository";
 import { UserRepository } from "../auth/userRepository";
+import { CacheService } from "../../helpers/cacheService";
 import type {
   AttendanceDto,
   AttendanceWithSessionDto,
@@ -42,13 +43,15 @@ export class AttendanceService {
   private studentRepo: StudentRepository;
   private classRepo: ClassRepository;
   private userRepo: UserRepository;
+  private cache?: CacheService;
 
-  constructor(private deps: { db: D1Database }) {
+  constructor(private deps: { db: D1Database; kv?: KVNamespace }) {
     this.attendanceRepo = new AttendanceRepository(deps);
     this.sessionRepo = new SessionRepository(deps);
     this.studentRepo = new StudentRepository(deps);
     this.classRepo = new ClassRepository(deps);
     this.userRepo = new UserRepository(deps);
+    this.cache = deps.kv ? new CacheService(deps.kv) : undefined;
   }
 
   /**
@@ -61,6 +64,16 @@ export class AttendanceService {
     sessionId: string;
     teacherId: string;
   }): Promise<AttendanceDto[]> {
+    // Try cache first
+    let cacheKey: string | undefined;
+    if (this.cache) {
+      cacheKey = CacheService.buildKey("attendance", "sessionList", {
+        sessionId,
+        teacherId,
+      });
+      const cached = await this.cache.get<AttendanceDto[]>(cacheKey);
+      if (cached) return cached;
+    }
     // Verify session ownership
     const session = await this.sessionRepo.getById({
       id: sessionId,
@@ -98,10 +111,15 @@ export class AttendanceService {
       const users = await this.userRepo.getByIds(markedByIds);
       const idToName = new Map(users.map((u) => [u.id, u.name ?? null]));
       for (const dto of attendanceDtos) {
-        dto.markedByName = dto.markedBy ? (idToName.get(dto.markedBy) ?? null) : null;
+        dto.markedByName = dto.markedBy
+          ? idToName.get(dto.markedBy) ?? null
+          : null;
       }
     }
 
+    if (this.cache && cacheKey) {
+      await this.cache.set(cacheKey, attendanceDtos, { ttl: 180 });
+    }
     return attendanceDtos;
   }
 
@@ -197,6 +215,14 @@ export class AttendanceService {
     const successCount = results.filter((r) => r.success).length;
     const failureCount = results.length - successCount;
 
+    // Invalidate caches
+    await this.invalidateSessionAttendanceCache(sessionId, teacherId);
+    for (const r of results) {
+      if (r.success) {
+        await this.invalidateStudentHistoryCache(r.studentId, teacherId);
+      }
+    }
+
     return {
       success: failureCount === 0,
       totalRecords: results.length,
@@ -290,6 +316,13 @@ export class AttendanceService {
       session
     );
 
+    // Invalidate caches
+    await this.invalidateSessionAttendanceCache(existing.sessionId, teacherId);
+    await this.invalidateStudentHistoryCache(
+      updatedRecord.studentId,
+      teacherId
+    );
+
     return {
       ...updatedRecord,
       studentName: student.name,
@@ -345,6 +378,9 @@ export class AttendanceService {
         500
       );
     }
+    // Invalidate caches
+    await this.invalidateSessionAttendanceCache(existing.sessionId, teacherId);
+    await this.invalidateStudentHistoryCache(existing.studentId, teacherId);
   }
 
   /**
@@ -362,6 +398,22 @@ export class AttendanceService {
     attendance: AttendanceWithSessionDto[];
     stats: AttendanceStats;
   }> {
+    // Try cache first
+    let cacheKey: string | undefined;
+    if (this.cache) {
+      cacheKey = CacheService.buildKey("attendance", "studentHistory", {
+        studentId,
+        teacherId,
+        classId: filters?.classId ?? null,
+        fromDate: filters?.fromDate ?? null,
+        toDate: filters?.toDate ?? null,
+      });
+      const cached = await this.cache.get<{
+        attendance: AttendanceWithSessionDto[];
+        stats: AttendanceStats;
+      }>(cacheKey);
+      if (cached) return cached;
+    }
     // Verify student exists and belongs to teacher
     const student = await this.studentRepo.getById(studentId, teacherId);
     if (!student) {
@@ -410,7 +462,9 @@ export class AttendanceService {
       const users = await this.userRepo.getByIds(markedByIds);
       const idToName = new Map(users.map((u) => [u.id, u.name ?? null]));
       for (const dto of attendanceDtos) {
-        dto.markedByName = dto.markedBy ? (idToName.get(dto.markedBy) ?? null) : null;
+        dto.markedByName = dto.markedBy
+          ? idToName.get(dto.markedBy) ?? null
+          : null;
       }
     }
 
@@ -423,10 +477,15 @@ export class AttendanceService {
       toDate: filters?.toDate || undefined,
     });
 
-    return {
+    const result = {
       attendance: attendanceDtos,
       stats,
     };
+
+    if (this.cache && cacheKey) {
+      await this.cache.set(cacheKey, result, { ttl: 180 });
+    }
+    return result;
   }
 
   /**
@@ -449,6 +508,29 @@ export class AttendanceService {
       feeSource: "attendance_override" | "student_override" | "session_default";
     }>;
   }> {
+    // Try cache first
+    let cacheKey: string | undefined;
+    if (this.cache) {
+      cacheKey = CacheService.buildKey("attendance", "sessionFees", {
+        sessionId,
+        teacherId,
+      });
+      const cached = await this.cache.get<{
+        sessionId: string;
+        totalFees: number;
+        attendanceFees: Array<{
+          studentId: string;
+          studentName: string;
+          status: "present" | "absent" | "late";
+          fee: number;
+          feeSource:
+            | "attendance_override"
+            | "student_override"
+            | "session_default";
+        }>;
+      }>(cacheKey);
+      if (cached) return cached;
+    }
     // Get session
     const session = await this.sessionRepo.getById({
       id: sessionId,
@@ -488,11 +570,16 @@ export class AttendanceService {
       totalFees += calculatedFee || 0;
     }
 
-    return {
+    const result = {
       sessionId,
       totalFees,
       attendanceFees,
     };
+
+    if (this.cache && cacheKey) {
+      await this.cache.set(cacheKey, result, { ttl: 180 });
+    }
+    return result;
   }
 
   /**
@@ -544,7 +631,12 @@ export class AttendanceService {
           teacherId,
         });
         // Only count fees for completed sessions and present attendance
-        if (session && session.status === SESSION_STATUS.COMPLETED && (record.status === ATTENDANCE_STATUS.PRESENT || record.status === ATTENDANCE_STATUS.LATE)) {
+        if (
+          session &&
+          session.status === SESSION_STATUS.COMPLETED &&
+          (record.status === ATTENDANCE_STATUS.PRESENT ||
+            record.status === ATTENDANCE_STATUS.LATE)
+        ) {
           const fee = await this.calculateAttendanceFee(record, session);
           if (fee !== null) totalFees += fee;
         }
@@ -580,11 +672,12 @@ export class AttendanceService {
 
     // 2. Check class student unit price override (if it's a class session)
     if (session.classId) {
-      const unitPriceOverride = await this.classRepo.getClassStudentUnitPriceOverride(
-        session.classId,
-        attendance.studentId,
-        session.teacherId
-      );
+      const unitPriceOverride =
+        await this.classRepo.getClassStudentUnitPriceOverride(
+          session.classId,
+          attendance.studentId,
+          session.teacherId
+        );
       if (unitPriceOverride !== null) {
         return unitPriceOverride;
       }
@@ -606,11 +699,12 @@ export class AttendanceService {
     }
 
     if (session.classId) {
-      const unitPriceOverride = await this.classRepo.getClassStudentUnitPriceOverride(
-        session.classId,
-        attendance.studentId,
-        session.teacherId
-      );
+      const unitPriceOverride =
+        await this.classRepo.getClassStudentUnitPriceOverride(
+          session.classId,
+          attendance.studentId,
+          session.teacherId
+        );
       if (unitPriceOverride !== null) {
         return "student_override";
       }
@@ -639,7 +733,11 @@ export class AttendanceService {
       }
 
       // Validate membership in class
-      const isMember = await this.classRepo.isStudentInClass(classId, studentId, teacherId);
+      const isMember = await this.classRepo.isStudentInClass(
+        classId,
+        studentId,
+        teacherId
+      );
       if (!isMember) {
         throw new AppError(
           "ATTENDANCE_STUDENT_NOT_IN_CLASS",
@@ -648,5 +746,28 @@ export class AttendanceService {
         );
       }
     }
+  }
+
+  private async invalidateSessionAttendanceCache(
+    sessionId: string,
+    teacherId: string
+  ): Promise<void> {
+    if (!this.cache) return;
+    await this.cache.deleteByPrefix(
+      `attendance:sessionList:sessionId_${sessionId}_teacherId_${teacherId}`
+    );
+    await this.cache.deleteByPrefix(
+      `attendance:sessionFees:sessionId_${sessionId}_teacherId_${teacherId}`
+    );
+  }
+
+  private async invalidateStudentHistoryCache(
+    studentId: string,
+    teacherId: string
+  ): Promise<void> {
+    if (!this.cache) return;
+    await this.cache.deleteByPrefix(
+      `attendance:studentHistory:studentId_${studentId}_teacherId_${teacherId}`
+    );
   }
 }

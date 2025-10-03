@@ -9,8 +9,9 @@ import type {
   UpdateStudentInput,
 } from "./studentSchemas";
 import { uuidv7 } from "uuidv7";
+import { CacheService } from "../../helpers/cacheService";
 
-export type StudentServiceDeps = { db: D1Database };
+export type StudentServiceDeps = { db: D1Database; kv?: KVNamespace };
 
 const REL_PREFIX: Record<
   "father" | "mother" | "grandfather" | "grandmother",
@@ -27,28 +28,58 @@ export class StudentService {
   private readonly parentRepo: ParentRepository;
   private readonly classStudentRepo: ClassStudentRepository;
   private readonly attendanceRepo: AttendanceRepository;
+  private readonly cache?: CacheService;
   constructor(private readonly deps: StudentServiceDeps) {
     this.repo = new StudentRepository({ db: deps.db });
     this.parentRepo = new ParentRepository({ db: deps.db });
     this.classStudentRepo = new ClassStudentRepository({ db: deps.db });
     this.attendanceRepo = new AttendanceRepository({ db: deps.db });
+    this.cache = deps.kv ? new CacheService(deps.kv) : undefined;
   }
 
   async listByTeacher(params: {
     teacherId: string;
     classId?: string;
   }): Promise<{ items: StudentDTO[]; total: number }> {
+    // Try cache first
+    let cacheKey: string | undefined;
+    if (this.cache) {
+      cacheKey = CacheService.buildKey("student", "list", {
+        teacherId: params.teacherId,
+        classId: params.classId ?? null,
+      });
+      const cached = await this.cache.get<{ items: StudentDTO[]; total: number }>(cacheKey);
+      if (cached) return cached;
+    }
+
     const rows = await this.repo.listByTeacher({
       teacherId: params.teacherId,
       classId: params.classId,
     });
-    return { items: rows.map(mapStudentRowToDTO), total: rows.length };
+    const result = { items: rows.map(mapStudentRowToDTO), total: rows.length };
+
+    if (this.cache && cacheKey) {
+      await this.cache.set(cacheKey, result, { ttl: 300 });
+    }
+    return result;
   }
 
   async getDetailById(teacherId: string, id: string): Promise<StudentDetailDTO> {
+    // Try cache first
+    let cacheKey: string | undefined;
+    if (this.cache) {
+      cacheKey = CacheService.buildKey("student", "detail", { id, teacherId });
+      const cached = await this.cache.get<StudentDetailDTO>(cacheKey);
+      if (cached) return cached;
+    }
+
     const detail = await this.repo.getDetailById(id, teacherId);
     if (!detail) throw new AppError("RESOURCE_NOT_FOUND", "Student not found", 404);
-    return mapStudentDetailToDTO(detail);
+    const dto = mapStudentDetailToDTO(detail);
+    if (this.cache && cacheKey) {
+      await this.cache.set(cacheKey, dto, { ttl: 300 });
+    }
+    return dto;
   }
 
   async create(
@@ -109,7 +140,13 @@ export class StudentService {
         "Student not found after create",
         404
       );
-    return mapStudentRowToDTO(created);
+    const dto = mapStudentRowToDTO(created);
+
+    // Invalidate caches
+    await this.invalidateListCache(teacherId);
+    await this.invalidateDetailCache(created.id, teacherId);
+
+    return dto;
   }
 
   async update(
@@ -196,7 +233,13 @@ export class StudentService {
         "Student not found after update",
         404
       );
-    return mapStudentRowToDTO(updated);
+    const dto = mapStudentRowToDTO(updated);
+
+    // Invalidate caches
+    await this.invalidateListCache(teacherId);
+    await this.invalidateDetailCache(id, teacherId);
+
+    return dto;
   }
 
   async delete(teacherId: string, id: string): Promise<void> {
@@ -230,5 +273,21 @@ export class StudentService {
     }
 
     await this.repo.delete(id, teacherId);
+
+    // Invalidate caches
+    await this.invalidateListCache(teacherId);
+    await this.invalidateDetailCache(id, teacherId);
+  }
+
+  /** Invalidate all list caches for a teacher */
+  private async invalidateListCache(teacherId: string): Promise<void> {
+    if (!this.cache) return;
+    await this.cache.deleteByPrefix(`student:list:teacherId_${teacherId}`);
+  }
+
+  /** Invalidate detail cache for a student */
+  private async invalidateDetailCache(id: string, teacherId: string): Promise<void> {
+    if (!this.cache) return;
+    await this.cache.deleteByPrefix(`student:detail:id_${id}_teacherId_${teacherId}`);
   }
 }
