@@ -69,5 +69,41 @@ export function createReportsRouter() {
         }
     });
 
+    /**
+     * Get monthly report for ad-hoc sessions
+     * GET /api/reports/ad-hoc?month=2024-09&includeStudentDetails=true&forceRefresh=false
+     */
+    router.get('/ad-hoc', async (c: Context) => {
+        try {
+            const month = c.req.query('month');
+            const includeStudentDetails = c.req.query('includeStudentDetails') === 'true';
+            const forceRefresh = c.req.query('forceRefresh') === 'true';
+            const teacherId = getTeacherId(c);
+
+            if (!month) {
+                return c.json({ error: 'Month parameter is required' }, 400);
+            }
+
+            // Validate month format (YYYY-MM)
+            const monthRegex = /^\d{4}-\d{2}$/;
+            if (!monthRegex.test(month)) {
+                return c.json({ error: 'Invalid month format. Expected YYYY-MM' }, 400);
+            }
+
+            const service = new ReportsService({ db: c.env.DB });
+            const result = await service.getAdHocMonthlyReport({
+                teacherId,
+                month,
+                includeStudentDetails,
+                forceRefresh
+            });
+
+            return c.json(result, 200 as 200);
+        } catch (err) {
+            const e = toAppError(err, { code: "UNKNOWN" });
+            return c.json({ error: e.message }, e.status as any);
+        }
+    });
+
     return router;
 }

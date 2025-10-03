@@ -12,6 +12,7 @@ import type { ClassDTO } from "../../services/classService";
 // Helper to produce the label shown in the class dropdown trigger
 const getClassLabel = (classes: ClassDTO[], selectedClassId: string) => {
   if (selectedClassId === 'ALL') return 'Tất cả các lớp';
+  if (selectedClassId === 'AD_HOC') return 'Lớp học riêng';
   if (!selectedClassId) return 'Chọn lớp học';
   const cls = classes.find((c) => c.id === selectedClassId);
   if (!cls) return 'Chọn lớp học';
@@ -86,6 +87,14 @@ export default function MonthlyReportFilters({
                 onClick={() => onClassChange('ALL')}
               >
                 Tất cả các lớp
+              </button>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <button
+                className="w-full text-left"
+                onClick={() => onClassChange('AD_HOC')}
+              >
+                Lớp học riêng
               </button>
             </DropdownMenuItem>
             {classes.map((classItem) => (

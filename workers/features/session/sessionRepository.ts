@@ -407,6 +407,33 @@ export class SessionRepository {
   }
 
   /**
+   * List ad-hoc sessions for a specific month (for reports)
+   */
+  async listAdHocByMonth(params: {
+    teacherId: string;
+    year: number;
+    month: number;
+  }): Promise<SessionRow[]> {
+    const startTime = `${params.year}-${params.month.toString().padStart(2, '0')}-01`;
+    const nextMonth = params.month === 12 ? 1 : params.month + 1;
+    const nextYear = params.month === 12 ? params.year + 1 : params.year;
+    const endTime = `${nextYear}-${nextMonth.toString().padStart(2, '0')}-01`;
+    
+    const query = `
+      SELECT
+        id, classId, teacherId, startTime, durationMin,
+        status, notes, feePerSession, type, seriesId, createdAt
+      FROM Session
+      WHERE teacherId = ? AND type = 'ad_hoc' AND classId IS NULL
+        AND startTime >= ? AND startTime < ?
+        AND status != 'canceled'
+      ORDER BY startTime
+    `;
+    
+    return await selectAll<SessionRow>(this.deps.db, query, [params.teacherId, startTime, endTime]);
+  }
+
+  /**
    * List sessions by IDs
    */
   private async listByIds(ids: string[], teacherId: string): Promise<SessionRow[]> {

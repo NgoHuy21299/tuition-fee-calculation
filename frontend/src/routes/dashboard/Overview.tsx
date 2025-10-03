@@ -148,23 +148,41 @@ export default function DashboardOverview() {
       try {
         setIsLoadingRevenue(true);
         const currentMonth = moment().format("YYYY-MM");
-        if (classes.length === 0) {
-          setMonthlyRevenue(0);
-          return;
+        
+        // Calculate class-based revenue
+        let classRevenue = 0;
+        if (classes.length > 0) {
+          const results = await Promise.allSettled(
+            classes.map((cls: ClassDTO) =>
+              reportsService.getMonthlyReport(cls.id, currentMonth, false, false)
+            )
+          );
+          classRevenue = results.reduce((acc, r) => {
+            if (r.status === "fulfilled") {
+              return acc + (r.value?.summary?.totalFees ?? 0);
+            }
+            return acc;
+          }, 0);
         }
-        const results = await Promise.allSettled(
-          classes.map((cls: ClassDTO) =>
-            reportsService.getMonthlyReport(cls.id, currentMonth, false, false)
-          )
-        );
+        
+        // Calculate ad-hoc revenue
+        let adHocRevenue = 0;
+        try {
+          const adHocReport = await reportsService.getAdHocMonthlyReport(
+            currentMonth,
+            false,
+            false
+          );
+          adHocRevenue = adHocReport?.summary?.totalFees ?? 0;
+        } catch (error) {
+          // If no ad-hoc data exists, continue with 0
+          console.log("No ad-hoc revenue data for current month");
+        }
+        
         if (!isMounted) return;
-        const sum = results.reduce((acc, r) => {
-          if (r.status === "fulfilled") {
-            return acc + (r.value?.summary?.totalFees ?? 0);
-          }
-          return acc;
-        }, 0);
-        setMonthlyRevenue(sum);
+        
+        // Set total revenue (class + ad-hoc)
+        setMonthlyRevenue(classRevenue + adHocRevenue);
       } catch (error) {
         console.error("Failed to load revenue:", error);
       } finally {
@@ -263,19 +281,35 @@ export default function DashboardOverview() {
       // Reuse classes in state if available; otherwise fetch
       const classList = classes ?? (await classService.listClasses({ isGetAll: false })).items;
       const currentMonth = moment().format('YYYY-MM');
-      let totalRevenue = 0;
-
+      
+      // Calculate class-based revenue
+      let classRevenue = 0;
       for (const cls of classList) {
         try {
           const r = await reportsService.getMonthlyReport(cls.id, currentMonth, false, true);
-          totalRevenue += r.summary.totalFees;
+          classRevenue += r.summary.totalFees;
         } catch {
           // If a class has no data or fails, skip it
           continue;
         }
       }
-
-      setMonthlyRevenue(totalRevenue);
+      
+      // Calculate ad-hoc revenue
+      let adHocRevenue = 0;
+      try {
+        const adHocReport = await reportsService.getAdHocMonthlyReport(
+          currentMonth,
+          false,
+          true // force refresh
+        );
+        adHocRevenue = adHocReport?.summary?.totalFees ?? 0;
+      } catch {
+        // If no ad-hoc data exists, continue with 0
+        console.log("No ad-hoc revenue data for current month during recalc");
+      }
+      
+      // Set total revenue (class + ad-hoc)
+      setMonthlyRevenue(classRevenue + adHocRevenue);
     } catch {
       console.error('Failed to recalc monthly revenue');
     } finally {

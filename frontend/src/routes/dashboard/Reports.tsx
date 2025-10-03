@@ -62,9 +62,13 @@ export default function Reports() {
       try {
         setIsLoadingReport(true);
         setError(null);
-        // If ALL selected, fetch per-class reports and collect
+        
+        // Handle different class selections
         if (selectedClassId === 'ALL') {
+          // If ALL selected, fetch per-class reports and ad-hoc reports, then combine
           const allReports: MonthlyReport[] = [];
+          
+          // Fetch reports for each regular class
           for (const cls of classes) {
             try {
               const r = await reportsService.getMonthlyReport(cls.id, convertMonthGetReport(selectedMonth), includeStudentDetails, forceRefresh);
@@ -79,9 +83,34 @@ export default function Reports() {
               });
             }
           }
+          
+          // Fetch ad-hoc report and add to the list
+          try {
+            const adHocReport = await reportsService.getAdHocMonthlyReport(convertMonthGetReport(selectedMonth), includeStudentDetails, forceRefresh);
+            allReports.push(adHocReport);
+          } catch {
+            // treat no-data or error as empty ad-hoc report
+            allReports.push({
+              classInfo: { id: 'AD_HOC', name: 'Lớp học riêng', subject: '' },
+              month: selectedMonth,
+              summary: { totalSessions: 0, totalParticipatingStudents: 0, totalFees: 0 },
+              students: [],
+            });
+          }
+          
           setReports(allReports);
           setReport(null);
+        } else if (selectedClassId === 'AD_HOC') {
+          // Handle ad-hoc sessions only
+          const adHocReport = await reportsService.getAdHocMonthlyReport(
+            convertMonthGetReport(selectedMonth),
+            includeStudentDetails,
+            forceRefresh
+          );
+          setReport(adHocReport);
+          setReports(null);
         } else {
+          // Handle single class report
           const reportData = await reportsService.getMonthlyReport(
             selectedClassId,
             convertMonthGetReport(selectedMonth),
@@ -100,13 +129,22 @@ export default function Reports() {
         if (isAxiosError(err)
           && err.response?.status === 404
           && err.response?.data?.error === "Không có dữ liệu báo cáo cho tháng này") {
-          const cls = classes.find(c => c.id === selectedClassId);
-          setReport({
-            classInfo: { id: selectedClassId, name: cls?.name || '', subject: cls?.subject || '' },
-            month: selectedMonth,
-            summary: { totalSessions: 0, totalParticipatingStudents: 0, totalFees: 0 },
-            students: [],
-          })
+          if (selectedClassId === 'AD_HOC') {
+            setReport({
+              classInfo: { id: 'AD_HOC', name: 'Lớp học riêng', subject: '' },
+              month: selectedMonth,
+              summary: { totalSessions: 0, totalParticipatingStudents: 0, totalFees: 0 },
+              students: [],
+            });
+          } else {
+            const cls = classes.find(c => c.id === selectedClassId);
+            setReport({
+              classInfo: { id: selectedClassId, name: cls?.name || '', subject: cls?.subject || '' },
+              month: selectedMonth,
+              summary: { totalSessions: 0, totalParticipatingStudents: 0, totalFees: 0 },
+              students: [],
+            });
+          }
         }
       } finally {
         const elapsed = Date.now() - start;
