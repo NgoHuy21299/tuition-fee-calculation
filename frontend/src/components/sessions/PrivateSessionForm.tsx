@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -52,6 +52,7 @@ export function PrivateSessionForm({
     formState: { errors },
     setValue,
     watch,
+    control,
   } = useForm<FormData>({
     defaultValues: {
       startTime: getCurrentDateTimeLocal(),
@@ -88,7 +89,9 @@ export function PrivateSessionForm({
         : getCurrentDateTimeLocal();
       setValue('startTime', startTime);
       setValue('durationMin', 90); // Default to 90 minutes
-      setValue('feePerSession', defaultFeePerSession?.toString() || '');
+      setValue('feePerSession', defaultFeePerSession 
+        ? defaultFeePerSession.toLocaleString('vi-VN') 
+        : '');
       setValue('notes', '');
       setSelectedStudents([]);
       setSubmitError(null);
@@ -111,7 +114,7 @@ export function PrivateSessionForm({
         studentIds,
         startTime: parseDateTimeLocal(data.startTime),
         durationMin: data.durationMin,
-        feePerSession: parseInt(data.feePerSession, 10),
+        feePerSession: parseInt(data.feePerSession.replace(/[^0-9]/g, ''), 10),
         notes: data.notes || null,
         type: SESSION_TYPE.AD_HOC,
         status: SESSION_STATUS.SCHEDULED,
@@ -248,15 +251,30 @@ export function PrivateSessionForm({
               <Label htmlFor="feePerSession">
                 Học phí buổi học *
               </Label>
-              <Input
-                id="feePerSession"
-                type="number"
-                min="0"
-                placeholder="Nhập học phí buổi học"
-                {...register('feePerSession', {
+              <Controller
+                name="feePerSession"
+                control={control}
+                rules={{
                   required: 'Vui lòng nhập học phí buổi học',
-                  valueAsNumber: false, // Keep as string to handle empty values
-                })}
+                }}
+                render={({ field: { onChange, value, ...field } }) => (
+                  <Input
+                    {...field}
+                    id="feePerSession"
+                    inputMode="numeric"
+                    value={value}
+                    onChange={(e) => {
+                      const onlyDigits = e.target.value.replace(/[^0-9]/g, "");
+                      if (onlyDigits === "") {
+                        onChange("");
+                      } else {
+                        const n = Number(onlyDigits);
+                        onChange(n.toLocaleString("vi-VN"));
+                      }
+                    }}
+                    placeholder="Nhập học phí buổi học"
+                  />
+                )}
               />
               {errors.feePerSession && (
                 <p className="text-sm text-destructive">{errors.feePerSession.message}</p>
