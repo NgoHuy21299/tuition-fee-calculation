@@ -149,15 +149,26 @@ export default function DashboardOverview() {
         setIsLoadingRevenue(true);
         const currentMonth = moment().format("YYYY-MM");
         
-        // Calculate class-based revenue
+        // Run class-based and ad-hoc revenue calculations in parallel
+        const [classResults, adHocResult] = await Promise.allSettled([
+          // Class-based revenue calculation
+          classes.length > 0
+            ? Promise.allSettled(
+                classes.map((cls: ClassDTO) =>
+                  reportsService.getMonthlyReport(cls.id, currentMonth, false, false)
+                )
+              )
+            : Promise.resolve([]),
+          // Ad-hoc revenue calculation
+          reportsService.getAdHocMonthlyReport(currentMonth, false, false)
+        ]);
+        
+        if (!isMounted) return;
+        
+        // Calculate class revenue
         let classRevenue = 0;
-        if (classes.length > 0) {
-          const results = await Promise.allSettled(
-            classes.map((cls: ClassDTO) =>
-              reportsService.getMonthlyReport(cls.id, currentMonth, false, false)
-            )
-          );
-          classRevenue = results.reduce((acc, r) => {
+        if (classResults.status === "fulfilled" && Array.isArray(classResults.value)) {
+          classRevenue = classResults.value.reduce((acc, r) => {
             if (r.status === "fulfilled") {
               return acc + (r.value?.summary?.totalFees ?? 0);
             }
@@ -167,19 +178,12 @@ export default function DashboardOverview() {
         
         // Calculate ad-hoc revenue
         let adHocRevenue = 0;
-        try {
-          const adHocReport = await reportsService.getAdHocMonthlyReport(
-            currentMonth,
-            false,
-            false
-          );
-          adHocRevenue = adHocReport?.summary?.totalFees ?? 0;
-        } catch (error) {
+        if (adHocResult.status === "fulfilled") {
+          adHocRevenue = adHocResult.value?.summary?.totalFees ?? 0;
+        } else {
           // If no ad-hoc data exists, continue with 0
           console.log("No ad-hoc revenue data for current month");
         }
-        
-        if (!isMounted) return;
         
         // Set total revenue (class + ad-hoc)
         setMonthlyRevenue(classRevenue + adHocRevenue);
@@ -258,7 +262,10 @@ export default function DashboardOverview() {
 
   // Handle create session from calendar
   const handleCreateSessionFromDate = useCallback((date: Date) => {
-    setSelectedDate(date);
+    // Set the date with default time to Ca 1 (16:45)
+    const dateWithDefaultTime = new Date(date);
+    dateWithDefaultTime.setHours(16, 45, 0, 0);
+    setSelectedDate(dateWithDefaultTime);
     setShowSessionTypeDialog(true);
   }, []);
 

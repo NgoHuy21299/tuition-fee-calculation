@@ -227,9 +227,12 @@ export class ReportsService {
         totalFees += calculatedFee.amount;
 
         if (includeStudentDetails) {
+          // Use session startTime as UTC - frontend will handle timezone conversion
+          const sessionDate = new Date(session.startTime);
+          
           attendanceDetails.push({
             sessionId: attendance.sessionId,
-            date: new Date(attendance.markedAt || session.startTime).toISOString().split('T')[0],
+            date: sessionDate.toISOString().split('T')[0],
             status: attendance.status,
             calculatedFee: calculatedFee.amount,
             feeBreakdown: {
@@ -449,9 +452,12 @@ export class ReportsService {
         totalFees += calculatedFee;
 
         if (includeStudentDetails) {
+          // Use session startTime as UTC - frontend will handle timezone conversion
+          const sessionDate = new Date(session.startTime);
+          
           attendanceDetails.push({
             sessionId: attendance.sessionId,
-            date: new Date(attendance.markedAt || session.startTime).toISOString().split('T')[0],
+            date: sessionDate.toISOString().split('T')[0],
             status: attendance.status,
             calculatedFee: calculatedFee,
             feeBreakdown: {

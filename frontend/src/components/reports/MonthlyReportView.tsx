@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Badge } from "../ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { Button } from "../ui/button";
 import { ChevronDown, ChevronRight, Users, Clock, DollarSign } from "lucide-react";
@@ -7,6 +7,7 @@ import { useState } from "react";
 import type { MonthlyReport } from "../../services/reportsService";
 import type { AttendanceStatus } from "../../constants";
 import { ATTENDANCE_STATUS } from "../../constants";
+import { formatUTCDateToLocal } from "../../utils/dateHelpers";
 
 interface MonthlyReportViewProps {
   report: MonthlyReport;
@@ -34,7 +35,7 @@ export default function MonthlyReportView({ report, includeDetails }: MonthlyRep
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('vi-VN');
+    return formatUTCDateToLocal(dateStr);
   };
 
   const getStatusBadge = (status: AttendanceStatus) => {
