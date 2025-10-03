@@ -7,23 +7,42 @@ import type { User } from "./userType";
 import { AppError } from "../../errors";
 import { uuidv7 } from "uuidv7";
 import { UserRepository } from "./userRepository";
+import { CacheService } from "../../helpers/cacheService";
 
 export interface AuthDeps {
   db: D1Database;
+  kv?: KVNamespace;
 }
 
 export class AuthService {
   private readonly userRepository: UserRepository;
+  private readonly cache?: CacheService;
   constructor(private readonly deps: AuthDeps) {
     this.userRepository = new UserRepository({ db: deps.db });
+    this.cache = deps.kv ? new CacheService(deps.kv) : undefined;
   }
 
   async findUserByEmail(email: string): Promise<User | null> {
     const normalized = normalizeEmail(email);
-    return this.userRepository.getByNormalizedEmail(normalized);
+    // Try cache first
+    let cacheKey: string | undefined;
+    if (this.cache) {
+      cacheKey = CacheService.buildKey("auth", "userByEmail", { normalized });
+      const cached = await this.cache.get<User | null>(cacheKey);
+      if (cached) return cached;
+    }
+
+    const user = await this.userRepository.getByNormalizedEmail(normalized);
+    if (this.cache && cacheKey) {
+      await this.cache.set(cacheKey, user, { ttl: 300 });
+    }
+    return user;
   }
 
-  async verifyCredentials(email: string, password: string): Promise<User | null> {
+  async verifyCredentials(
+    email: string,
+    password: string
+  ): Promise<User | null> {
     const user = await this.findUserByEmail(email);
     if (!user) return null;
 
@@ -31,7 +50,11 @@ export class AuthService {
     return ok ? user : null;
   }
 
-  async changePassword(userId: string, oldPassword: string, newPassword: string): Promise<void> {
+  async changePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string
+  ): Promise<void> {
     const user = await this.userRepository.getById(userId);
     if (!user) throw new AppError("RESOURCE_NOT_FOUND", "User not found", 404);
 
@@ -40,6 +63,9 @@ export class AuthService {
 
     const newHash = await hashPassword(newPassword);
     await this.userRepository.updatePasswordHash(userId, newHash);
+
+    // Invalidate caches for this user
+    await this.invalidateUserEmailCache(user.normalizedEmail);
   }
 
   buildJwtPayload(u: User, maxAgeSec: number): JwtPayload {
@@ -52,26 +78,58 @@ export class AuthService {
     } as JwtPayload;
   }
 
-  async createUser(params: { id?: string; email: string; password: string; name?: string | null }): Promise<User> {
+  async createUser(params: {
+    id?: string;
+    email: string;
+    password: string;
+    name?: string | null;
+  }): Promise<User> {
     const normalizedEmail = normalizeEmail(params.email);
-    const exists = await this.userRepository.isExistedNormalizedEmail(normalizedEmail);
+    const exists = await this.userRepository.isExistedNormalizedEmail(
+      normalizedEmail
+    );
     if (exists) throw new AppError("AUTH_EMAIL_EXISTS");
 
     const id = uuidv7();
     const password_hash = await hashPassword(params.password);
     const name = params.name ?? null;
 
-    await this.userRepository.insert({ id, email: params.email, normalizedEmail, password_hash, name });
+    await this.userRepository.insert({
+      id,
+      email: params.email,
+      normalizedEmail,
+      password_hash,
+      name,
+    });
 
     const row = await this.userRepository.getById(id);
-    if (!row) throw new AppError("RESOURCE_NOT_FOUND", "Failed to load created user", 500);
+    if (!row)
+      throw new AppError(
+        "RESOURCE_NOT_FOUND",
+        "Failed to load created user",
+        500
+      );
+    // Invalidate email lookup cache in case of race
+    await this.invalidateUserEmailCache(normalizedEmail);
     return row;
+  }
+
+  private async invalidateUserEmailCache(
+    normalizedEmail: string
+  ): Promise<void> {
+    if (!this.cache) return;
+    await this.cache.deleteByPrefix(
+      `auth:userByEmail:normalized_${normalizedEmail}`
+    );
   }
 }
 
 // Simple password verification strategy
 // Supports either plain text (dev only) or sha256:<hex> format
-async function verifyPassword(plaintext: string, stored: string): Promise<boolean> {
+async function verifyPassword(
+  plaintext: string,
+  stored: string
+): Promise<boolean> {
   if (stored.startsWith("sha256:")) {
     const hex = stored.slice("sha256:".length);
     const hash = await sha256Hex(plaintext);
@@ -105,4 +163,3 @@ export async function hashPassword(plaintext: string): Promise<string> {
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
-
