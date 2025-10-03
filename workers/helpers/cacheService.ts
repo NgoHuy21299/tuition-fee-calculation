@@ -48,7 +48,7 @@ export class CacheService {
       if (IS_DEV) {
         if (value) {
           console.log(`[CacheService] ✅ Cache HIT for key: "${key}"`);
-          console.log(`[CacheService] Value:`, value);
+        //   console.log(`[CacheService] Value:`, value);
         } else {
           console.log(`[CacheService] ❌ Cache MISS for key: "${key}"`);
         }
@@ -77,7 +77,7 @@ export class CacheService {
     if (IS_DEV) {
       const ttl = options?.ttl ?? 300;
       console.log(`[CacheService] Setting key: "${key}" with TTL: ${ttl}s`);
-      console.log(`[CacheService] Value preview:`, value);
+    //   console.log(`[CacheService] Value preview:`, value);
     }
 
     try {
