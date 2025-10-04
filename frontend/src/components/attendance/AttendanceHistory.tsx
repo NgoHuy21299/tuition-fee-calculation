@@ -20,6 +20,7 @@ import {
   X,
   AlertCircle
 } from 'lucide-react';
+import LoadingSpinner from '../commons/LoadingSpinner';
 import { formatDate, formatTime, formatDuration } from '../../utils/dateHelpers';
 // Removed currency formatting usage
 import { AttendanceService } from '../../services/attendanceService';
@@ -97,8 +98,7 @@ export function AttendanceHistory({ studentId, className }: AttendanceHistoryPro
     return (
       <Card className={className}>
         <CardContent className="p-8 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
-          <p className="text-muted-foreground">Đang tải lịch sử điểm danh...</p>
+          <LoadingSpinner size={32} />
         </CardContent>
       </Card>
     );

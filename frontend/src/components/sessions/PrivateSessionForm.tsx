@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '../ui/dialog';
+import LoadingSpinner from '../commons/LoadingSpinner';
 import { studentService, type StudentDTO } from '../../services/studentService';
 import { PrivateSessionService, type CreatePrivateSessionRequest } from '../../services/privateSessionService';
 import MultipleSelector, { type Option } from '../ui/multiple-selector';
@@ -168,7 +169,7 @@ export function PrivateSessionForm({
 
         {isLoadingStudents ? (
           <div className="flex items-center justify-center h-32">
-            <span className="text-sm text-gray-500">Đang tải danh sách học sinh...</span>
+            <LoadingSpinner size={24} />
           </div>
         ) : students.length === 0 ? (
           <div className="flex items-center justify-center h-32">
@@ -309,7 +310,13 @@ export function PrivateSessionForm({
                 Hủy
               </Button>
               <Button type="submit" disabled={isSubmitting || selectedStudents.length === 0}>
-                {isSubmitting ? 'Đang lưu...' : 'Tạo buổi học'}
+                {isSubmitting ? (
+                  <>
+                    <LoadingSpinner size={16} /> Tạo buổi học
+                  </>
+                ) : (
+                  'Tạo buổi học'
+                )}
               </Button>
             </DialogFooter>
           </form>

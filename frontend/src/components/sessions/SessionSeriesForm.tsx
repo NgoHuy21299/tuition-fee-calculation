@@ -5,6 +5,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
+import LoadingSpinner from '../commons/LoadingSpinner';
 import { SessionService, type CreateSessionRequest } from '../../services/sessionService';
 import { getCurrentDateTimeLocal } from '../../utils/dateHelpers';
 
@@ -253,7 +254,13 @@ export function SessionSeriesForm({
               Hủy
             </Button>
             <Button type="submit" disabled={isSubmitting || previewCount === 0}>
-              {isSubmitting ? 'Đang tạo...' : `Tạo ${previewCount} buổi học`}
+              {isSubmitting ? (
+                <>
+                  <LoadingSpinner size={16} /> Tạo {previewCount} buổi học
+                </>
+              ) : (
+                `Tạo ${previewCount} buổi học`
+              )}
             </Button>
           </DialogFooter>
         </form>

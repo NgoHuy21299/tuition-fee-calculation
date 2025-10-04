@@ -4,6 +4,7 @@ import { Button } from '../../../components/ui/button';
 import { Card, CardContent } from '../../../components/ui/card';
 import { AttendanceForm } from '../../../components/attendance/AttendanceForm';
 import { AlertCircle } from 'lucide-react';
+import LoadingSpinner from '../../../components/commons/LoadingSpinner';
 import { AttendanceService } from '../../../services/attendanceService';
 import { SessionService } from '../../../services/sessionService';
 import type { 
@@ -172,8 +173,7 @@ export default function AttendancePage() {
       {isLoading || !session ? (
         <Card>
           <CardContent className="p-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-2"></div>
-            <p className="text-muted-foreground">Đang tải dữ liệu...</p>
+            <LoadingSpinner size={32} />
           </CardContent>
         </Card>
       ) : (
