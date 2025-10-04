@@ -12,9 +12,10 @@ import { formatUTCDateToLocal } from "../../utils/dateHelpers";
 interface MonthlyReportViewProps {
   report: MonthlyReport;
   includeDetails: boolean;
+  showStudentDetailsSection?: boolean;
 }
 
-export default function MonthlyReportView({ report, includeDetails }: MonthlyReportViewProps) {
+export default function MonthlyReportView({ report, includeDetails, showStudentDetailsSection = true }: MonthlyReportViewProps) {
   const [expandedStudents, setExpandedStudents] = useState<Set<string>>(new Set());
 
   const toggleStudentExpansion = (studentId: string) => {
@@ -101,98 +102,100 @@ export default function MonthlyReportView({ report, includeDetails }: MonthlyRep
       </div>
 
       {/* Student Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Chi tiết theo học sinh</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Học sinh</TableHead>
-                <TableHead className="text-center">Số buổi tham gia</TableHead>
-                <TableHead className="text-center">Tổng học phí</TableHead>
-                {includeDetails && <TableHead className="text-center">Chi tiết</TableHead>}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {report.students.map((student) => (
-                <>
-                  <TableRow key={student.studentId}>
-                    <TableCell className="font-medium">{student.studentName}</TableCell>
-                    <TableCell className="text-center">{student.totalSessionsAttended}</TableCell>
-                    <TableCell className="text-center font-medium">
-                      {formatCurrency(student.totalFees)}
-                    </TableCell>
-                    {includeDetails && (
-                      <TableCell className="text-center">
-                        {student.attendanceDetails && student.attendanceDetails.length > 0 && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleStudentExpansion(student.studentId)}
-                          >
-                            {expandedStudents.has(student.studentId) ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                          </Button>
-                        )}
+      {showStudentDetailsSection && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Chi tiết theo học sinh</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Học sinh</TableHead>
+                  <TableHead className="text-center">Số buổi tham gia</TableHead>
+                  <TableHead className="text-center">Tổng học phí</TableHead>
+                  {includeDetails && <TableHead className="text-center">Chi tiết</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {report.students.map((student) => (
+                  <>
+                    <TableRow key={student.studentId}>
+                      <TableCell className="font-medium">{student.studentName}</TableCell>
+                      <TableCell className="text-center">{student.totalSessionsAttended}</TableCell>
+                      <TableCell className="text-center font-medium">
+                        {formatCurrency(student.totalFees)}
                       </TableCell>
-                    )}
-                  </TableRow>
-                  
-                  {/* Expanded Details */}
-                  {includeDetails && 
-                   expandedStudents.has(student.studentId) && 
-                   student.attendanceDetails && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="bg-gray-950 p-0">
-                        <div className="p-4 text-sm text-slate-200">
-                          <h4 className="font-medium mb-3 text-slate-100">Chi tiết buổi học của {student.studentName}</h4>
-                          <div className="space-y-2">
-                            {student.attendanceDetails.map((detail, index) => (
-                              <div 
-                                key={detail.sessionId} 
-                                className="flex items-center justify-between p-3 bg-gray-950 rounded border border-slate-700 text-sm"
-                              >
-                                <div className="flex items-center gap-4 text-slate-100">
-                                  <span>Buổi {index + 1}</span>
-                                  <span className="opacity-80">{formatDate(detail.date)}</span>
-                                  {getStatusBadge(detail.status)}
-                                </div>
-                                <div className="flex items-center gap-4">
-                                  <span className="font-medium text-slate-100">{formatCurrency(detail.calculatedFee)}</span>
-                                  <div className="text-xs text-slate-400">
-                                    {detail.feeBreakdown.attendanceOverride ? (
-                                      <span>Override riêng</span>
-                                    ) : detail.feeBreakdown.classOverride ? (
-                                      <span>Phí lớp riêng</span>
-                                    ) : (
-                                      <span>Phí buổi học</span>
-                                    )}
+                      {includeDetails && (
+                        <TableCell className="text-center">
+                          {student.attendanceDetails && student.attendanceDetails.length > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleStudentExpansion(student.studentId)}
+                            >
+                              {expandedStudents.has(student.studentId) ? (
+                                <ChevronDown className="h-4 w-4" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
+                        </TableCell>
+                      )}
+                    </TableRow>
+                    
+                    {/* Expanded Details */}
+                    {includeDetails && 
+                     expandedStudents.has(student.studentId) && 
+                     student.attendanceDetails && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="bg-gray-950 p-0">
+                          <div className="p-4 text-sm text-slate-200">
+                            <h4 className="font-medium mb-3 text-slate-100">Chi tiết buổi học của {student.studentName}</h4>
+                            <div className="space-y-2">
+                              {student.attendanceDetails.map((detail, index) => (
+                                <div 
+                                  key={detail.sessionId} 
+                                  className="flex items-center justify-between p-3 bg-gray-950 rounded border border-slate-700 text-sm"
+                                >
+                                  <div className="flex items-center gap-4 text-slate-100">
+                                    <span>Buổi {index + 1}</span>
+                                    <span className="opacity-80">{formatDate(detail.date)}</span>
+                                    {getStatusBadge(detail.status)}
+                                  </div>
+                                  <div className="flex items-center gap-4">
+                                    <span className="font-medium text-slate-100">{formatCurrency(detail.calculatedFee)}</span>
+                                    <div className="text-xs text-slate-400">
+                                      {detail.feeBreakdown.attendanceOverride ? (
+                                        <span>Override riêng</span>
+                                      ) : detail.feeBreakdown.classOverride ? (
+                                        <span>Phí lớp riêng</span>
+                                      ) : (
+                                        <span>Phí buổi học</span>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </>
-              ))}
-            </TableBody>
-          </Table>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
+                ))}
+              </TableBody>
+            </Table>
 
-          {report.students.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              Không có học sinh nào tham gia trong tháng này
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            {report.students.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                Không có học sinh nào tham gia trong tháng này
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

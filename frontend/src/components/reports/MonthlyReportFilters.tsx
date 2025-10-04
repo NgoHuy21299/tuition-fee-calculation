@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Label } from "../ui/label";
 import { Checkbox } from "../ui/checkbox";
 import {
@@ -38,6 +39,9 @@ export default function MonthlyReportFilters({
   onMonthChange,
   onDetailsToggleChange
 }: MonthlyReportFiltersProps) {
+  const [classDropdownOpen, setClassDropdownOpen] = useState(false);
+  const [monthDropdownOpen, setMonthDropdownOpen] = useState(false);
+
   // Generate month options (current month and previous 11 months)
   const generateMonthOptions = () => {
     const months = [];
@@ -66,7 +70,7 @@ export default function MonthlyReportFilters({
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div className="space-y-2">
         <Label htmlFor="class-select">Lớp học</Label>
-        <DropdownMenu>
+        <DropdownMenu open={classDropdownOpen} onOpenChange={setClassDropdownOpen}>
           <DropdownMenuTrigger asChild>
               <Button className="w-full text-left" variant="outline">
                 {getClassLabel(classes, selectedClassId)}
@@ -76,7 +80,16 @@ export default function MonthlyReportFilters({
             <DropdownMenuItem>
               <button
                 className="w-full text-left"
-                onClick={() => onClassChange('')}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onClassChange('');
+                  setClassDropdownOpen(false);
+                }}
               >
                 Chọn lớp học
               </button>
@@ -84,7 +97,16 @@ export default function MonthlyReportFilters({
             <DropdownMenuItem>
               <button
                 className="w-full text-left"
-                onClick={() => onClassChange('ALL')}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onClassChange('ALL');
+                  setClassDropdownOpen(false);
+                }}
               >
                 Tất cả các lớp
               </button>
@@ -92,7 +114,16 @@ export default function MonthlyReportFilters({
             <DropdownMenuItem>
               <button
                 className="w-full text-left"
-                onClick={() => onClassChange('AD_HOC')}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onClassChange('AD_HOC');
+                  setClassDropdownOpen(false);
+                }}
               >
                 Lớp học riêng
               </button>
@@ -101,7 +132,16 @@ export default function MonthlyReportFilters({
               <DropdownMenuItem key={classItem.id}>
                 <button
                   className="w-full text-left"
-                  onClick={() => onClassChange(classItem.id)}
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onClassChange(classItem.id);
+                    setClassDropdownOpen(false);
+                  }}
                 >
                   {classItem.name} - {classItem.subject || 'Chưa có môn học'}
                 </button>
@@ -113,7 +153,7 @@ export default function MonthlyReportFilters({
 
       <div className="space-y-2">
         <Label htmlFor="month-select">Tháng</Label>
-        <DropdownMenu>
+        <DropdownMenu open={monthDropdownOpen} onOpenChange={setMonthDropdownOpen}>
           <DropdownMenuTrigger asChild>
             <Button className="w-full text-left" variant="outline">
               {selectedMonth
@@ -123,11 +163,37 @@ export default function MonthlyReportFilters({
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-full">
             <DropdownMenuItem>
-              <button className="w-full text-left" onClick={() => onMonthChange('')}>Chọn tháng</button>
+              <button 
+                className="w-full text-left" 
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onMonthChange('');
+                  setMonthDropdownOpen(false);
+                }}
+              >
+                Chọn tháng
+              </button>
             </DropdownMenuItem>
             {monthOptions.map((month) => (
               <DropdownMenuItem key={month.value}>
-                <button className="w-full text-left" onClick={() => onMonthChange(month.value)}>
+                <button 
+                  className="w-full text-left" 
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onMonthChange(month.value);
+                    setMonthDropdownOpen(false);
+                  }}
+                >
                   {month.label}
                 </button>
               </DropdownMenuItem>

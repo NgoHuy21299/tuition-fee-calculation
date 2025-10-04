@@ -11,6 +11,7 @@ import {
   Clock,
   Unlock
 } from 'lucide-react';
+import LoadingSpinner from '../commons/LoadingSpinner';
 import { AttendanceRow } from './AttendanceRow';
 import { formatDate, formatTime, formatDuration } from '../../utils/dateHelpers';
 import type { 
@@ -235,7 +236,13 @@ export function AttendanceForm({
                   onClick={() => void onCancelSession()}
                   disabled={isCancelling}
                 >
-                  {isCancelling ? 'Đang hủy...' : 'Hủy buổi học'}
+                  {isCancelling ? (
+                    <>
+                      <LoadingSpinner size={16} /> Hủy buổi học
+                    </>
+                  ) : (
+                    'Hủy buổi học'
+                  )}
                 </Button>
               )}
 
@@ -245,7 +252,7 @@ export function AttendanceForm({
                 onClick={onRefresh}
                 disabled={isLoading}
               >
-                <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+                {isLoading ? <LoadingSpinner size={16} /> : <RefreshCw className="h-4 w-4 mr-1" />}
                 Làm mới
               </Button>
 
@@ -258,8 +265,14 @@ export function AttendanceForm({
                   disabled={isCompleting}
                   title="Đánh dấu buổi học đã hoàn thành"
                 >
-                  <CheckCircle className={`h-4 w-4 mr-1 ${isCompleting ? 'animate-spin' : ''}`} />
-                  {isCompleting ? 'Đang hoàn thành...' : 'Hoàn thành buổi học'}
+                  {isCompleting ? <LoadingSpinner size={16} /> : <CheckCircle className="h-4 w-4 mr-1" />}
+                  {isCompleting ? (
+                    <>
+                      <LoadingSpinner size={16} /> Hoàn thành buổi học
+                    </>
+                  ) : (
+                    'Hoàn thành buổi học'
+                  )}
                 </Button>
               )}
 
@@ -272,8 +285,14 @@ export function AttendanceForm({
                   disabled={isUnlocking}
                   title="Mở khoá để tiếp tục chỉnh sửa điểm danh"
                 >
-                  <Unlock className={`h-4 w-4 mr-1 ${isUnlocking ? 'animate-spin' : ''}`} />
-                  {isUnlocking ? 'Đang mở khoá...' : 'Mở khoá điểm danh'}
+                  {isUnlocking ? <LoadingSpinner size={16} /> : <Unlock className="h-4 w-4 mr-1" />}
+                  {isUnlocking ? (
+                    <>
+                      <LoadingSpinner size={16} /> Mở khoá điểm danh
+                    </>
+                  ) : (
+                    'Mở khoá điểm danh'
+                  )}
                 </Button>
               )}
               
@@ -300,7 +319,13 @@ export function AttendanceForm({
                     disabled={!hasChanges || isSaving}
                   >
                     <Save className="h-4 w-4 mr-1" />
-                    {isSaving ? 'Đang lưu...' : 'Lưu thay đổi'}
+                    {isSaving ? (
+                      <>
+                        <LoadingSpinner size={16} /> Lưu thay đổi
+                      </>
+                    ) : (
+                      'Lưu thay đổi'
+                    )}
                   </Button>
                 </div>
               ))}
@@ -383,8 +408,7 @@ export function AttendanceForm({
         {isLoading ? (
           <Card>
             <CardContent className="p-8 text-center">
-              <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-2 text-muted-foreground" />
-              <p className="text-muted-foreground">Đang tải danh sách điểm danh...</p>
+              <LoadingSpinner size={32} />
             </CardContent>
           </Card>
         ) : attendanceList.length === 0 ? (
