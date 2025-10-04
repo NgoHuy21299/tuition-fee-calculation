@@ -10,7 +10,7 @@ import { classService } from "../../services/classService";
 import { reportsService } from "../../services/reportsService";
 import { isAxiosError } from 'axios';
 import type { ClassDTO } from "../../services/classService";
-import type { MonthlyReport } from "../../services/reportsService";
+import type { MonthlyReport, MonthlyReportSummary } from "../../services/reportsService";
 
 export default function Reports() {
   const [selectedClassId, setSelectedClassId] = useState<string>("");
@@ -65,38 +65,39 @@ export default function Reports() {
         
         // Handle different class selections
         if (selectedClassId === 'ALL') {
-          // If ALL selected, fetch per-class reports and ad-hoc reports, then combine
-          const allReports: MonthlyReport[] = [];
+          // If ALL selected, fetch per-class reports and ad-hoc reports in parallel
+          const allReportsPromises: Promise<MonthlyReport>[] = [];
           
-          // Fetch reports for each regular class
+          // Create promises for each regular class
           for (const cls of classes) {
-            try {
-              const r = await reportsService.getMonthlyReport(cls.id, convertMonthGetReport(selectedMonth), includeStudentDetails, forceRefresh);
-              allReports.push(r);
-            } catch {
-              // treat no-data or error as empty report with zeros
-              allReports.push({
-                classInfo: { id: cls.id, name: cls.name, subject: cls.subject || '' },
+            const promise = reportsService.getMonthlyReport(cls.id, convertMonthGetReport(selectedMonth), includeStudentDetails, forceRefresh)
+              .catch(() => {
+                // treat no-data or error as empty report with zeros
+                return {
+                  classInfo: { id: cls.id, name: cls.name, subject: cls.subject || '' },
+                  month: selectedMonth,
+                  summary: { totalSessions: 0, totalParticipatingStudents: 0, totalFees: 0 },
+                  students: [],
+                };
+              });
+            allReportsPromises.push(promise);
+          }
+          
+          // Add ad-hoc report promise
+          const adHocPromise = reportsService.getAdHocMonthlyReport(convertMonthGetReport(selectedMonth), includeStudentDetails, forceRefresh)
+            .catch(() => {
+              // treat no-data or error as empty ad-hoc report
+              return {
+                classInfo: { id: 'AD_HOC', name: 'Lớp học riêng', subject: '' },
                 month: selectedMonth,
                 summary: { totalSessions: 0, totalParticipatingStudents: 0, totalFees: 0 },
                 students: [],
-              });
-            }
-          }
-          
-          // Fetch ad-hoc report and add to the list
-          try {
-            const adHocReport = await reportsService.getAdHocMonthlyReport(convertMonthGetReport(selectedMonth), includeStudentDetails, forceRefresh);
-            allReports.push(adHocReport);
-          } catch {
-            // treat no-data or error as empty ad-hoc report
-            allReports.push({
-              classInfo: { id: 'AD_HOC', name: 'Lớp học riêng', subject: '' },
-              month: selectedMonth,
-              summary: { totalSessions: 0, totalParticipatingStudents: 0, totalFees: 0 },
-              students: [],
+              };
             });
-          }
+          allReportsPromises.push(adHocPromise);
+          
+          // Execute all API calls in parallel
+          const allReports = await Promise.all(allReportsPromises);
           
           setReports(allReports);
           setReport(null);
@@ -183,6 +184,32 @@ export default function Reports() {
     if (split.length === 2 && monthRegex.test(split[0]) && yearRegex.test(split[1])) return `${split[1]}-${split[0]}`
     return selectedMonth;
   }
+
+  // Calculate total summary from all reports
+  const calculateTotalSummary = (reports: MonthlyReport[]): MonthlyReportSummary => {
+    // Get unique students across all classes/reports
+    const allStudentIds = new Set<string>();
+    let totalSessions = 0;
+    let totalFees = 0;
+    
+    reports.forEach(report => {
+      totalSessions += report.summary.totalSessions;
+      totalFees += report.summary.totalFees;
+      
+      // Add students who actually participated (had sessions)
+      report.students.forEach(student => {
+        if (student.totalSessionsAttended > 0) {
+          allStudentIds.add(student.studentId);
+        }
+      });
+    });
+    
+    return {
+      totalSessions,
+      totalParticipatingStudents: allStudentIds.size,
+      totalFees,
+    };
+  };
 
   if (isLoadingClasses) {
     return (
@@ -278,6 +305,29 @@ export default function Reports() {
               />
             ) : reports ? (
               <div className="space-y-6">
+                {/* Total Summary Row */}
+                {(() => {
+                  const totalSummary = calculateTotalSummary(reports);
+                  const totalReport: MonthlyReport = {
+                    classInfo: { id: 'TOTAL', name: 'Tổng các lớp', subject: '' },
+                    month: selectedMonth,
+                    summary: totalSummary,
+                    students: [],
+                  };
+                  return (
+                    <Card>
+                      <CardContent>
+                        <MonthlyReportView 
+                          report={totalReport} 
+                          includeDetails={false} 
+                          showStudentDetailsSection={false} 
+                        />
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
+                
+                {/* Individual Class Reports */}
                 {reports.map((r) => (
                   <div key={r.classInfo.id}>
                     <Card>
